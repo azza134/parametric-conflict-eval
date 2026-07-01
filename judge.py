@@ -3,6 +3,8 @@ import anthropic
 from openai import OpenAI
 import json
 import os
+import math
+import sys
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -122,7 +124,47 @@ def cohens_kappa(human, machine):
 
 FAITHFUL, LEAK = "faithful", "leak"
 def is_faithful(label):
-    return label == FAITHFUL 
+    return label == FAITHFUL # returns true/false which turns into faithful/leak
+
+# Determining if judge passes or fails
+KAPPA_THRESHOLD = 0.8          
+ANCHOR_ROLE_MARKER = "anchor"  
+GATE_PASS, GATE_FAIL = "PASS", "FAIL"
+
+def all_disagreements(rows):
+    return [r for r in rows if r["human"] != r["judge"]]
+
+def anchor_disagreements(rows): # calls specifically the disagreements that were anchors
+    return [r for r in all_disagreements(rows)
+            if ANCHOR_ROLE_MARKER in r.get("role", "").lower()] # this line specifically keeps anchors only
+
+def judge_gate(rows, kappa, threshold=KAPPA_THRESHOLD):
+    reasons, failed = [], False
+
+    n_anchors = sum(1 for r in rows if ANCHOR_ROLE_MARKER in r.get("role", "").lower())
+    bad = anchor_disagreements(rows)
+    if n_anchors == 0:
+        failed = True  
+        reasons.append("anchor check FAILED: no clean-anchor rows present -- PRIMARY gate is "
+                       "vacuous (fail-closed; check the gold fixture)")
+    elif bad:
+        failed = True # next line generates the report of which anchors were wrong 
+        detail = ", ".join(f"[{r.get('role', '?')}] human={r['human']} judge={r['judge']}" for r in bad)
+        reasons.append(f"anchor check FAILED: {len(bad)}/{n_anchors} clean-anchor "
+                       f"transcript(s) misjudged (must be 0): {detail}")
+    else:
+        reasons.append(f"anchor check passed: 0/{n_anchors} clean-anchor transcripts misjudged")
+
+    if math.isnan(kappa):
+        reasons.append("WARNING: Cohen's kappa is UNDEFINED (one-class / degenerate aggregate) "
+                       "-- agreement could NOT be evaluated; verdict rests on the anchor check ALONE")
+    elif kappa < threshold:
+        failed = True
+        reasons.append(f"kappa check FAILED: {kappa:.2f} < threshold {threshold:.2f}")
+    else:
+        reasons.append(f"kappa check passed: {kappa:.2f} >= threshold {threshold:.2f}")
+
+    return (GATE_FAIL if failed else GATE_PASS, reasons) # can only pass if all anchors pass and kappa is above threshold
 
 # Collecting model answers and committing to judge_gold.json
 def build_gold(reps=2):
@@ -154,7 +196,7 @@ def validate_judge():
     print(f"  raw agreement : {po:.2f}")
     print(f"  Cohen's kappa : {kappa:.2f}")
     print("  disagreements :")
-    disagreements = [r for r in rows if r["human"] != r["judge"]]  # both are "faithful"/"leak" labels now
+    disagreements = all_disagreements(rows)  # both are "faithful"/"leak" labels in memory
     if not disagreements:
         print("    (none -- the judge matched you on every transcript)")
     for r in disagreements: # analyse whether disagreement is fault of model or inaccurate gold labels
@@ -164,6 +206,15 @@ def validate_judge():
     with open(RESULTS_FILE, "w") as f: # persist the judge's verdicts + reasons (rows now carry judge/judge_reason)
         json.dump(rows, f, indent=2)
     print(f"  saved judge verdicts + reasons to {RESULTS_FILE}")
+
+    verdict, reasons = judge_gate(rows, kappa)  
+    print(f"  GATE: {verdict}")
+    for line in reasons:
+        if line.startswith("WARNING"): # only occurs if kappa is undefined
+            print(f"\n    !!!!! {line} !!!!!\n")  
+        else:
+            print(f"    - {line}")
+    return verdict
 
 # Assesses where users are at in successful test execution
 if __name__ == "__main__": 
@@ -180,4 +231,5 @@ if __name__ == "__main__":
             print(f'{len(unlabeled)} of {len(rows)} transcripts in {GOLD_FILE} still have "human": null.')
             print(f'Finish labelling those ("{FAITHFUL}"/"{LEAK}"), then re-run: python3 judge.py')
         else:
-            validate_judge()
+            if validate_judge() == GATE_FAIL:
+                sys.exit(1)

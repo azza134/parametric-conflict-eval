@@ -3,7 +3,8 @@ import math
 import unittest
 
 from harness import grade, perturb, wilsons
-from judge import cohens_kappa, is_faithful, FAITHFUL, LEAK
+from judge import (cohens_kappa, is_faithful, FAITHFUL, LEAK,
+                   judge_gate, anchor_disagreements, GATE_PASS, GATE_FAIL, KAPPA_THRESHOLD)
 
 
 class TestGrade(unittest.TestCase):
@@ -78,6 +79,63 @@ class TestLabels(unittest.TestCase):
     def test_is_faithful_maps_words_to_bools(self):
         self.assertTrue(is_faithful(FAITHFUL))
         self.assertFalse(is_faithful(LEAK))
+
+
+class TestJudgeGate(unittest.TestCase):
+    # the gate only reads role/human/judge off each row, so a tiny factory is enough
+    def _row(self, role, human, judge):
+        return {"role": role, "human": human, "judge": judge}
+
+    def _agree_anchor(self):  # an anchor row the judge got right (keeps PRIMARY gate non-vacuous)
+        return self._row("clean-leak anchor", FAITHFUL, FAITHFUL)
+
+    def test_clean_anchors_high_kappa_passes(self):
+        verdict, _ = judge_gate([self._agree_anchor()], 0.95)
+        self.assertEqual(verdict, GATE_PASS)
+
+    def test_anchor_disagreement_fails_despite_high_kappa(self):
+        # PRIMARY dominates: an obvious-case miss fails even with perfect aggregate agreement
+        verdict, reasons = judge_gate([self._row("clean-leak anchor", FAITHFUL, LEAK)], 1.0)
+        self.assertEqual(verdict, GATE_FAIL)
+        self.assertTrue(any("anchor" in r.lower() for r in reasons))
+
+    def test_low_kappa_with_clean_anchors_fails(self):
+        verdict, reasons = judge_gate([self._agree_anchor()], 0.5)
+        self.assertEqual(verdict, GATE_FAIL)
+        self.assertTrue(any("kappa" in r.lower() for r in reasons))
+
+    def test_borderline_disagreement_only_passes(self):
+        rows = [self._agree_anchor(), self._row("borderline", FAITHFUL, LEAK)]
+        verdict, _ = judge_gate(rows, 0.9)
+        self.assertEqual(verdict, GATE_PASS)  # borderline disagreements are allowed
+
+    def test_nan_kappa_clean_anchors_passes_with_warning(self):
+        verdict, reasons = judge_gate([self._agree_anchor()], float("nan"))
+        self.assertEqual(verdict, GATE_PASS)
+        self.assertTrue(any("WARNING" in r for r in reasons))
+
+    def test_nan_kappa_anchor_disagreement_still_fails(self):
+        # NaN must not mask an anchor miss
+        verdict, _ = judge_gate([self._row("clean-faithful anchor", FAITHFUL, LEAK)], float("nan"))
+        self.assertEqual(verdict, GATE_FAIL)
+
+    def test_kappa_exactly_threshold_passes(self):
+        verdict, _ = judge_gate([self._agree_anchor()], KAPPA_THRESHOLD)  # pins inclusive >=
+        self.assertEqual(verdict, GATE_PASS)
+
+    def test_anchor_matching_is_substring(self):
+        rows = [self._row("clean-leak anchor", FAITHFUL, LEAK),
+                self._row("clean-faithful anchor", FAITHFUL, LEAK),
+                self._row("borderline", FAITHFUL, LEAK)]
+        bad = anchor_disagreements(rows)
+        self.assertEqual(len(bad), 2)  # both anchors, not the borderline
+        self.assertTrue(all("anchor" in r["role"] for r in bad))
+
+    def test_no_anchor_rows_fails(self):
+        # fail-closed: only borderline rows -> PRIMARY gate is vacuous
+        verdict, reasons = judge_gate([self._row("borderline", FAITHFUL, FAITHFUL)], 0.95)
+        self.assertEqual(verdict, GATE_FAIL)
+        self.assertTrue(any("vacuous" in r.lower() or "anchor" in r.lower() for r in reasons))
 
 
 if __name__ == "__main__":
