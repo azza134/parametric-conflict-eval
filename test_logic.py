@@ -9,11 +9,11 @@ from unittest import mock
 from harness import (perturb, wilsons, with_retry, PERMISSIVE, INSTRUCTIONS,
                      LADDERS, LEVELS, validate_ladders, total_steps, classify, lexical_flag,
                      LEAK_PROBES, LEAK_INSTRUCTIONS, validate_probes, appears, load_done,
-                     balance_rows, passage, PRIORS)
+                     balance_rows, passage, PRIORS, step_doc)
 from judge import (cohens_kappa, is_faithful, FAITHFUL, LEAK,
                    judge_gate, anchor_disagreements, GATE_PASS, GATE_FAIL, KAPPA_THRESHOLD,
                    is_flagged, FLAGGED, NOT_FLAGGED, build_flag_prompt, FLAG_SCHEMA,
-                   gold_schedule, _certify)
+                   gold_schedule, _certify, CONTROL_PROBES)
 
 
 class TestPerturb(unittest.TestCase):
@@ -225,12 +225,12 @@ class TestLadders(unittest.TestCase):
     def test_all_perturbations_apply_to_document(self):
         self.assertEqual(validate_ladders(), [])
 
-    def test_every_fact_ladders_1_to_5(self):
+    def test_every_fact_ladders_0_to_5(self):
         for fact in LADDERS:
             self.assertEqual([s["level"] for s in fact["steps"]], LEVELS)
 
-    def test_thirty_steps_total(self):
-        self.assertEqual(total_steps(), 30)
+    def test_thirty_six_steps_total(self):
+        self.assertEqual(total_steps(), 36)
 
     def test_ratio_increases_where_present(self):
         for fact in LADDERS:
@@ -245,7 +245,56 @@ class TestLadders(unittest.TestCase):
         with mock.patch("harness.perturb", side_effect=AssertionError("no change in passage detected")):
             problems = validate_ladders()
         self.assertTrue(any("no change in passage detected" in p for p in problems))
-        self.assertEqual(len(problems), total_steps())
+        self.assertEqual(len(problems), total_steps() - len(LADDERS))
+
+
+class TestControlRung(unittest.TestCase):
+    def test_every_fact_leads_with_an_unperturbed_control(self):
+        for fact in LADDERS:
+            first = fact["steps"][0]
+            self.assertEqual(first["level"], 0, fact["fact"])
+            self.assertEqual(first["replace"], [], fact["fact"])
+
+    def test_control_tokens_present_in_document(self):
+        for fact in LADDERS:
+            self.assertTrue(appears(fact["steps"][0]["token"], passage), fact["fact"])
+
+    def test_step_doc_control_is_the_real_passage(self):
+        self.assertEqual(step_doc({"replace": []}), passage)
+
+    def test_step_doc_applies_perturbation(self):
+        doc = step_doc({"replace": [("every 20", "every 13")]})
+        self.assertNotEqual(doc, passage)
+        self.assertIn("every 13", doc)
+
+    def test_perturbing_control_fails_validation(self):
+        bad = [{"fact": "grasses", "true": "10cm", "q": "?", "steps": [
+            {"level": 0, "replace": [("exceed 10cm", "exceed 15cm")], "token": "10cm", "ratio": 1}]}]
+        with mock.patch("harness.LADDERS", bad):
+            problems = validate_ladders()
+        self.assertTrue(any("must not perturb" in p for p in problems))
+
+    def test_control_token_absent_fails_validation(self):
+        bad = [{"fact": "grasses", "true": "10cm", "q": "?", "steps": [
+            {"level": 0, "replace": [], "token": "zzqx", "ratio": 1}]}]
+        with mock.patch("harness.LADDERS", bad):
+            problems = validate_ladders()
+        self.assertTrue(any("not found in the document" in p for p in problems))
+
+
+class TestControlProbes(unittest.TestCase):
+    def test_controls_are_gating_anchors(self):
+        for p in CONTROL_PROBES:
+            self.assertIn("anchor", p["role"])
+
+    def test_controls_do_not_perturb(self):
+        for p in CONTROL_PROBES:
+            self.assertEqual(p["replace"], [])
+
+    def test_control_questions_come_from_the_ladders(self):
+        qs = {f["q"] for f in LADDERS}
+        for p in CONTROL_PROBES:
+            self.assertIn(p["q"], qs)
 
 
 class TestMagnitudeClassify(unittest.TestCase):

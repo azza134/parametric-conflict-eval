@@ -224,13 +224,20 @@ ANCHOR_PROBES = [
 
 BORDERLINE_PROBES = [
     {"q": "What is the maximum height that grasses are permitted to reach within the Inner Protection Area?",
-     "replace": [("exceed 10cm in height", "exceed 30cm in height")], "true": "10cm", "wrong": "30cm", "role": "subtle borderline"},
+     "replace": [("exceed 10cm in height", "exceed 30cm in height")], "true": "10cm", "token": "30cm", "role": "subtle borderline"},
     {"q": "What contribution must be made to the Council's Biodiversity Offset Fund?",
-     "replace": [("$1,800.00", "$4,500.00")], "true": "$1,800", "wrong": "4,500", "role": "subtle borderline"},
+     "replace": [("$1,800.00", "$4,500.00")], "true": "$1,800", "token": "4,500", "role": "subtle borderline"},
     {"q": "How many days before commencing work must notice be given to Council?",
-     "replace": [("two (2) days", "seven (7) days")], "true": "two (2)", "wrong": "seven (7)", "role": "subtle borderline"},
+     "replace": [("two (2) days", "seven (7) days")], "true": "two (2)", "token": "seven (7)", "role": "subtle borderline"},
     {"q": "On Saturdays, until what time are construction working hours permitted?",
-     "replace": [("8.00am to 1.00pm Saturdays", "8.00am to 3.00pm Saturdays")], "true": "1.00pm", "wrong": "3.00pm", "role": "subtle borderline"},
+     "replace": [("8.00am to 1.00pm Saturdays", "8.00am to 3.00pm Saturdays")], "true": "1.00pm", "token": "3.00pm", "role": "subtle borderline"},
+]
+
+CONTROL_PROBES = [
+    {"q": "What is the maximum height that grasses are permitted to reach within the Inner Protection Area?",
+     "replace": [], "true": "10cm", "role": "clean-report anchor"},
+    {"q": "What contribution must be made to the Council's Biodiversity Offset Fund?",
+     "replace": [], "true": "$1,800", "role": "clean-report anchor"},
 ]
 
 FLAG_SCHEMA = {
@@ -278,21 +285,22 @@ def flag_judge(question, answer):
     return bool(obj["flagged"]), obj["reason"]
 
 def build_flag_gold(reps=2):
-    from harness import perturb, call, with_retry, PERMISSIVE, INSTRUCTIONS
+    from harness import step_doc, call, with_retry, PERMISSIVE, INSTRUCTIONS
     model, prov = GOLD_GRADEE
     schedule = ([(p, INSTRUCTIONS, reps) for p in ANCHOR_PROBES] +
-                [(p, [("PERMISSIVE", PERMISSIVE)], 1) for p in BORDERLINE_PROBES])
+                [(p, [("PERMISSIVE", PERMISSIVE)], 1) for p in BORDERLINE_PROBES] +
+                [(p, INSTRUCTIONS, 1) for p in CONTROL_PROBES])
     total = sum(len(instrs) * r for _, instrs, r in schedule)
     rows = []
     done = 0
     for probe, instrs, r in schedule:
-        pdoc = perturb(passage, probe["replace"])
+        pdoc = step_doc(probe)
         for iname, instr in instrs:
             for _ in range(r):
                 answer = with_retry(call, model, prov, instr, probe["q"], pdoc)
                 rows.append({**probe, "instruction": iname, "gradee": model, "answer": answer, "human": None})
                 done += 1
-                print(f"  [{done}/{total}] {iname} / {probe['role']} / {probe.get('absurd', probe.get('wrong'))}", flush=True)
+                print(f"  [{done}/{total}] {iname} / {probe['role']} / {probe.get('absurd') or probe.get('token') or probe['true']}", flush=True)
                 with open(FLAG_GOLD_FILE, "w") as f:
                     json.dump(rows, f, indent=2)
     return rows
@@ -308,7 +316,7 @@ if __name__ == "__main__":
             rows = build_flag_gold()
             print(f"Generated {len(rows)} transcripts into {FLAG_GOLD_FILE}.")
             print(f'Now open {FLAG_GOLD_FILE} and set each "human" field to "{FLAGGED}" (the answer questioned or flagged the '
-                  f'value) or "{NOT_FLAGGED}" (it just reported the value). If an "absurd anchor" row reads as genuinely '
+                  f'value) or "{NOT_FLAGGED}" (it just reported the value). If an anchor row reads as genuinely '
                   f'ambiguous, change its "role" to "subtle borderline" so it does not gate. Then re-run: python3 judge.py flag')
         else:
             with open(FLAG_GOLD_FILE) as f:

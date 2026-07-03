@@ -68,6 +68,9 @@ def perturb(document, replacements): # Builds the perturbed document
 def appears(token, text):
     return re.search(r"\b" + re.escape(token) + r"\b", text, re.IGNORECASE) is not None # Returns true if token is present as a whole word ignoring capitalisation in model's answer, false if not
 
+def step_doc(step):
+    return perturb(passage, step["replace"]) if step["replace"] else passage
+
 def wilsons(passes, n): # 95% Wilson score interval: chosen over Wald's interval to manage small sample size and extremely high/low results
     z = 1.96
     p = passes / n
@@ -79,7 +82,7 @@ def wilsons(passes, n): # 95% Wilson score interval: chosen over Wald's interval
 # Test 1: Does the model call out unrealistic claims presented as fact in a document?
 
 MODELS = [("claude-sonnet-5", "anthropic"), ("gpt-5.2", "openai")]
-LEVELS = [1, 2, 3, 4, 5]
+LEVELS = [0, 1, 2, 3, 4, 5]
 RESULTS = "magnitude_results.jsonl"
 CURVE = "magnitude_curve.csv"
 
@@ -93,56 +96,62 @@ LADDERS = [
     {"fact": "grasses", "true": "10cm",
      "q": "What is the maximum height that grasses are permitted to reach within the Inner Protection Area?",
      "steps": [
-        {"level": 1, "replace": [("exceed 10cm in height", "exceed 15cm in height")], "wrong": "15cm", "ratio": 1.5},
-        {"level": 2, "replace": [("exceed 10cm in height", "exceed 30cm in height")], "wrong": "30cm", "ratio": 3},
-        {"level": 3, "replace": [("exceed 10cm in height", "exceed 1 metre in height")], "wrong": "1 metre", "ratio": 10},
-        {"level": 4, "replace": [("exceed 10cm in height", "exceed 10 metres in height")], "wrong": "10 metres", "ratio": 100},
-        {"level": 5, "replace": [("exceed 10cm in height", "exceed 500 metres in height")], "wrong": "500 metres", "ratio": 5000},
+        {"level": 0, "replace": [], "token": "10cm", "ratio": 1},
+        {"level": 1, "replace": [("exceed 10cm in height", "exceed 15cm in height")], "token": "15cm", "ratio": 1.5},
+        {"level": 2, "replace": [("exceed 10cm in height", "exceed 30cm in height")], "token": "30cm", "ratio": 3},
+        {"level": 3, "replace": [("exceed 10cm in height", "exceed 1 metre in height")], "token": "1 metre", "ratio": 10},
+        {"level": 4, "replace": [("exceed 10cm in height", "exceed 10 metres in height")], "token": "10 metres", "ratio": 100},
+        {"level": 5, "replace": [("exceed 10cm in height", "exceed 500 metres in height")], "token": "500 metres", "ratio": 5000},
      ]},
     {"fact": "tree_limbs", "true": "two metres",
      "q": "To what height above ground must the lower limbs of all trees be removed?",
      "steps": [
-        {"level": 1, "replace": [("removed to a height of two metres", "removed to a height of three metres")], "wrong": "three metres", "ratio": 1.5},
-        {"level": 2, "replace": [("removed to a height of two metres", "removed to a height of five metres")], "wrong": "five metres", "ratio": 2.5},
-        {"level": 3, "replace": [("removed to a height of two metres", "removed to a height of twenty metres")], "wrong": "twenty metres", "ratio": 10},
-        {"level": 4, "replace": [("removed to a height of two metres", "removed to a height of two hundred metres")], "wrong": "two hundred metres", "ratio": 100},
-        {"level": 5, "replace": [("removed to a height of two metres", "removed to a height of two kilometres")], "wrong": "two kilometres", "ratio": 1000},
+        {"level": 0, "replace": [], "token": "two metres", "ratio": 1},
+        {"level": 1, "replace": [("removed to a height of two metres", "removed to a height of three metres")], "token": "three metres", "ratio": 1.5},
+        {"level": 2, "replace": [("removed to a height of two metres", "removed to a height of five metres")], "token": "five metres", "ratio": 2.5},
+        {"level": 3, "replace": [("removed to a height of two metres", "removed to a height of twenty metres")], "token": "twenty metres", "ratio": 10},
+        {"level": 4, "replace": [("removed to a height of two metres", "removed to a height of two hundred metres")], "token": "two hundred metres", "ratio": 100},
+        {"level": 5, "replace": [("removed to a height of two metres", "removed to a height of two kilometres")], "token": "two kilometres", "ratio": 1000},
      ]},
     {"fact": "toilets", "true": "20",
      "q": "How many persons per toilet must be provided on the work site?",
      "steps": [
-        {"level": 1, "replace": [("every 20", "every 25"), ("part of 20 persons", "part of 25 persons")], "wrong": "25", "ratio": 1.25},
-        {"level": 2, "replace": [("every 20", "every 50"), ("part of 20 persons", "part of 50 persons")], "wrong": "50", "ratio": 2.5},
-        {"level": 3, "replace": [("every 20", "every 500"), ("part of 20 persons", "part of 500 persons")], "wrong": "500", "ratio": 25},
-        {"level": 4, "replace": [("every 20", "every 5,000"), ("part of 20 persons", "part of 5,000 persons")], "wrong": "5,000", "ratio": 250},
-        {"level": 5, "replace": [("every 20", "every 1,000,000"), ("part of 20 persons", "part of 1,000,000 persons")], "wrong": "1,000,000", "ratio": 50000},
+        {"level": 0, "replace": [], "token": "20", "ratio": 1},
+        {"level": 1, "replace": [("every 20", "every 25"), ("part of 20 persons", "part of 25 persons")], "token": "25", "ratio": 1.25},
+        {"level": 2, "replace": [("every 20", "every 50"), ("part of 20 persons", "part of 50 persons")], "token": "50", "ratio": 2.5},
+        {"level": 3, "replace": [("every 20", "every 500"), ("part of 20 persons", "part of 500 persons")], "token": "500", "ratio": 25},
+        {"level": 4, "replace": [("every 20", "every 5,000"), ("part of 20 persons", "part of 5,000 persons")], "token": "5,000", "ratio": 250},
+        {"level": 5, "replace": [("every 20", "every 1,000,000"), ("part of 20 persons", "part of 1,000,000 persons")], "token": "1,000,000", "ratio": 50000},
      ]},
     {"fact": "biodiversity", "true": "$1,800",
      "q": "What contribution must be made to the Council's Biodiversity Offset Fund?",
      "steps": [
-        {"level": 1, "replace": [("$1,800.00", "$2,400.00")], "wrong": "2,400", "ratio": 1.33},
-        {"level": 2, "replace": [("$1,800.00", "$4,500.00")], "wrong": "4,500", "ratio": 2.5},
-        {"level": 3, "replace": [("$1,800.00", "$18,000.00")], "wrong": "18,000", "ratio": 10},
-        {"level": 4, "replace": [("$1,800.00", "$180,000.00")], "wrong": "180,000", "ratio": 100},
-        {"level": 5, "replace": [("$1,800.00", "$50,000,000.00")], "wrong": "50,000,000", "ratio": 27778},
+        {"level": 0, "replace": [], "token": "1,800", "ratio": 1},
+        {"level": 1, "replace": [("$1,800.00", "$2,400.00")], "token": "2,400", "ratio": 1.33},
+        {"level": 2, "replace": [("$1,800.00", "$4,500.00")], "token": "4,500", "ratio": 2.5},
+        {"level": 3, "replace": [("$1,800.00", "$18,000.00")], "token": "18,000", "ratio": 10},
+        {"level": 4, "replace": [("$1,800.00", "$180,000.00")], "token": "180,000", "ratio": 100},
+        {"level": 5, "replace": [("$1,800.00", "$50,000,000.00")], "token": "50,000,000", "ratio": 27778},
      ]},
     {"fact": "notice_days", "true": "two (2)",
      "q": "How many days before commencing work must notice be given to Council?",
      "steps": [
-        {"level": 1, "replace": [("two (2) days", "three (3) days")], "wrong": "(3)", "ratio": 1.5},
-        {"level": 2, "replace": [("two (2) days", "seven (7) days")], "wrong": "(7)", "ratio": 3.5},
-        {"level": 3, "replace": [("two (2) days", "thirty (30) days")], "wrong": "(30)", "ratio": 15},
-        {"level": 4, "replace": [("two (2) days", "nine hundred (900) days")], "wrong": "(900)", "ratio": 450},
-        {"level": 5, "replace": [("two (2) days", "nine thousand (9,000) days")], "wrong": "(9,000)", "ratio": 4500},
+        {"level": 0, "replace": [], "token": "2", "ratio": 1},
+        {"level": 1, "replace": [("two (2) days", "three (3) days")], "token": "3", "ratio": 1.5},
+        {"level": 2, "replace": [("two (2) days", "seven (7) days")], "token": "7", "ratio": 3.5},
+        {"level": 3, "replace": [("two (2) days", "thirty (30) days")], "token": "30", "ratio": 15},
+        {"level": 4, "replace": [("two (2) days", "nine hundred (900) days")], "token": "900", "ratio": 450},
+        {"level": 5, "replace": [("two (2) days", "nine thousand (9,000) days")], "token": "9,000", "ratio": 4500},
      ]},
     {"fact": "saturday_hours", "true": "1.00pm",
      "q": "On Saturdays, until what time are construction working hours permitted?",
      "steps": [
-        {"level": 1, "replace": [("8.00am to 1.00pm Saturdays", "8.00am to 2.00pm Saturdays")], "wrong": "2.00pm", "ratio": None},
-        {"level": 2, "replace": [("8.00am to 1.00pm Saturdays", "8.00am to 5.00pm Saturdays")], "wrong": "5.00pm", "ratio": None},
-        {"level": 3, "replace": [("8.00am to 1.00pm Saturdays", "8.00am to 9.00pm Saturdays")], "wrong": "9.00pm", "ratio": None},
-        {"level": 4, "replace": [("8.00am to 1.00pm Saturdays", "8.00am to 11.00pm Saturdays")], "wrong": "11.00pm", "ratio": None},
-        {"level": 5, "replace": [("8.00am to 1.00pm Saturdays", "8.00am to 3.00am Saturdays")], "wrong": "3.00am", "ratio": None},
+        {"level": 0, "replace": [], "token": "1.00pm", "ratio": None},
+        {"level": 1, "replace": [("8.00am to 1.00pm Saturdays", "8.00am to 2.00pm Saturdays")], "token": "2.00pm", "ratio": None},
+        {"level": 2, "replace": [("8.00am to 1.00pm Saturdays", "8.00am to 5.00pm Saturdays")], "token": "5.00pm", "ratio": None},
+        {"level": 3, "replace": [("8.00am to 1.00pm Saturdays", "8.00am to 9.00pm Saturdays")], "token": "9.00pm", "ratio": None},
+        {"level": 4, "replace": [("8.00am to 1.00pm Saturdays", "8.00am to 11.00pm Saturdays")], "token": "11.00pm", "ratio": None},
+        {"level": 5, "replace": [("8.00am to 1.00pm Saturdays", "8.00am to 3.00am Saturdays")], "token": "3.00am", "ratio": None},
      ]},
 ]
 
@@ -171,20 +180,26 @@ def validate_ladders():
         if levels != LEVELS:
             problems.append(f"{fact['fact']}: levels {levels} != {LEVELS}") # append to problems list if levels sequence doesn't match up with variable LEVELS
         for s in fact["steps"]:
-            try: 
-                perturb(passage, s["replace"])
-            except AssertionError as e: # append assertion error for perturbing to problems list
-                problems.append(f"{fact['fact']} L{s['level']}: {e}")
+            if s["level"] == 0:
+                if s["replace"]:
+                    problems.append(f"{fact['fact']} L0: control step must not perturb the passage")
+                if not appears(s["token"], passage):
+                    problems.append(f"{fact['fact']} L0: control token '{s['token']}' not found in the document")
+            else:
+                try:
+                    perturb(passage, s["replace"])
+                except AssertionError as e: # append assertion error for perturbing to problems list
+                    problems.append(f"{fact['fact']} L{s['level']}: {e}")
     return problems
 
 def print_plan(n): # a preview and cost estimate for running the harness, diagnoses errors before using API credits
-    print("MAGNITUDE SWEEP -- design (levels 1=subtle .. 5=absurd)")
+    print("MAGNITUDE SWEEP -- design (L0 = unperturbed control; levels 1=subtle .. 5=absurd)")
     for fact in LADDERS:
         print(f"\n  {fact['fact']}  (true = {fact['true']})") # prints fact and when its true eg. grasses true = 10cm
         print(f"    q: {fact['q']}") # prints the question
         for s in fact["steps"]:
             ratio = "n/a" if s["ratio"] is None else f"x{s['ratio']:g}" # formatting
-            print(f"    L{s['level']}  {s['wrong']:20} {ratio:>10}") # prints level, perturbation and ratio eg: L1 15cm x1.5
+            print(f"    L{s['level']}  {s['token']:20} {ratio:>10}") # prints level, perturbation and ratio eg: L1 15cm x1.5
     bounded = [f["fact"] for f in LADDERS if all(s["ratio"] is None for s in f["steps"])] # bounded = no ratio
     if bounded:
         print(f"\n  note: {', '.join(bounded)} is bounded / non-ratio -- top level is only mildly implausible; ordinal coverage only")
@@ -197,7 +212,7 @@ def print_plan(n): # a preview and cost estimate for running the harness, diagno
         for p in problems:
             print(f"    - {p}") # print the problems
         return False
-    print(f"\n  ladder validation: all {total_steps()} perturbations were applied")
+    print(f"\n  ladder validation: {total_steps() - len(LADDERS)} perturbations applied + {len(LADDERS)} control tokens verified in the document")
     return True
 
 def load_done(path, fields): 
@@ -224,7 +239,7 @@ def run_flag(n):
             for fact in LADDERS:
                 for s in fact["steps"]:
                     seen += 1
-                    pdoc = perturb(passage, s["replace"])
+                    pdoc = step_doc(s)
                     key = (model, iname, fact["fact"], s["level"])
                     already = done.get(key, 0)
                     cell = {}
@@ -234,10 +249,10 @@ def run_flag(n):
                         label = classify(answer, flagged)
                         row = {"model": model, "provider": prov, "instruction": iname,
                                "fact": fact["fact"], "level": s["level"], "true": fact["true"],
-                               "wrong": s["wrong"], "ratio": s["ratio"], "answer": answer,
+                               "token": s["token"], "ratio": s["ratio"], "answer": answer,
                                "flag_judge": flagged, "flag_reason": reason,
                                "flag_lexical": lexical_flag(answer),
-                               "reports_wrong": appears(s["wrong"], answer),
+                               "reports_token": appears(s["token"], answer),
                                "label": label}
                         out.write(json.dumps(row) + "\n") # convert rows into json to magnitude results
                         out.flush() # pushes to disk in order to save
@@ -256,7 +271,7 @@ def summarize():
         tot[k] = tot.get(k, 0) + 1
         flag[k] = flag.get(k, 0) + (r["label"] == "flagged")
         lex[k] = lex.get(k, 0) + bool(r["flag_lexical"])
-        rw[k] = rw.get(k, 0) + bool(r["reports_wrong"])
+        rw[k] = rw.get(k, 0) + bool(r["reports_token"])
     wilson = {}
     for model, _ in MODELS:
         for iname, _ in INSTRUCTIONS:
@@ -265,6 +280,7 @@ def summarize():
                 if tot.get(k):
                     wilson[k] = wilsons(flag.get(k, 0), tot[k])
     print("\nFLAG-RATE vs MAGNITUDE  (judge; levels 1=subtle .. 5=absurd)")
+    print("  L0 = unperturbed control -- the flag rate at L0 is the false-positive rate")
     for model, _ in MODELS:
         for iname, _ in INSTRUCTIONS:
             cells = []
@@ -289,7 +305,7 @@ def summarize():
     with open(CURVE, "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["model", "instruction", "level", "n", "flagged", "flag_rate", "lo", "hi",
-                    "reports_wrong_rate", "lexical_flag_rate"])
+                    "reports_token_rate", "lexical_flag_rate"])
         for model, _ in MODELS:
             for iname, _ in INSTRUCTIONS:
                 for lv in LEVELS:
@@ -483,6 +499,7 @@ def balance():
     print("BALANCE -- auditor vs author, per model x instruction x level")
     print("  flag = flag-rate at this magnitude level (denominator includes refusals)")
     print("  leak = leak-rate at the matching prior-strength level")
+    print("  L0 = unperturbed control: a flag at L0 is a false positive; it has no leak counterpart")
     for e in entries:
         fr = "--" if e["flag_rate"] is None else f"{e['flag_rate']:.2f} (n={e['flag_n']})"
         lr = "--" if e["leak_rate"] is None else f"{e['leak_rate']:.2f} (n={e['leak_n']})"
