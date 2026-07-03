@@ -6,14 +6,14 @@ import tempfile
 import unittest
 from unittest import mock
 
-from harness import (perturb, wilsons, with_retry, PERMISSIVE, INSTRUCTIONS,
-                     LADDERS, LEVELS, validate_ladders, total_steps, classify, lexical_flag,
-                     LEAK_PROBES, LEAK_INSTRUCTIONS, validate_probes, appears, load_done,
-                     balance_rows, passage, PRIORS, step_doc)
-from judge import (cohens_kappa, is_faithful, FAITHFUL, LEAK,
+from harness import (perturb, wilson_interval, with_retry, PERMISSIVE, INSTRUCTIONS,
+                     PERTURBATION_LADDERS, SEVERITIES, validate_ladders, total_steps, classify, lexical_caveat,
+                     UNANSWERABLE_ITEMS, ABSTENTION_INSTRUCTIONS, validate_items, appears, load_done,
+                     tradeoff_rows, passage, PRIOR_STRENGTHS, step_doc)
+from judge import (cohens_kappa, is_faithful, FAITHFUL, UNGROUNDED,
                    judge_gate, anchor_disagreements, GATE_PASS, GATE_FAIL, KAPPA_THRESHOLD,
-                   is_flagged, FLAGGED, NOT_FLAGGED, build_flag_prompt, FLAG_SCHEMA,
-                   gold_schedule, _certify, CONTROL_PROBES)
+                   is_caveated, CAVEATED, NOT_CAVEATED, build_caveat_prompt, CAVEAT_SCHEMA,
+                   gold_schedule, _meta_evaluate, CONTROL_ITEMS)
 
 
 class TestPerturb(unittest.TestCase):
@@ -25,14 +25,14 @@ class TestPerturb(unittest.TestCase):
             perturb("nothing to change here", [("absent token", "x")]) # argument 1 is a phrase that doesn't exist in passage, thus nothing to replace, raising the assertion error for the perturb function
 
 
-class TestWilsons(unittest.TestCase):
+class TestWilsonInterval(unittest.TestCase):
     def test_point_estimate(self):
-        p, low, high = wilsons(3, 5)
+        p, low, high = wilson_interval(3, 5)
         self.assertAlmostEqual(p, 0.6)
         self.assertTrue(0.0 <= low <= p <= high <= 1.0)
 
     def test_extreme_is_clamped_and_honest(self):
-        p, low, high = wilsons(5, 5)
+        p, low, high = wilson_interval(5, 5)
         self.assertEqual(p, 1.0)
         self.assertEqual(high, 1.0)   
         self.assertLess(low, 1.0)     # prevents [1.00, 1.00] that Wald CI gives
@@ -66,7 +66,7 @@ class TestCohensKappa(unittest.TestCase):
 class TestLabels(unittest.TestCase):
     def test_is_faithful_maps_words_to_bools(self):
         self.assertTrue(is_faithful(FAITHFUL))
-        self.assertFalse(is_faithful(LEAK))
+        self.assertFalse(is_faithful(UNGROUNDED))
 
 
 class TestJudgeGate(unittest.TestCase):
@@ -75,7 +75,7 @@ class TestJudgeGate(unittest.TestCase):
         return {"role": role, "human": human, "judge": judge}
 
     def _agree_anchor(self):  # an anchor row the judge got right (keeps PRIMARY gate non-vacuous)
-        return self._row("clean-leak anchor", FAITHFUL, FAITHFUL)
+        return self._row("clean-ungrounded anchor", FAITHFUL, FAITHFUL)
 
     def test_clean_anchors_high_kappa_passes(self):
         verdict, _ = judge_gate([self._agree_anchor()], 0.95)
@@ -83,7 +83,7 @@ class TestJudgeGate(unittest.TestCase):
 
     def test_anchor_disagreement_fails_despite_high_kappa(self):
         # PRIMARY dominates: an obvious-case miss fails even with perfect aggregate agreement
-        verdict, reasons = judge_gate([self._row("clean-leak anchor", FAITHFUL, LEAK)], 1.0)
+        verdict, reasons = judge_gate([self._row("clean-ungrounded anchor", FAITHFUL, UNGROUNDED)], 1.0)
         self.assertEqual(verdict, GATE_FAIL)
         self.assertTrue(any("anchor" in r.lower() for r in reasons))
 
@@ -93,7 +93,7 @@ class TestJudgeGate(unittest.TestCase):
         self.assertTrue(any("kappa" in r.lower() for r in reasons))
 
     def test_borderline_disagreement_only_passes(self):
-        rows = [self._agree_anchor(), self._row("borderline", FAITHFUL, LEAK)]
+        rows = [self._agree_anchor(), self._row("borderline", FAITHFUL, UNGROUNDED)]
         verdict, _ = judge_gate(rows, 0.9)
         self.assertEqual(verdict, GATE_PASS)  # borderline disagreements are allowed
 
@@ -104,7 +104,7 @@ class TestJudgeGate(unittest.TestCase):
 
     def test_nan_kappa_anchor_disagreement_still_fails(self):
         # NaN must not mask an anchor miss
-        verdict, _ = judge_gate([self._row("clean-faithful anchor", FAITHFUL, LEAK)], float("nan"))
+        verdict, _ = judge_gate([self._row("clean-faithful anchor", FAITHFUL, UNGROUNDED)], float("nan"))
         self.assertEqual(verdict, GATE_FAIL)
 
     def test_kappa_exactly_threshold_passes(self):
@@ -112,9 +112,9 @@ class TestJudgeGate(unittest.TestCase):
         self.assertEqual(verdict, GATE_PASS)
 
     def test_anchor_matching_is_substring(self):
-        rows = [self._row("clean-leak anchor", FAITHFUL, LEAK),
-                self._row("clean-faithful anchor", FAITHFUL, LEAK),
-                self._row("borderline", FAITHFUL, LEAK)]
+        rows = [self._row("clean-ungrounded anchor", FAITHFUL, UNGROUNDED),
+                self._row("clean-faithful anchor", FAITHFUL, UNGROUNDED),
+                self._row("borderline", FAITHFUL, UNGROUNDED)]
         bad = anchor_disagreements(rows)
         self.assertEqual(len(bad), 2)  # both anchors, not the borderline
         self.assertTrue(all("anchor" in r["role"] for r in bad))
@@ -126,64 +126,64 @@ class TestJudgeGate(unittest.TestCase):
         self.assertTrue(any("vacuous" in r.lower() or "anchor" in r.lower() for r in reasons))
 
 
-class TestFlagLabels(unittest.TestCase):
-    def test_is_flagged_maps_words_to_bools(self):
-        self.assertTrue(is_flagged(FLAGGED))
-        self.assertFalse(is_flagged(NOT_FLAGGED))
+class TestCaveatLabels(unittest.TestCase):
+    def test_is_caveated_maps_words_to_bools(self):
+        self.assertTrue(is_caveated(CAVEATED))
+        self.assertFalse(is_caveated(NOT_CAVEATED))
 
 
-class TestFlagGate(unittest.TestCase):
+class TestCaveatGate(unittest.TestCase):
     def _row(self, role, human, judge):
         return {"role": role, "human": human, "judge": judge}
 
     def _agree_anchor(self):
-        return self._row("absurd anchor", FLAGGED, FLAGGED)
+        return self._row("extreme-perturbation anchor", CAVEATED, CAVEATED)
 
-    def test_flag_anchor_agreement_passes(self):
+    def test_caveat_anchor_agreement_passes(self):
         verdict, _ = judge_gate([self._agree_anchor()], 0.9)
         self.assertEqual(verdict, GATE_PASS)
 
-    def test_flagged_anchor_miss_fails_despite_high_kappa(self):
-        verdict, _ = judge_gate([self._row("absurd anchor", FLAGGED, NOT_FLAGGED)], 1.0)
+    def test_caveated_anchor_miss_fails_despite_high_kappa(self):
+        verdict, _ = judge_gate([self._row("extreme-perturbation anchor", CAVEATED, NOT_CAVEATED)], 1.0)
         self.assertEqual(verdict, GATE_FAIL)
 
-    def test_notflagged_anchor_miss_fails(self):
-        verdict, _ = judge_gate([self._row("absurd anchor", NOT_FLAGGED, FLAGGED)], 1.0)
+    def test_notcaveated_anchor_miss_fails(self):
+        verdict, _ = judge_gate([self._row("extreme-perturbation anchor", NOT_CAVEATED, CAVEATED)], 1.0)
         self.assertEqual(verdict, GATE_FAIL)
 
     def test_subtle_borderline_disagreement_passes(self):
-        rows = [self._agree_anchor(), self._row("subtle borderline", NOT_FLAGGED, FLAGGED)]
+        rows = [self._agree_anchor(), self._row("subtle borderline", NOT_CAVEATED, CAVEATED)]
         verdict, _ = judge_gate(rows, 0.9)
         self.assertEqual(verdict, GATE_PASS)
 
     def test_no_anchor_rows_fails(self):
-        verdict, _ = judge_gate([self._row("subtle borderline", FLAGGED, FLAGGED)], 0.95)
+        verdict, _ = judge_gate([self._row("subtle borderline", CAVEATED, CAVEATED)], 0.95)
         self.assertEqual(verdict, GATE_FAIL)
 
-    def test_anchor_disagreements_picks_absurd_anchor(self):
-        rows = [self._row("absurd anchor", FLAGGED, NOT_FLAGGED),
-                self._row("subtle borderline", FLAGGED, NOT_FLAGGED)]
+    def test_anchor_disagreements_picks_extreme_anchor(self):
+        rows = [self._row("extreme-perturbation anchor", CAVEATED, NOT_CAVEATED),
+                self._row("subtle borderline", CAVEATED, NOT_CAVEATED)]
         bad = anchor_disagreements(rows)
         self.assertEqual(len(bad), 1)
-        self.assertEqual(bad[0]["role"], "absurd anchor")
+        self.assertEqual(bad[0]["role"], "extreme-perturbation anchor")
 
 
-class TestFlagPrompt(unittest.TestCase):
+class TestCaveatPrompt(unittest.TestCase):
     def test_prompt_contains_its_two_args(self):
-        prompt = build_flag_prompt("How tall is X?", "It is 500 metres.")
+        prompt = build_caveat_prompt("How tall is X?", "It is 500 metres.")
         self.assertIn("How tall is X?", prompt)
         self.assertIn("It is 500 metres.", prompt)
 
     def test_prompt_takes_no_document(self):
         with self.assertRaises(TypeError):
-            build_flag_prompt("q", "a", "the correct value is 10cm")
+            build_caveat_prompt("q", "a", "the correct value is 10cm")
 
 
-class TestFlagSchema(unittest.TestCase):
+class TestCaveatSchema(unittest.TestCase):
     def test_schema_shape(self):
-        self.assertEqual(FLAG_SCHEMA["required"], ["flagged", "reason"])
-        self.assertIs(FLAG_SCHEMA["additionalProperties"], False)
-        self.assertEqual(FLAG_SCHEMA["properties"]["flagged"]["type"], "boolean")
+        self.assertEqual(CAVEAT_SCHEMA["required"], ["caveated", "reason"])
+        self.assertIs(CAVEAT_SCHEMA["additionalProperties"], False)
+        self.assertEqual(CAVEAT_SCHEMA["properties"]["caveated"]["type"], "boolean")
 
 
 class TestWithRetry(unittest.TestCase):
@@ -226,38 +226,38 @@ class TestLadders(unittest.TestCase):
         self.assertEqual(validate_ladders(), [])
 
     def test_every_fact_ladders_0_to_5(self):
-        for fact in LADDERS:
-            self.assertEqual([s["level"] for s in fact["steps"]], LEVELS)
+        for fact in PERTURBATION_LADDERS:
+            self.assertEqual([s["severity"] for s in fact["steps"]], SEVERITIES)
 
     def test_thirty_six_steps_total(self):
         self.assertEqual(total_steps(), 36)
 
     def test_ratio_increases_where_present(self):
-        for fact in LADDERS:
+        for fact in PERTURBATION_LADDERS:
             ratios = [s["ratio"] for s in fact["steps"] if s["ratio"] is not None]
             self.assertEqual(ratios, sorted(ratios))
 
     def test_saturday_hours_is_non_ratio(self):
-        sat = next(f for f in LADDERS if f["fact"] == "saturday_hours")
+        sat = next(f for f in PERTURBATION_LADDERS if f["fact"] == "saturday_hours")
         self.assertTrue(all(s["ratio"] is None for s in sat["steps"]))
 
     def test_noop_perturbation_reported_via_exception_alone(self):
         with mock.patch("harness.perturb", side_effect=AssertionError("no change in passage detected")):
             problems = validate_ladders()
         self.assertTrue(any("no change in passage detected" in p for p in problems))
-        self.assertEqual(len(problems), total_steps() - len(LADDERS))
+        self.assertEqual(len(problems), total_steps() - len(PERTURBATION_LADDERS))
 
 
 class TestControlRung(unittest.TestCase):
     def test_every_fact_leads_with_an_unperturbed_control(self):
-        for fact in LADDERS:
+        for fact in PERTURBATION_LADDERS:
             first = fact["steps"][0]
-            self.assertEqual(first["level"], 0, fact["fact"])
+            self.assertEqual(first["severity"], 0, fact["fact"])
             self.assertEqual(first["replace"], [], fact["fact"])
 
-    def test_control_tokens_present_in_document(self):
-        for fact in LADDERS:
-            self.assertTrue(appears(fact["steps"][0]["token"], passage), fact["fact"])
+    def test_control_target_strings_present_in_document(self):
+        for fact in PERTURBATION_LADDERS:
+            self.assertTrue(appears(fact["steps"][0]["target_string"], passage), fact["fact"])
 
     def test_step_doc_control_is_the_real_passage(self):
         self.assertEqual(step_doc({"replace": []}), passage)
@@ -269,49 +269,49 @@ class TestControlRung(unittest.TestCase):
 
     def test_perturbing_control_fails_validation(self):
         bad = [{"fact": "grasses", "true": "10cm", "q": "?", "steps": [
-            {"level": 0, "replace": [("exceed 10cm", "exceed 15cm")], "token": "10cm", "ratio": 1}]}]
-        with mock.patch("harness.LADDERS", bad):
+            {"severity": 0, "replace": [("exceed 10cm", "exceed 15cm")], "target_string": "10cm", "ratio": 1}]}]
+        with mock.patch("harness.PERTURBATION_LADDERS", bad):
             problems = validate_ladders()
         self.assertTrue(any("must not perturb" in p for p in problems))
 
-    def test_control_token_absent_fails_validation(self):
+    def test_control_target_string_absent_fails_validation(self):
         bad = [{"fact": "grasses", "true": "10cm", "q": "?", "steps": [
-            {"level": 0, "replace": [], "token": "zzqx", "ratio": 1}]}]
-        with mock.patch("harness.LADDERS", bad):
+            {"severity": 0, "replace": [], "target_string": "zzqx", "ratio": 1}]}]
+        with mock.patch("harness.PERTURBATION_LADDERS", bad):
             problems = validate_ladders()
         self.assertTrue(any("not found in the document" in p for p in problems))
 
 
-class TestControlProbes(unittest.TestCase):
+class TestControlItems(unittest.TestCase):
     def test_controls_are_gating_anchors(self):
-        for p in CONTROL_PROBES:
+        for p in CONTROL_ITEMS:
             self.assertIn("anchor", p["role"])
 
     def test_controls_do_not_perturb(self):
-        for p in CONTROL_PROBES:
+        for p in CONTROL_ITEMS:
             self.assertEqual(p["replace"], [])
 
     def test_control_questions_come_from_the_ladders(self):
-        qs = {f["q"] for f in LADDERS}
-        for p in CONTROL_PROBES:
+        qs = {f["q"] for f in PERTURBATION_LADDERS}
+        for p in CONTROL_ITEMS:
             self.assertIn(p["q"], qs)
 
 
-class TestMagnitudeClassify(unittest.TestCase):
-    def test_refusal_detected(self):
-        self.assertEqual(classify("NOT IN DOCUMENT", False), "refused")
+class TestSeverityClassify(unittest.TestCase):
+    def test_abstention_detected(self):
+        self.assertEqual(classify("NOT IN DOCUMENT", False), "abstained")
 
-    def test_flagged_follows_judge(self):
-        self.assertEqual(classify("It says 500 metres.", True), "flagged")
+    def test_caveated_follows_judge(self):
+        self.assertEqual(classify("It says 500 metres.", True), "caveated")
 
-    def test_reported_when_judge_does_not_flag(self):
+    def test_reported_when_judge_does_not_caveat(self):
         self.assertEqual(classify("It says 500 metres.", False), "reported")
 
-    def test_lexical_flag_catches_caveat(self):
-        self.assertTrue(lexical_flag("This value seems implausible."))
+    def test_lexical_caveat_catches_caveat(self):
+        self.assertTrue(lexical_caveat("This value seems implausible."))
 
-    def test_lexical_flag_absent_on_plain_report(self):
-        self.assertFalse(lexical_flag("The maximum height is 30cm."))
+    def test_lexical_caveat_absent_on_plain_report(self):
+        self.assertFalse(lexical_caveat("The maximum height is 30cm."))
 
 
 class TestAppears(unittest.TestCase):
@@ -326,25 +326,25 @@ class TestAppears(unittest.TestCase):
         self.assertTrue(appears("not in document", "NOT IN DOCUMENT"))
 
 
-class TestLeakProbes(unittest.TestCase):
-    def test_validate_probes_clean(self):
-        self.assertEqual(validate_probes(), [])
+class TestUnanswerableItems(unittest.TestCase):
+    def test_validate_items_clean(self):
+        self.assertEqual(validate_items(), [])
 
-    def test_avoid_tokens_absent_from_document(self):
-        for p in LEAK_PROBES:
-            self.assertFalse(appears(p["avoid"], passage), p["slug"])
+    def test_parametric_answers_absent_from_document(self):
+        for p in UNANSWERABLE_ITEMS:
+            self.assertFalse(appears(p["parametric_answer"], passage), p["item_id"])
 
     def test_two_probes_per_prior_level(self):
-        for lv in PRIORS:
-            self.assertEqual(sum(1 for p in LEAK_PROBES if p["prior"] == lv), 2)
+        for lv in PRIOR_STRENGTHS:
+            self.assertEqual(sum(1 for p in UNANSWERABLE_ITEMS if p["prior_strength"] == lv), 2)
 
-    def test_slugs_unique(self):
-        slugs = [p["slug"] for p in LEAK_PROBES]
-        self.assertEqual(len(slugs), len(set(slugs)))
+    def test_item_ids_unique(self):
+        item_ids = [p["item_id"] for p in UNANSWERABLE_ITEMS]
+        self.assertEqual(len(item_ids), len(set(item_ids)))
 
     def test_required_fields(self):
-        for p in LEAK_PROBES:
-            for field in ("slug", "prior", "proximity", "domain", "avoid", "q"):
+        for p in UNANSWERABLE_ITEMS:
+            for field in ("item_id", "prior_strength", "proximity", "domain", "parametric_answer", "q"):
                 self.assertIn(field, p)
             self.assertIn(p["proximity"], ("near", "far"))
 
@@ -352,45 +352,45 @@ class TestLeakProbes(unittest.TestCase):
         self.assertTrue(appears("19", passage))
         self.assertFalse(appears("BAL 19", passage))
 
-    def test_wrong_probe_count_fails_validation(self):
-        extra = LEAK_PROBES + [{"slug": "extra", "prior": 6, "proximity": "near",
-                                "domain": "x", "avoid": "zzqx", "q": "?"}]
-        with mock.patch("harness.LEAK_PROBES", extra):
-            self.assertTrue(any("probes !=" in p for p in validate_probes()))
+    def test_wrong_item_count_fails_validation(self):
+        extra = UNANSWERABLE_ITEMS + [{"item_id": "extra", "prior_strength": 6, "proximity": "near",
+                                "domain": "x", "parametric_answer": "zzqx", "q": "?"}]
+        with mock.patch("harness.UNANSWERABLE_ITEMS", extra):
+            self.assertTrue(any("items !=" in p for p in validate_items()))
 
 
 class TestLegacyGoldGuard(unittest.TestCase):
     def test_legacy_schema_raises_before_judging(self):
         with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
-            json.dump([{"question": "x", "firmness": "FIRM", "role": "clean-leak anchor",
+            json.dump([{"question": "x", "firmness": "FIRM", "role": "clean-ungrounded anchor",
                         "answer": "y", "human": FAITHFUL}], f)
             path = f.name
         try:
             with self.assertRaises(SystemExit):
-                _certify(path, "unused.json", "judge", "m", FAITHFUL, LEAK, is_faithful,
+                _meta_evaluate(path, "unused.json", "judge", "m", FAITHFUL, UNGROUNDED, is_faithful,
                          lambda row: self.fail("judge must not be called"), "instruction")
         finally:
             os.unlink(path)
 
 
-class TestLeakInstructions(unittest.TestCase):
+class TestAbstentionInstructions(unittest.TestCase):
     def test_names_and_order(self):
-        self.assertEqual([n for n, _ in LEAK_INSTRUCTIONS], ["STRICT", "PERMISSIVE", "SOFT"])
+        self.assertEqual([n for n, _ in ABSTENTION_INSTRUCTIONS], ["STRICT", "PERMISSIVE", "SOFT"])
 
     def test_three_distinct_instructions(self):
-        self.assertEqual(len({t for _, t in LEAK_INSTRUCTIONS}), 3)
+        self.assertEqual(len({t for _, t in ABSTENTION_INSTRUCTIONS}), 3)
 
 
 class TestLoadDone(unittest.TestCase):
     def test_counts_by_fields(self):
         with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as f:
-            for row in [{"model": "m", "instruction": "S", "slug": "a"},
-                        {"model": "m", "instruction": "S", "slug": "a"},
-                        {"model": "m", "instruction": "P", "slug": "b"}]:
+            for row in [{"model": "m", "instruction": "S", "item_id": "a"},
+                        {"model": "m", "instruction": "S", "item_id": "a"},
+                        {"model": "m", "instruction": "P", "item_id": "b"}]:
                 f.write(json.dumps(row) + "\n")
             path = f.name
         try:
-            done = load_done(path, ["model", "instruction", "slug"])
+            done = load_done(path, ["model", "instruction", "item_id"])
             self.assertEqual(done[("m", "S", "a")], 2)
             self.assertEqual(done[("m", "P", "b")], 1)
         finally:
@@ -402,60 +402,60 @@ class TestLoadDone(unittest.TestCase):
 
 class TestGoldSchedule(unittest.TestCase):
     def test_twenty_rows_at_reps_2(self):
-        self.assertEqual(len(gold_schedule(LEAK_PROBES, 2)), 20)
+        self.assertEqual(len(gold_schedule(UNANSWERABLE_ITEMS, 2)), 20)
 
     def test_both_anchor_classes_present(self):
-        roles = {role for _, _, role in gold_schedule(LEAK_PROBES, 2)}
-        self.assertIn("clean-leak anchor", roles)
+        roles = {role for _, _, role in gold_schedule(UNANSWERABLE_ITEMS, 2)}
+        self.assertIn("clean-ungrounded anchor", roles)
         self.assertIn("clean-faithful anchor", roles)
 
     def test_strong_priors_soft_weak_priors_strict(self):
-        for p, iname, role in gold_schedule(LEAK_PROBES, 2):
-            if p["prior"] >= 4:
-                self.assertEqual((iname, role), ("SOFT", "clean-leak anchor"))
-            elif p["prior"] <= 2:
+        for p, iname, role in gold_schedule(UNANSWERABLE_ITEMS, 2):
+            if p["prior_strength"] >= 4:
+                self.assertEqual((iname, role), ("SOFT", "clean-ungrounded anchor"))
+            elif p["prior_strength"] <= 2:
                 self.assertEqual((iname, role), ("STRICT", "clean-faithful anchor"))
 
     def test_borderline_p3_under_both_instructions(self):
-        borderline = [(p["slug"], iname) for p, iname, role in gold_schedule(LEAK_PROBES, 2)
+        borderline = [(p["item_id"], iname) for p, iname, role in gold_schedule(UNANSWERABLE_ITEMS, 2)
                       if role == "borderline"]
         self.assertTrue(borderline)
-        for slug in {s for s, _ in borderline}:
-            self.assertEqual({i for s, i in borderline if s == slug}, {"STRICT", "SOFT"})
+        for item_id in {s for s, _ in borderline}:
+            self.assertEqual({i for s, i in borderline if s == item_id}, {"STRICT", "SOFT"})
 
 
-class TestBalanceRows(unittest.TestCase):
-    def _flag(self, instr, level, label):
-        return {"model": "claude-sonnet-5", "instruction": instr, "level": level, "label": label}
+class TestTradeoffRows(unittest.TestCase):
+    def _caveat(self, instr, level, label):
+        return {"model": "claude-sonnet-5", "instruction": instr, "severity": level, "label": label}
 
-    def _leak(self, instr, prior, label):
-        return {"model": "claude-sonnet-5", "instruction": instr, "prior": prior, "label": label}
+    def _ungrounded(self, instr, prior, label):
+        return {"model": "claude-sonnet-5", "instruction": instr, "prior_strength": prior, "label": label}
 
-    def test_reports_each_level_separately(self):
-        flag = [self._flag("STRICT", 5, "flagged"), self._flag("STRICT", 4, "reported"),
-                self._flag("STRICT", 1, "flagged")]
-        leak = [self._leak("STRICT", 5, LEAK), self._leak("STRICT", 3, LEAK)]
-        entries = {e["level"]: e for e in balance_rows(flag, leak) if e["instruction"] == "STRICT"}
+    def test_reports_each_severity_separately(self):
+        caveat = [self._caveat("STRICT", 5, "caveated"), self._caveat("STRICT", 4, "reported"),
+                self._caveat("STRICT", 1, "caveated")]
+        ungrounded = [self._ungrounded("STRICT", 5, UNGROUNDED), self._ungrounded("STRICT", 3, UNGROUNDED)]
+        entries = {e["severity"]: e for e in tradeoff_rows(caveat, ungrounded) if e["instruction"] == "STRICT"}
         self.assertEqual(set(entries), {1, 3, 4, 5})
-        self.assertEqual(entries[5]["flag_n"], 1)
-        self.assertAlmostEqual(entries[5]["flag_rate"], 1.0)
-        self.assertEqual(entries[5]["leak_n"], 1)
-        self.assertAlmostEqual(entries[5]["leak_rate"], 1.0)
-        self.assertEqual(entries[4]["flag_n"], 1)
-        self.assertAlmostEqual(entries[4]["flag_rate"], 0.0)
-        self.assertIsNone(entries[4]["leak_rate"])
-        self.assertEqual(entries[3]["leak_n"], 1)
-        self.assertIsNone(entries[3]["flag_rate"])
+        self.assertEqual(entries[5]["caveat_n"], 1)
+        self.assertAlmostEqual(entries[5]["caveat_rate"], 1.0)
+        self.assertEqual(entries[5]["ungrounded_n"], 1)
+        self.assertAlmostEqual(entries[5]["ungrounded_rate"], 1.0)
+        self.assertEqual(entries[4]["caveat_n"], 1)
+        self.assertAlmostEqual(entries[4]["caveat_rate"], 0.0)
+        self.assertIsNone(entries[4]["ungrounded_rate"])
+        self.assertEqual(entries[3]["ungrounded_n"], 1)
+        self.assertIsNone(entries[3]["caveat_rate"])
 
     def test_one_side_missing_reports_other(self):
-        entry = balance_rows([self._flag("PERMISSIVE", 5, "flagged")], [])[0]
-        self.assertEqual(entry["level"], 5)
-        self.assertIsNone(entry["leak_rate"])
-        self.assertEqual(entry["flag_n"], 1)
-        self.assertAlmostEqual(entry["flag_rate"], 1.0)
+        entry = tradeoff_rows([self._caveat("PERMISSIVE", 5, "caveated")], [])[0]
+        self.assertEqual(entry["severity"], 5)
+        self.assertIsNone(entry["ungrounded_rate"])
+        self.assertEqual(entry["caveat_n"], 1)
+        self.assertAlmostEqual(entry["caveat_rate"], 1.0)
 
     def test_both_empty(self):
-        self.assertEqual(balance_rows([], []), [])
+        self.assertEqual(tradeoff_rows([], []), [])
 
 
 if __name__ == "__main__":

@@ -5,10 +5,10 @@ __pycache__/
 archive/
 results.md
 judge_results.json
-flag_results.json
+caveat_judge_results.json
 discriminate_results.jsonl
-magnitude_results.jsonl
-magnitude_curve.csv
-leak_results.jsonl
-leak_curve.csv
+caveat_results.jsonl
+caveat_curve.csv
+abstention_results.jsonl
+abstention_curve.csv
 TODO.md
