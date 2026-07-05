@@ -38,9 +38,10 @@ def ask_anthropic(system_instruction, question, doc, model):
     return "".join(b.text for b in response.content if b.type == "text") # Returns only text sections of the model output
 
 def ask_openai(system_instruction, question, doc, model):
+    reasoning = {"reasoning": {"effort": "low"}} if model.startswith("gpt-5") else {}
     r = judge_client().responses.create(model=model, instructions=system_instruction,
         input="Passage:\n" + doc + "\n\nQuestion: " + question,
-        reasoning={"effort": "low"}, max_output_tokens=2000)
+        max_output_tokens=2000, **reasoning)
     if r.status == "incomplete":
         print(f"    WARNING: answer truncated at max_output_tokens ({model})", flush=True)
     return r.output_text or ""
@@ -85,7 +86,7 @@ def wilson_interval(passes, n): # 95% Wilson score interval: chosen over Wald's 
 
 # Test 1: Does the model call out unrealistic claims presented as fact in a document?
 
-MODELS = [("claude-sonnet-5", "anthropic"), ("gpt-5.2", "openai")]
+MODELS = [("gpt-4o-mini", "openai"), ("gpt-5.4-nano", "openai")]
 SEVERITIES = [0, 1, 2, 3, 4, 5]
 CAVEAT_RESULTS = "caveat_results.jsonl"
 CAVEAT_CURVE = "caveat_curve.csv"
