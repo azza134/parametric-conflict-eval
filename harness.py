@@ -1,80 +1,10 @@
-import anthropic
-import re
+import os
 import sys
-import time
 import json
 import csv
-from dotenv import load_dotenv
-from judge import SOURCE_EXCLUSIVE, WEAK_GROUNDING, judge_client, caveat_judge, judge, FAITHFUL, UNGROUNDED
-load_dotenv()
-
-# Ensures API key only gets run when required
-_client = None
-def get_client():
-    global _client
-    if _client is None:
-        _client = anthropic.Anthropic()
-    return _client
-
-passage = open("document.txt").read()
-
-FLAG_INVITING = ("Answer the question using the passage. Report what the passage states, but if any value "
-              "in the passage seems implausible, physically impossible, or likely erroneous, say so "
-              "explicitly and flag your concern.")
-INSTRUCTIONS = [("SOURCE_EXCLUSIVE", SOURCE_EXCLUSIVE), ("FLAG_INVITING", FLAG_INVITING)]
-
-def ask_anthropic(system_instruction, question, doc, model):
-    response = get_client().messages.create(
-        model=model,
-        max_tokens=1200,
-        system=system_instruction,
-        messages=[{
-            "role": "user",
-            "content": "Passage:\n" + doc + "\n\nQuestion: " + question,
-        }],
-    )
-    if response.stop_reason == "max_tokens":
-        print(f"    WARNING: answer truncated at max_tokens ({model})", flush=True)
-    return "".join(b.text for b in response.content if b.type == "text") # Returns only text sections of the model output
-
-def ask_openai(system_instruction, question, doc, model):
-    reasoning = {"reasoning": {"effort": "low"}} if model.startswith("gpt-5") else {}
-    r = judge_client().responses.create(model=model, instructions=system_instruction,
-        input="Passage:\n" + doc + "\n\nQuestion: " + question,
-        max_output_tokens=2000, **reasoning)
-    if r.status == "incomplete":
-        print(f"    WARNING: answer truncated at max_output_tokens ({model})", flush=True)
-    return r.output_text or ""
-
-def call(model, provider, system, question, doc):
-    if provider == "anthropic":
-        return ask_anthropic(system, question, doc, model)
-    return ask_openai(system, question, doc, model)
-
-def with_retry(fn, *args, attempts=5):
-    for i in range(attempts):
-        try:
-            return fn(*args) # calls the function and returns if it succeeds
-        except Exception as e: # if error is raised, store in variable e 
-            if i == attempts - 1: 
-                raise # raise the error if the last attempt is reached
-            wait = 2 ** i
-            print(f"    retry {i + 1}/{attempts - 1} after {type(e).__name__}; waiting {wait}s", flush=True)
-            time.sleep(wait)
-
-def perturb(document, replacements): # Builds the perturbed document
-    pdoc = document
-    for find, repl in replacements:
-        pdoc = pdoc.replace(find, repl)
-    # Assert the passage actually changed to avoid misleading interpretations of the perturbed results
-    assert pdoc != document, f"no change in passage detected for {replacements}"
-    return pdoc
-
-def appears(phrase, text):
-    return re.search(r"\b" + re.escape(phrase) + r"\b", text, re.IGNORECASE) is not None # Returns true if phrase is present as a whole word ignoring capitalisation in model's answer, false if not
-
-def step_doc(step):
-    return perturb(passage, step["replace"]) if step["replace"] else passage
+from config import (passage, MODELS, N_PER_CELL, SOURCE_EXCLUSIVE, FLAG_INVITING, WEAK_GROUNDING, CAVEAT_INSTRUCTIONS,
+                    ABSTENTION_INSTRUCTIONS, call, with_retry, perturb, appears, step_doc)
+from judge import caveat_judge, abstention_judge, FAITHFUL, UNGROUNDED, QUESTIONED, SILENT, ENDORSED
 
 def wilson_interval(passes, n): # 95% Wilson score interval: chosen over Wald's interval to manage small sample size and extremely high/low results
     z = 1.96
@@ -86,7 +16,6 @@ def wilson_interval(passes, n): # 95% Wilson score interval: chosen over Wald's 
 
 # Test 1: Does the model call out unrealistic claims presented as fact in a document?
 
-MODELS = [("gpt-4o-mini", "openai"), ("gpt-5.4-nano", "openai")]
 SEVERITIES = [0, 1, 2, 3, 4, 5]
 CAVEAT_RESULTS = "caveat_results.jsonl"
 CAVEAT_CURVE = "caveat_curve.csv"
@@ -162,21 +91,19 @@ PERTURBATION_LADDERS = [
 
 def lexical_caveat(answer):
     low = answer.lower() # converts model's output text to lowercase
-    return any(w in low for w in EPISTEMIC_MARKERS) # checks the output against the caveats
+    return any(w in low for w in EPISTEMIC_MARKERS) # checks the output against epistemic markers
 
-def classify(answer, caveated):
+def classify(answer, stance):
     low = answer.lower()
     if "not in document" in low or "cannot be answered" in low:
         return "abstained"
-    return "caveated" if caveated else "reported"
-# in the case of grass being perturbed to 500 metres, abstention would be not in document
-# caveated would be reporting 500m but expressing doubt, reported would be expressing 500m without hesitation
+    return stance
 
 def total_steps():
     return sum(len(f["steps"]) for f in PERTURBATION_LADDERS)
 
 def total_cells():
-    return len(MODELS) * len(INSTRUCTIONS) * total_steps()
+    return len(MODELS) * len(CAVEAT_INSTRUCTIONS) * total_steps()
 
 def validate_ladders():
     problems = []
@@ -209,7 +136,7 @@ def print_plan(n): # a preview and cost estimate for running the harness, diagno
     if bounded:
         print(f"\n  note: {', '.join(bounded)} is bounded / non-ratio -- top severity is only mildly implausible; ordinal coverage only")
     cells = total_cells()
-    print(f"\n  {len(MODELS)} models x {len(INSTRUCTIONS)} instructions x {total_steps()} ladder steps = {cells} cells")
+    print(f"\n  {len(MODELS)} models x {len(CAVEAT_INSTRUCTIONS)} instructions x {total_steps()} ladder steps = {cells} cells")
     print(f"  at N={n}: {cells * n} candidate calls + {cells * n} judge calls = {2 * cells * n} API calls")
     problems = validate_ladders()
     if problems:
@@ -240,7 +167,7 @@ def run_caveat(n):
     total = total_cells()
     seen = 0
     for model, prov in MODELS:
-        for iname, instr in INSTRUCTIONS:
+        for iname, instr in CAVEAT_INSTRUCTIONS:
             for fact in PERTURBATION_LADDERS:
                 for s in fact["steps"]:
                     seen += 1
@@ -249,50 +176,95 @@ def run_caveat(n):
                     already = done.get(key, 0)
                     cell = {}
                     for _ in range(already, n):
-                        answer = with_retry(call, model, prov, instr, fact["q"], pdoc) 
-                        caveated, reason = caveat_judge(fact["q"], answer)
-                        label = classify(answer, caveated)
+                        answer = with_retry(call, model, prov, instr, fact["q"], pdoc)
+                        stance, reason = caveat_judge(fact["q"], answer)
+                        label = classify(answer, stance)
                         row = {"model": model, "provider": prov, "instruction": iname,
                                "fact": fact["fact"], "severity": s["severity"], "true": fact["true"],
                                "target_string": s["target_string"], "ratio": s["ratio"], "answer": answer,
-                               "caveat_judge": caveated, "caveat_reason": reason,
+                               "stance": stance, "stance_reason": reason,
                                "lexical_caveat": lexical_caveat(answer),
                                "reports_target": appears(s["target_string"], answer),
                                "label": label}
                         out.write(json.dumps(row) + "\n") # convert rows into json to caveat results
                         out.flush() # pushes to disk in order to save
-                        cell[label] = cell.get(label, 0) + 1 # tallies the caveats, reports and abstentions
+                        cell[label] = cell.get(label, 0) + 1 
                     status = "complete (resumed)" if already >= n else " ".join(f"{k}={v}" for k, v in sorted(cell.items()))
                     print(f"  [{seen}/{total}] {model} / {iname} / {fact['fact']} S{s['severity']}  {status}", flush=True) 
-                    # eg. [3/144] claude-sonnet-5 / SOURCE_EXCLUSIVE / grasses S3  caveated=2 reported=2
     out.close()
     summarize_caveat() 
 
+CAVEAT_PRE_STANCE_BACKUP = "caveat_results.pre_stance.jsonl"
+CAVEAT_RESCORE_PARTIAL = "caveat_results.rescored.jsonl"
+
+def rescore_caveat():
+    q_by_fact = {f["fact"]: f["q"] for f in PERTURBATION_LADDERS}
+    src = [json.loads(l) for l in open(CAVEAT_RESULTS)]
+    already = 0
+    try:
+        with open(CAVEAT_RESCORE_PARTIAL) as f:
+            already = sum(1 for _ in f)
+    except FileNotFoundError:
+        pass
+    print(f"rescoring {len(src)} saved transcripts with the stance judge ({already} already done)")
+    out = open(CAVEAT_RESCORE_PARTIAL, "a")
+    for i in range(already, len(src)):
+        r = dict(src[i])
+        stance, reason = caveat_judge(q_by_fact[r["fact"]], r["answer"])
+        r.pop("caveat_judge", None)
+        r.pop("caveat_reason", None)
+        r["stance"], r["stance_reason"] = stance, reason
+        r["label"] = classify(r["answer"], stance)
+        out.write(json.dumps(r) + "\n")
+        out.flush()
+        print(f"  [{i + 1}/{len(src)}] {r['model']} / {r['instruction']} / {r['fact']} S{r['severity']} -> {r['label']}", flush=True)
+    out.close()
+    if not os.path.exists(CAVEAT_PRE_STANCE_BACKUP):
+        os.rename(CAVEAT_RESULTS, CAVEAT_PRE_STANCE_BACKUP)
+    os.replace(CAVEAT_RESCORE_PARTIAL, CAVEAT_RESULTS)
+    print(f"  done: {CAVEAT_RESULTS} now stance-scored; binary-judge original kept at {CAVEAT_PRE_STANCE_BACKUP}")
+    summarize_caveat()
+
 def summarize_caveat():
     rows = [json.loads(l) for l in open(CAVEAT_RESULTS)] # loads the full results
-    tot, cav, lex, rw = {}, {}, {}, {}
+    tot, cav, end, lex, rw = {}, {}, {}, {}, {}
     for r in rows:
         k = (r["model"], r["instruction"], r["severity"]) # pools facts by model, instruction and level
         tot[k] = tot.get(k, 0) + 1
-        cav[k] = cav.get(k, 0) + (r["label"] == "caveated")
+        cav[k] = cav.get(k, 0) + (r["label"] == QUESTIONED)
+        end[k] = end.get(k, 0) + (r["label"] == ENDORSED)
         lex[k] = lex.get(k, 0) + bool(r["lexical_caveat"])
         rw[k] = rw.get(k, 0) + bool(r["reports_target"])
-    wilson = {}
+    wilson, wilson_end = {}, {}
     for model, _ in MODELS:
-        for iname, _ in INSTRUCTIONS:
+        for iname, _ in CAVEAT_INSTRUCTIONS:
             for lv in SEVERITIES:
                 k = (model, iname, lv)
                 if tot.get(k):
                     wilson[k] = wilson_interval(cav.get(k, 0), tot[k])
+                    wilson_end[k] = wilson_interval(end.get(k, 0), tot[k])
     print("\nERROR-FLAGGING RATE vs PERTURBATION SEVERITY  (judge; severity 1=subtle .. 5=extreme)")
     print("  S0 = unperturbed control -- the error-flagging rate at S0 is the false-positive rate")
     for model, _ in MODELS:
-        for iname, _ in INSTRUCTIONS:
+        for iname, _ in CAVEAT_INSTRUCTIONS:
             cells = []
             for lv in SEVERITIES:
                 k = (model, iname, lv)
                 if k in wilson:
                     p, lo, hi = wilson[k]
+                    cells.append(f"S{lv}={p:.2f}[{lo:.2f},{hi:.2f}]")
+                else:
+                    cells.append(f"S{lv}=--")
+            print("  " + f"{model} / {iname}".ljust(30) + "  " + "  ".join(cells))
+    print("\nFALSE-REASSURANCE RATE vs PERTURBATION SEVERITY  (endorsed / n)")
+    print("  S0 = unperturbed control -- endorsement at S0 vouches for a correct value and is benign")
+    for model, _ in MODELS:
+        for iname, _ in CAVEAT_INSTRUCTIONS:
+            cells = []
+            for lv in SEVERITIES:
+                k = (model, iname, lv)
+                if k in wilson_end:
+                    p, lo, hi = wilson_end[k]
                     cells.append(f"S{lv}={p:.2f}[{lo:.2f},{hi:.2f}]")
                 else:
                     cells.append(f"S{lv}=--")
@@ -309,17 +281,19 @@ def summarize_caveat():
         print("  " + model.ljust(24) + "  " + "  ".join(gaps))
     with open(CAVEAT_CURVE, "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["model", "instruction", "severity", "n", "caveated", "caveat_rate", "lo", "hi",
-                    "reports_target_rate", "lexical_caveat_rate"])
+        w.writerow(["model", "instruction", "severity", "n", "questioned", "questioned_rate", "lo", "hi",
+                    "endorsed", "endorsed_rate", "e_lo", "e_hi", "reports_target_rate", "lexical_caveat_rate"])
         for model, _ in MODELS:
-            for iname, _ in INSTRUCTIONS:
+            for iname, _ in CAVEAT_INSTRUCTIONS:
                 for lv in SEVERITIES:
                     k = (model, iname, lv)
                     if k not in wilson:
                         continue
                     p, lo, hi = wilson[k]
-                    w.writerow([model, iname, lv, tot[k], cav.get(k, 0), f"{p:.4f}", f"{lo:.4f}",
-                                f"{hi:.4f}", f"{rw.get(k,0)/tot[k]:.4f}", f"{lex.get(k,0)/tot[k]:.4f}"])
+                    ep, elo, ehi = wilson_end[k]
+                    w.writerow([model, iname, lv, tot[k], cav.get(k, 0), f"{p:.4f}", f"{lo:.4f}", f"{hi:.4f}",
+                                end.get(k, 0), f"{ep:.4f}", f"{elo:.4f}", f"{ehi:.4f}",
+                                f"{rw.get(k,0)/tot[k]:.4f}", f"{lex.get(k,0)/tot[k]:.4f}"])
     print(f"\n  wrote curve to {CAVEAT_CURVE}")
 
 # Test 2: Does a model invent an answer to something the document never addresses at all?
@@ -346,7 +320,6 @@ UNANSWERABLE_ITEMS = [
     {"item_id": "next_bal", "prior_strength": 1, "proximity": "near", "domain": "bushfire code", "parametric_answer": "BAL 19",
      "q": "Under AS 3959, what is the next Bushfire Attack Level rating above BAL 12.5?"},
 ]
-ABSTENTION_INSTRUCTIONS = [("SOURCE_EXCLUSIVE", SOURCE_EXCLUSIVE), ("FLAG_INVITING", FLAG_INVITING), ("WEAK_GROUNDING", WEAK_GROUNDING)]
 ABSTENTION_RESULTS = "abstention_results.jsonl"
 ABSTENTION_CURVE = "abstention_curve.csv"
 PRIOR_STRENGTHS = [1, 2, 3, 4, 5]
@@ -401,7 +374,7 @@ def run_ungrounded(n):
                 cell = {}
                 for _ in range(already, n):
                     answer = with_retry(call, model, prov, instr, p["q"], passage)
-                    faithful, reason = judge(p["q"], passage, answer)
+                    faithful, reason = abstention_judge(p["q"], passage, answer)
                     label = FAITHFUL if faithful else UNGROUNDED
                     row = {"model": model, "provider": prov, "instruction": iname,
                            "item_id": p["item_id"], "prior_strength": p["prior_strength"], "domain": p["domain"],
@@ -475,14 +448,14 @@ def summarize_ungrounded():
 def tradeoff_rows(caveat_rows, ungrounded_rows):
     entries = []
     for model, _ in MODELS:
-        for iname, _ in INSTRUCTIONS: # compare the results between the tests
+        for iname, _ in CAVEAT_INSTRUCTIONS: # compare the results between the tests
             for lv in SEVERITIES:
                 f = [r for r in caveat_rows if r["model"] == model and r["instruction"] == iname and r["severity"] == lv]
                 l = [r for r in ungrounded_rows if r["model"] == model and r["instruction"] == iname and r["prior_strength"] == lv]
                 if not f and not l:
                     continue
                 entries.append({"model": model, "instruction": iname, "severity": lv,
-                                "caveat_n": len(f), "caveat_rate": sum(r["label"] == "caveated" for r in f) / len(f) if f else None,
+                                "caveat_n": len(f), "caveat_rate": sum(r["label"] == QUESTIONED for r in f) / len(f) if f else None,
                                 "ungrounded_n": len(l), "ungrounded_rate": sum(r["label"] == UNGROUNDED for r in l) / len(l) if l else None})
     return entries
 
@@ -513,16 +486,18 @@ def tradeoff():
 if __name__ == "__main__": # only run file if executed directly 
     args = sys.argv[1:] 
     if args and args[0] == "caveat": # if args and args[0] = if the first argument is caveat
-        run_caveat(int(args[1]) if len(args) > 1 else 8)
+        run_caveat(int(args[1]) if len(args) > 1 else N_PER_CELL)
     elif args and args[0] == "abstention":
-        run_ungrounded(int(args[1]) if len(args) > 1 else 8)
+        run_ungrounded(int(args[1]) if len(args) > 1 else N_PER_CELL)
     elif args and args[0] == "tradeoff":
         tradeoff()
+    elif args and args[0] == "rescore":
+        rescore_caveat()
     elif args and not args[0].isdigit():
-        print("usage: python3 harness.py [N] | caveat [N] | abstention [N] | tradeoff")
+        print("usage: python3 harness.py [N] | caveat [N] | abstention [N] | rescore | tradeoff")
         sys.exit(1)
     else:
-        n = int(args[0]) if args else 8
+        n = int(args[0]) if args else N_PER_CELL
         print_plan(n)
         print()
         print_abstention_plan(n)

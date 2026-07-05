@@ -6,14 +6,15 @@ import tempfile
 import unittest
 from unittest import mock
 
-from harness import (perturb, wilson_interval, with_retry, FLAG_INVITING, INSTRUCTIONS, MODELS,
-                     PERTURBATION_LADDERS, SEVERITIES, validate_ladders, total_steps, classify, lexical_caveat,
-                     UNANSWERABLE_ITEMS, ABSTENTION_INSTRUCTIONS, validate_items, appears, load_done,
-                     tradeoff_rows, passage, PRIOR_STRENGTHS, step_doc)
-from judge import (cohens_kappa, is_faithful, FAITHFUL, UNGROUNDED,
+from config import (perturb, with_retry, MODELS, FLAG_INVITING, CAVEAT_INSTRUCTIONS, ABSTENTION_INSTRUCTIONS,
+                    appears, passage, step_doc)
+from harness import (wilson_interval, PERTURBATION_LADDERS, SEVERITIES, validate_ladders,
+                     total_steps, classify, lexical_caveat, UNANSWERABLE_ITEMS, validate_items,
+                     load_done, tradeoff_rows, PRIOR_STRENGTHS)
+from judge import (cohens_kappa, FAITHFUL, UNGROUNDED,
                    judge_gate, anchor_disagreements, GATE_PASS, GATE_FAIL, KAPPA_THRESHOLD,
-                   is_caveated, CAVEATED, NOT_CAVEATED, build_caveat_prompt, CAVEAT_SCHEMA,
-                   gold_schedule, _meta_evaluate, CONTROL_ITEMS)
+                   QUESTIONED, SILENT, ENDORSED, CAVEAT_LABELS, CAVEAT_SCHEMA, build_caveat_prompt,
+                   gold_schedule, _meta_evaluate)
 
 
 class TestPerturb(unittest.TestCase):
@@ -39,34 +40,30 @@ class TestWilsonInterval(unittest.TestCase):
 
 
 class TestCohensKappa(unittest.TestCase):
-    def test_perfect_with_variation(self):
-        po, k = cohens_kappa([True, False, True, False], [True, False, True, False])
+    def test_perfect_three_class(self):
+        po, k = cohens_kappa([QUESTIONED, SILENT, ENDORSED], [QUESTIONED, SILENT, ENDORSED])
         self.assertEqual(po, 1.0)
         self.assertAlmostEqual(k, 1.0)
 
-    def test_all_one_class_is_nan(self):
-        po, k = cohens_kappa([True, True, True], [True, True, True])
+    def test_one_class_is_nan(self):
+        po, k = cohens_kappa([SILENT, SILENT], [SILENT, SILENT])
         self.assertEqual(po, 1.0)
         self.assertTrue(math.isnan(k))
 
-    def test_chance_level(self):
-        po, k = cohens_kappa([True, True, False, False], [True, False, True, False])
+    def test_two_class_chance_level(self):
+        po, k = cohens_kappa([FAITHFUL, FAITHFUL, UNGROUNDED, UNGROUNDED],
+                            [FAITHFUL, UNGROUNDED, FAITHFUL, UNGROUNDED])
         self.assertAlmostEqual(po, 0.5)
         self.assertAlmostEqual(k, 0.0)
 
     def test_length_mismatch_raises(self):
         with self.assertRaises(ValueError):
-            cohens_kappa([True], [True, False])
+            cohens_kappa([SILENT], [SILENT, ENDORSED])
 
     def test_empty_raises(self):
         with self.assertRaises(ValueError):
             cohens_kappa([], [])
 
-
-class TestLabels(unittest.TestCase):
-    def test_is_faithful_maps_words_to_bools(self):
-        self.assertTrue(is_faithful(FAITHFUL))
-        self.assertFalse(is_faithful(UNGROUNDED))
 
 
 class TestJudgeGate(unittest.TestCase):
@@ -126,43 +123,37 @@ class TestJudgeGate(unittest.TestCase):
         self.assertTrue(any("vacuous" in r.lower() or "anchor" in r.lower() for r in reasons))
 
 
-class TestCaveatLabels(unittest.TestCase):
-    def test_is_caveated_maps_words_to_bools(self):
-        self.assertTrue(is_caveated(CAVEATED))
-        self.assertFalse(is_caveated(NOT_CAVEATED))
-
-
 class TestCaveatGate(unittest.TestCase):
     def _row(self, role, human, judge):
         return {"role": role, "human": human, "judge": judge}
 
     def _agree_anchor(self):
-        return self._row("extreme-perturbation anchor", CAVEATED, CAVEATED)
+        return self._row("extreme-perturbation anchor", QUESTIONED, QUESTIONED)
 
     def test_caveat_anchor_agreement_passes(self):
         verdict, _ = judge_gate([self._agree_anchor()], 0.9)
         self.assertEqual(verdict, GATE_PASS)
 
-    def test_caveated_anchor_miss_fails_despite_high_kappa(self):
-        verdict, _ = judge_gate([self._row("extreme-perturbation anchor", CAVEATED, NOT_CAVEATED)], 1.0)
+    def test_questioned_anchor_miss_fails_despite_high_kappa(self):
+        verdict, _ = judge_gate([self._row("extreme-perturbation anchor", QUESTIONED, SILENT)], 1.0)
         self.assertEqual(verdict, GATE_FAIL)
 
-    def test_notcaveated_anchor_miss_fails(self):
-        verdict, _ = judge_gate([self._row("extreme-perturbation anchor", NOT_CAVEATED, CAVEATED)], 1.0)
+    def test_silent_anchor_miss_fails(self):
+        verdict, _ = judge_gate([self._row("extreme-perturbation anchor", SILENT, ENDORSED)], 1.0)
         self.assertEqual(verdict, GATE_FAIL)
 
     def test_subtle_borderline_disagreement_passes(self):
-        rows = [self._agree_anchor(), self._row("subtle borderline", NOT_CAVEATED, CAVEATED)]
+        rows = [self._agree_anchor(), self._row("subtle borderline", SILENT, ENDORSED)]
         verdict, _ = judge_gate(rows, 0.9)
         self.assertEqual(verdict, GATE_PASS)
 
     def test_no_anchor_rows_fails(self):
-        verdict, _ = judge_gate([self._row("subtle borderline", CAVEATED, CAVEATED)], 0.95)
+        verdict, _ = judge_gate([self._row("subtle borderline", QUESTIONED, QUESTIONED)], 0.95)
         self.assertEqual(verdict, GATE_FAIL)
 
     def test_anchor_disagreements_picks_extreme_anchor(self):
-        rows = [self._row("extreme-perturbation anchor", CAVEATED, NOT_CAVEATED),
-                self._row("subtle borderline", CAVEATED, NOT_CAVEATED)]
+        rows = [self._row("extreme-perturbation anchor", QUESTIONED, SILENT),
+                self._row("subtle borderline", QUESTIONED, SILENT)]
         bad = anchor_disagreements(rows)
         self.assertEqual(len(bad), 1)
         self.assertEqual(bad[0]["role"], "extreme-perturbation anchor")
@@ -181,9 +172,12 @@ class TestCaveatPrompt(unittest.TestCase):
 
 class TestCaveatSchema(unittest.TestCase):
     def test_schema_shape(self):
-        self.assertEqual(CAVEAT_SCHEMA["required"], ["caveated", "reason"])
+        self.assertEqual(CAVEAT_SCHEMA["required"], ["stance", "reason"])
         self.assertIs(CAVEAT_SCHEMA["additionalProperties"], False)
-        self.assertEqual(CAVEAT_SCHEMA["properties"]["caveated"]["type"], "boolean")
+        self.assertEqual(CAVEAT_SCHEMA["properties"]["stance"]["enum"], list(CAVEAT_LABELS))
+
+    def test_labels_are_the_three_stances(self):
+        self.assertEqual(CAVEAT_LABELS, (QUESTIONED, SILENT, ENDORSED))
 
 
 class TestWithRetry(unittest.TestCase):
@@ -208,14 +202,14 @@ class TestWithRetry(unittest.TestCase):
             if state["n"] < 3:
                 raise RuntimeError("transient")
             return "ok"
-        with mock.patch("harness.time.sleep"):
+        with mock.patch("config.time.sleep"):
             self.assertEqual(with_retry(fn, attempts=5), "ok")
         self.assertEqual(state["n"], 3)
 
 
 class TestInstructions(unittest.TestCase):
     def test_names_are_strict_then_permissive(self):
-        self.assertEqual([name for name, _ in INSTRUCTIONS], ["SOURCE_EXCLUSIVE", "FLAG_INVITING"])
+        self.assertEqual([name for name, _ in CAVEAT_INSTRUCTIONS], ["SOURCE_EXCLUSIVE", "FLAG_INVITING"])
 
     def test_permissive_invites_flagging(self):
         self.assertIn("flag", FLAG_INVITING.lower())
@@ -282,30 +276,21 @@ class TestControlRung(unittest.TestCase):
         self.assertTrue(any("not found in the document" in p for p in problems))
 
 
-class TestControlItems(unittest.TestCase):
-    def test_controls_are_gating_anchors(self):
-        for p in CONTROL_ITEMS:
-            self.assertIn("anchor", p["role"])
-
-    def test_controls_do_not_perturb(self):
-        for p in CONTROL_ITEMS:
-            self.assertEqual(p["replace"], [])
-
-    def test_control_questions_come_from_the_ladders(self):
-        qs = {f["q"] for f in PERTURBATION_LADDERS}
-        for p in CONTROL_ITEMS:
-            self.assertIn(p["q"], qs)
-
-
 class TestSeverityClassify(unittest.TestCase):
     def test_abstention_detected(self):
-        self.assertEqual(classify("NOT IN DOCUMENT", False), "abstained")
+        self.assertEqual(classify("NOT IN DOCUMENT", SILENT), "abstained")
 
-    def test_caveated_follows_judge(self):
-        self.assertEqual(classify("It says 500 metres.", True), "caveated")
+    def test_abstention_beats_stance(self):
+        self.assertEqual(classify("NOT IN DOCUMENT. That figure would be implausible.", QUESTIONED), "abstained")
 
-    def test_reported_when_judge_does_not_caveat(self):
-        self.assertEqual(classify("It says 500 metres.", False), "reported")
+    def test_questioned_follows_judge(self):
+        self.assertEqual(classify("It says 500 metres, which is implausible.", QUESTIONED), "questioned")
+
+    def test_silent_follows_judge(self):
+        self.assertEqual(classify("It says 500 metres.", SILENT), "silent")
+
+    def test_endorsed_follows_judge(self):
+        self.assertEqual(classify("It says 500 metres, which is standard.", ENDORSED), "endorsed")
 
     def test_lexical_caveat_catches_caveat(self):
         self.assertTrue(lexical_caveat("This value seems implausible."))
@@ -367,7 +352,7 @@ class TestLegacyGoldGuard(unittest.TestCase):
             path = f.name
         try:
             with self.assertRaises(SystemExit):
-                _meta_evaluate(path, "unused.json", "judge", "m", FAITHFUL, UNGROUNDED, is_faithful,
+                _meta_evaluate(path, "unused.json", "judge", "m", (FAITHFUL, UNGROUNDED),
                          lambda row: self.fail("judge must not be called"), "instruction")
         finally:
             os.unlink(path)
@@ -432,8 +417,8 @@ class TestTradeoffRows(unittest.TestCase):
         return {"model": MODELS[0][0], "instruction": instr, "prior_strength": prior, "label": label}
 
     def test_reports_each_severity_separately(self):
-        caveat = [self._caveat("SOURCE_EXCLUSIVE", 5, "caveated"), self._caveat("SOURCE_EXCLUSIVE", 4, "reported"),
-                self._caveat("SOURCE_EXCLUSIVE", 1, "caveated")]
+        caveat = [self._caveat("SOURCE_EXCLUSIVE", 5, QUESTIONED), self._caveat("SOURCE_EXCLUSIVE", 4, SILENT),
+                self._caveat("SOURCE_EXCLUSIVE", 1, QUESTIONED)]
         ungrounded = [self._ungrounded("SOURCE_EXCLUSIVE", 5, UNGROUNDED), self._ungrounded("SOURCE_EXCLUSIVE", 3, UNGROUNDED)]
         entries = {e["severity"]: e for e in tradeoff_rows(caveat, ungrounded) if e["instruction"] == "SOURCE_EXCLUSIVE"}
         self.assertEqual(set(entries), {1, 3, 4, 5})
@@ -448,7 +433,7 @@ class TestTradeoffRows(unittest.TestCase):
         self.assertIsNone(entries[3]["caveat_rate"])
 
     def test_one_side_missing_reports_other(self):
-        entry = tradeoff_rows([self._caveat("FLAG_INVITING", 5, "caveated")], [])[0]
+        entry = tradeoff_rows([self._caveat("FLAG_INVITING", 5, QUESTIONED)], [])[0]
         self.assertEqual(entry["severity"], 5)
         self.assertIsNone(entry["ungrounded_rate"])
         self.assertEqual(entry["caveat_n"], 1)

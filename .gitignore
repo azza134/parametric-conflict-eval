@@ -4,7 +4,7 @@ __pycache__/
 *.pyc
 archive/
 results.md
-judge_results.json
+abstention_judge_results.json
 caveat_judge_results.json
 discriminate_results.jsonl
 caveat_results.jsonl
