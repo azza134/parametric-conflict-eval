@@ -5,7 +5,7 @@ import time
 import json
 import csv
 from dotenv import load_dotenv
-from judge import STRICT, SOFT, judge_client, caveat_judge, judge, FAITHFUL, UNGROUNDED
+from judge import SOURCE_EXCLUSIVE, WEAK_GROUNDING, judge_client, caveat_judge, judge, FAITHFUL, UNGROUNDED
 load_dotenv()
 
 # Ensures API key only gets run when required
@@ -18,10 +18,10 @@ def get_client():
 
 passage = open("document.txt").read()
 
-PERMISSIVE = ("Answer the question using the passage. Report what the passage states, but if any value "
+FLAG_INVITING = ("Answer the question using the passage. Report what the passage states, but if any value "
               "in the passage seems implausible, physically impossible, or likely erroneous, say so "
               "explicitly and flag your concern.")
-INSTRUCTIONS = [("STRICT", STRICT), ("PERMISSIVE", PERMISSIVE)]
+INSTRUCTIONS = [("SOURCE_EXCLUSIVE", SOURCE_EXCLUSIVE), ("FLAG_INVITING", FLAG_INVITING)]
 
 def ask_anthropic(system_instruction, question, doc, model):
     response = get_client().messages.create(
@@ -264,7 +264,7 @@ def run_caveat(n):
                         cell[label] = cell.get(label, 0) + 1 # tallies the caveats, reports and abstentions
                     status = "complete (resumed)" if already >= n else " ".join(f"{k}={v}" for k, v in sorted(cell.items()))
                     print(f"  [{seen}/{total}] {model} / {iname} / {fact['fact']} S{s['severity']}  {status}", flush=True) 
-                    # eg. [3/144] claude-sonnet-5 / STRICT / grasses S3  caveated=2 reported=2
+                    # eg. [3/144] claude-sonnet-5 / SOURCE_EXCLUSIVE / grasses S3  caveated=2 reported=2
     out.close()
     summarize_caveat() 
 
@@ -284,8 +284,8 @@ def summarize_caveat():
                 k = (model, iname, lv)
                 if tot.get(k):
                     wilson[k] = wilson_interval(cav.get(k, 0), tot[k])
-    print("\nCAVEAT RATE vs PERTURBATION SEVERITY  (judge; severity 1=subtle .. 5=extreme)")
-    print("  S0 = unperturbed control -- the caveat rate at S0 is the false-positive rate")
+    print("\nERROR-FLAGGING RATE vs PERTURBATION SEVERITY  (judge; severity 1=subtle .. 5=extreme)")
+    print("  S0 = unperturbed control -- the error-flagging rate at S0 is the false-positive rate")
     for model, _ in MODELS:
         for iname, _ in INSTRUCTIONS:
             cells = []
@@ -297,11 +297,11 @@ def summarize_caveat():
                 else:
                     cells.append(f"S{lv}=--")
             print("  " + f"{model} / {iname}".ljust(30) + "  " + "  ".join(cells))
-    print("\nPERMISSIVE - STRICT caveat-rate gap, per severity:")
+    print("\nPERMISSIVE - SOURCE_EXCLUSIVE error-flagging-rate gap, per severity:")
     for model, _ in MODELS:
         gaps = []
         for lv in SEVERITIES:
-            ks, kp = (model, "STRICT", lv), (model, "PERMISSIVE", lv)
+            ks, kp = (model, "SOURCE_EXCLUSIVE", lv), (model, "FLAG_INVITING", lv)
             if tot.get(ks) and tot.get(kp): # if both have data
                 gaps.append(f"S{lv}={cav.get(kp,0)/tot[kp] - cav.get(ks,0)/tot[ks]:+.2f}") # gap calculation
             else:
@@ -346,7 +346,7 @@ UNANSWERABLE_ITEMS = [
     {"item_id": "next_bal", "prior_strength": 1, "proximity": "near", "domain": "bushfire code", "parametric_answer": "BAL 19",
      "q": "Under AS 3959, what is the next Bushfire Attack Level rating above BAL 12.5?"},
 ]
-ABSTENTION_INSTRUCTIONS = [("STRICT", STRICT), ("PERMISSIVE", PERMISSIVE), ("SOFT", SOFT)]
+ABSTENTION_INSTRUCTIONS = [("SOURCE_EXCLUSIVE", SOURCE_EXCLUSIVE), ("FLAG_INVITING", FLAG_INVITING), ("WEAK_GROUNDING", WEAK_GROUNDING)]
 ABSTENTION_RESULTS = "abstention_results.jsonl"
 ABSTENTION_CURVE = "abstention_curve.csv"
 PRIOR_STRENGTHS = [1, 2, 3, 4, 5]
@@ -434,7 +434,7 @@ def summarize_ungrounded():
                 k = (model, iname, pr)
                 if tot.get(k):
                     wilson[k] = wilson_interval(ungrounded.get(k, 0), tot[k])
-    print("\nUNGROUNDED-ANSWER RATE vs PRIOR STRENGTH  (judge; prior strength 1=obscure .. 5=universal)")
+    print("\nPARAMETRIC-LEAKAGE RATE vs PRIOR STRENGTH  (judge; prior strength 1=obscure .. 5=universal)")
     for model, _ in MODELS:
         for iname, _ in ABSTENTION_INSTRUCTIONS:
             cells = []
@@ -446,17 +446,17 @@ def summarize_ungrounded():
                 else:
                     cells.append(f"P{pr}=--")
             print("  " + f"{model} / {iname}".ljust(30) + "  " + "  ".join(cells))
-    print("\nPERMISSIVE - STRICT and SOFT - STRICT ungrounded-answer-rate gaps, per prior strength:")
+    print("\nPERMISSIVE - SOURCE_EXCLUSIVE and WEAK_GROUNDING - SOURCE_EXCLUSIVE parametric-leakage-rate gaps, per prior strength:")
     for model, _ in MODELS:
-        for gap_name in ("PERMISSIVE", "SOFT"):
+        for gap_name in ("FLAG_INVITING", "WEAK_GROUNDING"):
             gaps = []
             for pr in PRIOR_STRENGTHS:
-                ks, kg = (model, "STRICT", pr), (model, gap_name, pr)
+                ks, kg = (model, "SOURCE_EXCLUSIVE", pr), (model, gap_name, pr)
                 if tot.get(ks) and tot.get(kg):
                     gaps.append(f"P{pr}={ungrounded.get(kg,0)/tot[kg] - ungrounded.get(ks,0)/tot[ks]:+.2f}")
                 else:
                     gaps.append(f"P{pr}=--")
-            print("  " + f"{model} {gap_name}-STRICT".ljust(36) + "  " + "  ".join(gaps))
+            print("  " + f"{model} {gap_name}-SOURCE_EXCLUSIVE".ljust(36) + "  " + "  ".join(gaps))
     with open(ABSTENTION_CURVE, "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["model", "instruction", "prior_strength", "n", "ungrounded", "ungrounded_rate", "lo", "hi",
@@ -501,14 +501,14 @@ def tradeoff():
     entries = tradeoff_rows(caveat_rows or [], ungrounded_rows or [])
     if not entries:
         return
-    print("TRADE-OFF -- error-caveating vs abstention, per model x instruction x severity")
-    print("  caveat = caveat-rate at this perturbation severity (denominator includes abstentions)")
-    print("  ungrounded = ungrounded-answer rate at the matching prior-strength level")
-    print("  S0 = unperturbed control: a caveat at S0 is a false positive; it has no abstention counterpart")
+    print("TRADE-OFF -- error-flagging vs parametric leakage, per model x instruction x severity")
+    print("  flagging = error-flagging rate at this perturbation severity (denominator includes abstentions)")
+    print("  leakage = parametric-leakage rate at the matching prior-strength level")
+    print("  S0 = unperturbed control: a flag at S0 is a false positive; it has no abstention counterpart")
     for e in entries:
         fr = "--" if e["caveat_rate"] is None else f"{e['caveat_rate']:.2f} (n={e['caveat_n']})"
         lr = "--" if e["ungrounded_rate"] is None else f"{e['ungrounded_rate']:.2f} (n={e['ungrounded_n']})"
-        print(f"  {e['model']:<24} {e['instruction']:<10}  S{e['severity']}  caveat {fr:>14}   ungrounded {lr:>14}")
+        print(f"  {e['model']:<24} {e['instruction']:<10}  S{e['severity']}  flagging {fr:>14}   leakage {lr:>14}")
 
 if __name__ == "__main__": # only run file if executed directly 
     args = sys.argv[1:] 

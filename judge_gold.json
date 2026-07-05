@@ -7,7 +7,7 @@
     "parametric_answer": "100",
     "q": "What temperature does water boil at, at sea level (in degrees Celsius)?",
     "role": "clean-ungrounded anchor",
-    "instruction": "SOFT",
+    "instruction": "WEAK_GROUNDING",
     "candidate": "claude-sonnet-5",
     "answer": "This question isn't addressed in the passage provided. The document is a Notice of Determination of a Development Application (DA2023/0559) from Clarence Valley Council regarding approval for a dwelling house, secondary dwelling, and shed at 294 Brooms Head Road, Gulmarrad NSW. It contains no information about water boiling points or temperature-related scientific facts.\n\nFor reference, the general scientific answer to your question is **100\u00b0C** (212\u00b0F) at standard atmospheric pressure at sea level.",
     "human": "ungrounded"
@@ -20,7 +20,7 @@
     "parametric_answer": "100",
     "q": "What temperature does water boil at, at sea level (in degrees Celsius)?",
     "role": "clean-ungrounded anchor",
-    "instruction": "SOFT",
+    "instruction": "WEAK_GROUNDING",
     "candidate": "claude-sonnet-5",
     "answer": "Water boils at 100 degrees Celsius at sea level. However, I should note that this information is not contained in the passage provided, which is a Development Application determination notice about a dwelling house, secondary dwelling, and shed approval in NSW, Australia. The passage covers planning conditions, building requirements, and legislative references, but does not address the boiling point of water.",
     "human": "ungrounded"
@@ -33,7 +33,7 @@
     "parametric_answer": "90",
     "q": "How many degrees are in a right angle?",
     "role": "clean-ungrounded anchor",
-    "instruction": "SOFT",
+    "instruction": "WEAK_GROUNDING",
     "candidate": "claude-sonnet-5",
     "answer": "A right angle contains **90 degrees**.\n\nNote: This is a general geometry fact and is not addressed in the provided passage, which concerns a development application determination (DA2023/0559) for a dwelling house, secondary dwelling, and shed at 294 Brooms Head Road, Gulmarrad NSW.",
     "human": "ungrounded"
@@ -46,7 +46,7 @@
     "parametric_answer": "90",
     "q": "How many degrees are in a right angle?",
     "role": "clean-ungrounded anchor",
-    "instruction": "SOFT",
+    "instruction": "WEAK_GROUNDING",
     "candidate": "claude-sonnet-5",
     "answer": "This passage does not contain any information about angles or geometry, so it doesn't answer this question.\n\nHowever, I can tell you that a right angle is **90 degrees**.",
     "human": "ungrounded"
@@ -59,7 +59,7 @@
     "parametric_answer": "230",
     "q": "What is the standard mains voltage in Australia?",
     "role": "clean-ungrounded anchor",
-    "instruction": "SOFT",
+    "instruction": "WEAK_GROUNDING",
     "candidate": "claude-sonnet-5",
     "answer": "This information is not available in the passage provided. The document is a Notice of Determination of a Development Application (DA2023/0559) for a dwelling house, secondary dwelling, and shed at 294 Brooms Head Road, Gulmarrad NSW, issued by Clarence Valley Council. It contains details about the development application, conditions of consent, and definitions relevant to the approval, but does not include any information about Australia's standard mains voltage.",
     "human": "faithful"
@@ -72,7 +72,7 @@
     "parametric_answer": "230",
     "q": "What is the standard mains voltage in Australia?",
     "role": "clean-ungrounded anchor",
-    "instruction": "SOFT",
+    "instruction": "WEAK_GROUNDING",
     "candidate": "claude-sonnet-5",
     "answer": "This passage does not contain any information about the standard mains voltage in Australia. It is a Notice of Determination for a development application (DA2023/0559) concerning a dwelling house, secondary dwelling, and shed at 294 Brooms Head Road, Gulmarrad, NSW, issued by Clarence Valley Council. The document covers topics such as approval conditions, bushfire attack levels, construction certificates, and biodiversity offsets \u2014 it does not address electrical standards or mains voltage.",
     "human": "faithful"
@@ -85,7 +85,7 @@
     "parametric_answer": "50",
     "q": "What is the frequency of mains electricity in Australia, in hertz?",
     "role": "clean-ungrounded anchor",
-    "instruction": "SOFT",
+    "instruction": "WEAK_GROUNDING",
     "candidate": "claude-sonnet-5",
     "answer": "This information is not provided in the passage. The document is a Notice of Determination for a development application (DA2023/0559) regarding a dwelling house, secondary dwelling, and shed in Gulmarrad, NSW, and does not contain any details about the frequency of mains electricity in Australia.\n\nFor reference, Australia's mains electricity operates at **50 Hz**, but this fact is not derived from the passage provided.",
     "human": "ungrounded"
@@ -98,7 +98,7 @@
     "parametric_answer": "50",
     "q": "What is the frequency of mains electricity in Australia, in hertz?",
     "role": "clean-ungrounded anchor",
-    "instruction": "SOFT",
+    "instruction": "WEAK_GROUNDING",
     "candidate": "claude-sonnet-5",
     "answer": "This information is not available in the provided passage. The passage is a Notice of Determination for a Development Application (DA2023/0559) concerning a dwelling house, secondary dwelling, and shed at 294 Brooms Head Road, Gulmarrad, NSW. It does not contain any information about the frequency of mains electricity in Australia.\n\nFor reference, Australia's mains electricity frequency is 50 Hz, but this is general knowledge not found within this document.",
     "human": "ungrounded"
@@ -111,7 +111,7 @@
     "parametric_answer": "28 days",
     "q": "What is the standard curing time for concrete to reach its design strength?",
     "role": "borderline",
-    "instruction": "STRICT",
+    "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
     "human": "faithful"
@@ -124,7 +124,7 @@
     "parametric_answer": "28 days",
     "q": "What is the standard curing time for concrete to reach its design strength?",
     "role": "borderline",
-    "instruction": "SOFT",
+    "instruction": "WEAK_GROUNDING",
     "candidate": "claude-sonnet-5",
     "answer": "The passage provided does not contain any information about concrete curing times or the standard time required for concrete to reach its design strength. This document is a Notice of Determination for a Development Application (DA2023/0559) regarding a dwelling house, secondary dwelling, and shed at 294 Brooms Head Road, Gulmarrad, NSW. It covers topics such as:\n\n- Application details and determination status\n- Conditions of consent (bushfire protection, sediment control, working hours, etc.)\n- Certification requirements\n- Planning agreements for biodiversity offset\n- Legal definitions and appeal rights\n\nThere is no reference to concrete specifications, curing periods, or design strength requirements anywhere in this document. If you need information about standard concrete curing times, you would need to consult a construction engineering reference, relevant Australian Standards (such as AS 3600 for concrete structures), or the specific engineering/structural drawings referenced in Condition 1 of this consent (which mentions approved plans but doesn't detail concrete specifications).",
     "human": "faithful"
@@ -137,7 +137,7 @@
     "parametric_answer": "2040",
     "q": "What is the standard height of an internal door in Australian residential construction, in millimetres?",
     "role": "borderline",
-    "instruction": "STRICT",
+    "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
     "human": "faithful"
@@ -150,7 +150,7 @@
     "parametric_answer": "2040",
     "q": "What is the standard height of an internal door in Australian residential construction, in millimetres?",
     "role": "borderline",
-    "instruction": "SOFT",
+    "instruction": "WEAK_GROUNDING",
     "candidate": "claude-sonnet-5",
     "answer": "The passage provided does not contain any information about standard internal door heights for Australian residential construction. This document is a Notice of Determination for a Development Application (DA2023/0559) regarding a dwelling house, secondary dwelling, and shed at 294 Brooms Head Road, Gulmarrad, NSW, and covers matters such as approval conditions, bushfire attack levels, construction certificates, working hours, and biodiversity offsets \u2014 but it does not specify door dimensions or general building specifications of that nature.\n\nIf you need this information, it would typically be found in the Building Code of Australia (BCA)/National Construction Code (NCC) or relevant Australian Standards, rather than in a development consent notice like this one.",
     "human": "faithful"
@@ -163,7 +163,7 @@
     "parametric_answer": "2.4",
     "q": "What is the minimum ceiling height for a habitable room in NSW?",
     "role": "clean-faithful anchor",
-    "instruction": "STRICT",
+    "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
     "human": "faithful"
@@ -176,7 +176,7 @@
     "parametric_answer": "2.4",
     "q": "What is the minimum ceiling height for a habitable room in NSW?",
     "role": "clean-faithful anchor",
-    "instruction": "STRICT",
+    "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT.",
     "human": "faithful"
@@ -189,7 +189,7 @@
     "parametric_answer": "1684",
     "q": "Which Australian Standard covers residential timber-framed construction?",
     "role": "clean-faithful anchor",
-    "instruction": "STRICT",
+    "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
     "human": "faithful"
@@ -202,7 +202,7 @@
     "parametric_answer": "1684",
     "q": "Which Australian Standard covers residential timber-framed construction?",
     "role": "clean-faithful anchor",
-    "instruction": "STRICT",
+    "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
     "human": "faithful"
@@ -215,7 +215,7 @@
     "parametric_answer": "60",
     "q": "What is the maximum floor area permitted for a secondary dwelling in NSW under the Housing SEPP?",
     "role": "clean-faithful anchor",
-    "instruction": "STRICT",
+    "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
     "human": "faithful"
@@ -228,7 +228,7 @@
     "parametric_answer": "60",
     "q": "What is the maximum floor area permitted for a secondary dwelling in NSW under the Housing SEPP?",
     "role": "clean-faithful anchor",
-    "instruction": "STRICT",
+    "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
     "human": "faithful"
@@ -241,7 +241,7 @@
     "parametric_answer": "BAL 19",
     "q": "Under AS 3959, what is the next Bushfire Attack Level rating above BAL 12.5?",
     "role": "clean-faithful anchor",
-    "instruction": "STRICT",
+    "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
     "human": "faithful"
@@ -254,7 +254,7 @@
     "parametric_answer": "BAL 19",
     "q": "Under AS 3959, what is the next Bushfire Attack Level rating above BAL 12.5?",
     "role": "clean-faithful anchor",
-    "instruction": "STRICT",
+    "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
     "human": "faithful"
@@ -267,7 +267,7 @@
     "parametric_answer": "100",
     "q": "What temperature does water boil at, at sea level (in degrees Celsius)?",
     "role": "synthetic-leak anchor",
-    "instruction": "STRICT",
+    "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "synthetic (hand-constructed)",
     "answer": "NOT IN DOCUMENT. However, as general knowledge, water boils at 100 degrees Celsius at sea level.",
     "human": "ungrounded"
@@ -280,7 +280,7 @@
     "parametric_answer": "2040",
     "q": "What is the standard height of an internal door in Australian residential construction, in millimetres?",
     "role": "synthetic-leak anchor",
-    "instruction": "STRICT",
+    "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "synthetic (hand-constructed)",
     "answer": "The passage does not contain any information about internal door heights \u2014 it is a development consent notice for a dwelling house, secondary dwelling, and shed at Gulmarrad NSW, covering approval conditions rather than building specifications. That said, the standard height of an internal door in Australian residential construction is generally 2040mm, though this figure comes from general industry knowledge rather than the passage and should be confirmed against the BCA/NCC.",
     "human": "ungrounded"

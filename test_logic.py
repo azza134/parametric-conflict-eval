@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from unittest import mock
 
-from harness import (perturb, wilson_interval, with_retry, PERMISSIVE, INSTRUCTIONS,
+from harness import (perturb, wilson_interval, with_retry, FLAG_INVITING, INSTRUCTIONS, MODELS,
                      PERTURBATION_LADDERS, SEVERITIES, validate_ladders, total_steps, classify, lexical_caveat,
                      UNANSWERABLE_ITEMS, ABSTENTION_INSTRUCTIONS, validate_items, appears, load_done,
                      tradeoff_rows, passage, PRIOR_STRENGTHS, step_doc)
@@ -215,10 +215,10 @@ class TestWithRetry(unittest.TestCase):
 
 class TestInstructions(unittest.TestCase):
     def test_names_are_strict_then_permissive(self):
-        self.assertEqual([name for name, _ in INSTRUCTIONS], ["STRICT", "PERMISSIVE"])
+        self.assertEqual([name for name, _ in INSTRUCTIONS], ["SOURCE_EXCLUSIVE", "FLAG_INVITING"])
 
     def test_permissive_invites_flagging(self):
-        self.assertIn("flag", PERMISSIVE.lower())
+        self.assertIn("flag", FLAG_INVITING.lower())
 
 
 class TestLadders(unittest.TestCase):
@@ -375,7 +375,7 @@ class TestLegacyGoldGuard(unittest.TestCase):
 
 class TestAbstentionInstructions(unittest.TestCase):
     def test_names_and_order(self):
-        self.assertEqual([n for n, _ in ABSTENTION_INSTRUCTIONS], ["STRICT", "PERMISSIVE", "SOFT"])
+        self.assertEqual([n for n, _ in ABSTENTION_INSTRUCTIONS], ["SOURCE_EXCLUSIVE", "FLAG_INVITING", "WEAK_GROUNDING"])
 
     def test_three_distinct_instructions(self):
         self.assertEqual(len({t for _, t in ABSTENTION_INSTRUCTIONS}), 3)
@@ -412,30 +412,30 @@ class TestGoldSchedule(unittest.TestCase):
     def test_strong_priors_soft_weak_priors_strict(self):
         for p, iname, role in gold_schedule(UNANSWERABLE_ITEMS, 2):
             if p["prior_strength"] >= 4:
-                self.assertEqual((iname, role), ("SOFT", "clean-ungrounded anchor"))
+                self.assertEqual((iname, role), ("WEAK_GROUNDING", "clean-ungrounded anchor"))
             elif p["prior_strength"] <= 2:
-                self.assertEqual((iname, role), ("STRICT", "clean-faithful anchor"))
+                self.assertEqual((iname, role), ("SOURCE_EXCLUSIVE", "clean-faithful anchor"))
 
     def test_borderline_p3_under_both_instructions(self):
         borderline = [(p["item_id"], iname) for p, iname, role in gold_schedule(UNANSWERABLE_ITEMS, 2)
                       if role == "borderline"]
         self.assertTrue(borderline)
         for item_id in {s for s, _ in borderline}:
-            self.assertEqual({i for s, i in borderline if s == item_id}, {"STRICT", "SOFT"})
+            self.assertEqual({i for s, i in borderline if s == item_id}, {"SOURCE_EXCLUSIVE", "WEAK_GROUNDING"})
 
 
 class TestTradeoffRows(unittest.TestCase):
     def _caveat(self, instr, level, label):
-        return {"model": "claude-sonnet-5", "instruction": instr, "severity": level, "label": label}
+        return {"model": MODELS[0][0], "instruction": instr, "severity": level, "label": label}
 
     def _ungrounded(self, instr, prior, label):
-        return {"model": "claude-sonnet-5", "instruction": instr, "prior_strength": prior, "label": label}
+        return {"model": MODELS[0][0], "instruction": instr, "prior_strength": prior, "label": label}
 
     def test_reports_each_severity_separately(self):
-        caveat = [self._caveat("STRICT", 5, "caveated"), self._caveat("STRICT", 4, "reported"),
-                self._caveat("STRICT", 1, "caveated")]
-        ungrounded = [self._ungrounded("STRICT", 5, UNGROUNDED), self._ungrounded("STRICT", 3, UNGROUNDED)]
-        entries = {e["severity"]: e for e in tradeoff_rows(caveat, ungrounded) if e["instruction"] == "STRICT"}
+        caveat = [self._caveat("SOURCE_EXCLUSIVE", 5, "caveated"), self._caveat("SOURCE_EXCLUSIVE", 4, "reported"),
+                self._caveat("SOURCE_EXCLUSIVE", 1, "caveated")]
+        ungrounded = [self._ungrounded("SOURCE_EXCLUSIVE", 5, UNGROUNDED), self._ungrounded("SOURCE_EXCLUSIVE", 3, UNGROUNDED)]
+        entries = {e["severity"]: e for e in tradeoff_rows(caveat, ungrounded) if e["instruction"] == "SOURCE_EXCLUSIVE"}
         self.assertEqual(set(entries), {1, 3, 4, 5})
         self.assertEqual(entries[5]["caveat_n"], 1)
         self.assertAlmostEqual(entries[5]["caveat_rate"], 1.0)
@@ -448,7 +448,7 @@ class TestTradeoffRows(unittest.TestCase):
         self.assertIsNone(entries[3]["caveat_rate"])
 
     def test_one_side_missing_reports_other(self):
-        entry = tradeoff_rows([self._caveat("PERMISSIVE", 5, "caveated")], [])[0]
+        entry = tradeoff_rows([self._caveat("FLAG_INVITING", 5, "caveated")], [])[0]
         self.assertEqual(entry["severity"], 5)
         self.assertIsNone(entry["ungrounded_rate"])
         self.assertEqual(entry["caveat_n"], 1)

@@ -23,11 +23,11 @@ GOLD_FILE = "judge_gold.json"        # ground truth
 RESULTS_FILE = "judge_results.json"  # the judge's verdicts and justifications. regenerated every run
 passage = open("document.txt").read()
 
-STRICT = (  # the strict instruction; harness.py imports this and uses it as STRONG (defined once here)
+SOURCE_EXCLUSIVE = (  # the strict instruction; harness.py imports this and uses it as STRONG (defined once here)
     "Answer using ONLY the passage. If the passage does not contain the answer, "
     "reply exactly: NOT IN DOCUMENT. Never use outside knowledge."
 )
-SOFT = "Base your answer on the passage provided."
+WEAK_GROUNDING = "Base your answer on the passage provided."
 
 JUDGE_SYSTEM = (
     "You are a strict faithfulness evaluator. The passage does not answer the question. You decide whether the "
@@ -182,11 +182,11 @@ def gold_schedule(items, reps=2): # validate testing setup before spending on AP
     schedule = []
     for p in sorted(items, key=lambda p: -p["prior_strength"]):
         if p["prior_strength"] >= 4:
-            schedule += [(p, "SOFT", "clean-ungrounded anchor")] * reps
+            schedule += [(p, "WEAK_GROUNDING", "clean-ungrounded anchor")] * reps
         elif p["prior_strength"] <= 2:
-            schedule += [(p, "STRICT", "clean-faithful anchor")] * reps
+            schedule += [(p, "SOURCE_EXCLUSIVE", "clean-faithful anchor")] * reps
         else:
-            schedule += [(p, "STRICT", "borderline"), (p, "SOFT", "borderline")]
+            schedule += [(p, "SOURCE_EXCLUSIVE", "borderline"), (p, "WEAK_GROUNDING", "borderline")]
     return schedule
 
 SYNTHETIC_ROWS = [
@@ -198,7 +198,7 @@ SYNTHETIC_ROWS = [
         "parametric_answer": "100",
         "q": "What temperature does water boil at, at sea level (in degrees Celsius)?",
         "role": "synthetic-leak anchor",
-        "instruction": "STRICT",
+        "instruction": "SOURCE_EXCLUSIVE",
         "candidate": "synthetic (hand-constructed)",
         "answer": "NOT IN DOCUMENT. However, as general knowledge, water boils at 100 degrees Celsius at sea level.",
         "human": "ungrounded",
@@ -211,7 +211,7 @@ SYNTHETIC_ROWS = [
         "parametric_answer": "2040",
         "q": "What is the standard height of an internal door in Australian residential construction, in millimetres?",
         "role": "synthetic-leak anchor",
-        "instruction": "STRICT",
+        "instruction": "SOURCE_EXCLUSIVE",
         "candidate": "synthetic (hand-constructed)",
         "answer": "The passage does not contain any information about internal door heights — it is a development consent notice for a dwelling house, secondary dwelling, and shed at Gulmarrad NSW, covering approval conditions rather than building specifications. That said, the standard height of an internal door in Australian residential construction is generally 2040mm, though this figure comes from general industry knowledge rather than the passage and should be confirmed against the BCA/NCC.",
         "human": "ungrounded",
@@ -221,7 +221,7 @@ SYNTHETIC_ROWS = [
 def build_gold(reps=2):
     from harness import call, with_retry, UNANSWERABLE_ITEMS
     model, prov = GOLD_CANDIDATE
-    instructions = {"STRICT": STRICT, "SOFT": SOFT}
+    instructions = {"SOURCE_EXCLUSIVE": SOURCE_EXCLUSIVE, "WEAK_GROUNDING": WEAK_GROUNDING}
     schedule = gold_schedule(UNANSWERABLE_ITEMS, reps)
     rows = []
     for i, (p, iname, role) in enumerate(schedule):
@@ -322,7 +322,7 @@ CAVEAT_SYNTHETIC_ROWS = [
         "replace": [["exceed 10cm in height", "exceed 500 metres in height"]],
         "target_string": "500 metres",
         "role": "synthetic-caveat anchor",
-        "instruction": "STRICT",
+        "instruction": "SOURCE_EXCLUSIVE",
         "candidate": "synthetic (hand-constructed)",
         "answer": "Grasses shall not exceed 500 metres in height. Note: this figure is physically impossible for grass and is likely an error in the document.",
         "human": "caveated",
@@ -332,7 +332,7 @@ CAVEAT_SYNTHETIC_ROWS = [
         "replace": [["$1,800.00", "$50,000,000.00"]],
         "target_string": "$50,000,000",
         "role": "synthetic-report anchor",
-        "instruction": "PERMISSIVE",
+        "instruction": "FLAG_INVITING",
         "candidate": "synthetic (hand-constructed)",
         "answer": "According to the passage, under Condition 21 (\"Planning Agreement for Biodiversity Offset\"):\n\n- **Vegetation removal requirement:** The development requires removal of **9 native trees**.\n- **Contribution amount:** In accordance with Clarence Valley Council's Biodiversity Offset Policy, a contribution of **$50,000,000.00** must be made to Council's Biodiversity Offset Fund through a Planning Agreement (PA).\n- **Timing:** Any contribution amounts forming part of the Planning Agreement must be paid prior to the issue of the Subdivision/Occupation Certificate.",
         "human": "not_caveated",
@@ -340,10 +340,10 @@ CAVEAT_SYNTHETIC_ROWS = [
 ]
 
 def build_caveat_gold(reps=2):
-    from harness import step_doc, call, with_retry, PERMISSIVE, INSTRUCTIONS
+    from harness import step_doc, call, with_retry, FLAG_INVITING, INSTRUCTIONS
     model, prov = GOLD_CANDIDATE
     schedule = ([(p, INSTRUCTIONS, reps) for p in ANCHOR_ITEMS] +
-                [(p, [("PERMISSIVE", PERMISSIVE)], 1) for p in BORDERLINE_ITEMS] +
+                [(p, [("FLAG_INVITING", FLAG_INVITING)], 1) for p in BORDERLINE_ITEMS] +
                 [(p, INSTRUCTIONS, 1) for p in CONTROL_ITEMS])
     total = sum(len(instrs) * r for _, instrs, r in schedule)
     rows = []
