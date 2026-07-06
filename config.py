@@ -23,8 +23,7 @@ FLAG_INVITING = ("Answer the question using the passage. Report what the passage
               "explicitly and flag your concern.")
 WEAK_GROUNDING = "Base your answer on the passage provided."
 
-CAVEAT_INSTRUCTIONS = [("SOURCE_EXCLUSIVE", SOURCE_EXCLUSIVE), ("FLAG_INVITING", FLAG_INVITING)]
-ABSTENTION_INSTRUCTIONS = [("SOURCE_EXCLUSIVE", SOURCE_EXCLUSIVE), ("FLAG_INVITING", FLAG_INVITING), ("WEAK_GROUNDING", WEAK_GROUNDING)]
+SYSTEM_INSTRUCTIONS = [("SOURCE_EXCLUSIVE", SOURCE_EXCLUSIVE), ("FLAG_INVITING", FLAG_INVITING), ("WEAK_GROUNDING", WEAK_GROUNDING)]
 
 KAPPA_THRESHOLD = 0.8 # Threshold for the Cohen's Kappa score to determine if the model is consistent with the human judge
 

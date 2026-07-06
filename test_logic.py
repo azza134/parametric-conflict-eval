@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from unittest import mock
 
-from config import (perturb, with_retry, MODELS, FLAG_INVITING, CAVEAT_INSTRUCTIONS, ABSTENTION_INSTRUCTIONS,
+from config import (perturb, with_retry, MODELS, FLAG_INVITING, SYSTEM_INSTRUCTIONS,
                     appears, passage, step_doc)
 from harness import (wilson_interval, PERTURBATION_LADDERS, SEVERITIES, validate_ladders,
                      total_steps, classify, lexical_caveat, UNANSWERABLE_ITEMS, validate_items,
@@ -208,8 +208,11 @@ class TestWithRetry(unittest.TestCase):
 
 
 class TestInstructions(unittest.TestCase):
-    def test_names_are_strict_then_permissive(self):
-        self.assertEqual([name for name, _ in CAVEAT_INSTRUCTIONS], ["SOURCE_EXCLUSIVE", "FLAG_INVITING"])
+    def test_instruction_names_and_order(self):
+        self.assertEqual([name for name, _ in SYSTEM_INSTRUCTIONS], ["SOURCE_EXCLUSIVE", "FLAG_INVITING", "WEAK_GROUNDING"])
+
+    def test_three_distinct_instructions(self):
+        self.assertEqual(len({t for _, t in SYSTEM_INSTRUCTIONS}), 3)
 
     def test_permissive_invites_flagging(self):
         self.assertIn("flag", FLAG_INVITING.lower())
@@ -356,14 +359,6 @@ class TestLegacyGoldGuard(unittest.TestCase):
                          lambda row: self.fail("judge must not be called"), "instruction")
         finally:
             os.unlink(path)
-
-
-class TestAbstentionInstructions(unittest.TestCase):
-    def test_names_and_order(self):
-        self.assertEqual([n for n, _ in ABSTENTION_INSTRUCTIONS], ["SOURCE_EXCLUSIVE", "FLAG_INVITING", "WEAK_GROUNDING"])
-
-    def test_three_distinct_instructions(self):
-        self.assertEqual(len({t for _, t in ABSTENTION_INSTRUCTIONS}), 3)
 
 
 class TestLoadDone(unittest.TestCase):

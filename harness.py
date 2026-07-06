@@ -2,8 +2,8 @@ import os
 import sys
 import json
 import csv
-from config import (passage, MODELS, N_PER_CELL, SOURCE_EXCLUSIVE, FLAG_INVITING, WEAK_GROUNDING, CAVEAT_INSTRUCTIONS,
-                    ABSTENTION_INSTRUCTIONS, call, with_retry, perturb, appears, step_doc)
+from config import (passage, MODELS, N_PER_CELL, SYSTEM_INSTRUCTIONS,
+                    call, with_retry, perturb, appears, step_doc)
 from judge import caveat_judge, abstention_judge, FAITHFUL, UNGROUNDED, QUESTIONED, SILENT, ENDORSED
 
 def wilson_interval(passes, n): # 95% Wilson score interval: chosen over Wald's interval to manage small sample size and extremely high/low results
@@ -103,7 +103,7 @@ def total_steps():
     return sum(len(f["steps"]) for f in PERTURBATION_LADDERS)
 
 def total_cells():
-    return len(MODELS) * len(CAVEAT_INSTRUCTIONS) * total_steps()
+    return len(MODELS) * len(SYSTEM_INSTRUCTIONS) * total_steps()
 
 def validate_ladders():
     problems = []
@@ -136,7 +136,7 @@ def print_plan(n): # a preview and cost estimate for running the harness, diagno
     if bounded:
         print(f"\n  note: {', '.join(bounded)} is bounded / non-ratio -- top severity is only mildly implausible; ordinal coverage only")
     cells = total_cells()
-    print(f"\n  {len(MODELS)} models x {len(CAVEAT_INSTRUCTIONS)} instructions x {total_steps()} ladder steps = {cells} cells")
+    print(f"\n  {len(MODELS)} models x {len(SYSTEM_INSTRUCTIONS)} instructions x {total_steps()} ladder steps = {cells} cells")
     print(f"  at N={n}: {cells * n} candidate calls + {cells * n} judge calls = {2 * cells * n} API calls")
     problems = validate_ladders()
     if problems:
@@ -167,7 +167,7 @@ def run_caveat(n):
     total = total_cells()
     seen = 0
     for model, prov in MODELS:
-        for iname, instr in CAVEAT_INSTRUCTIONS:
+        for iname, instr in SYSTEM_INSTRUCTIONS:
             for fact in PERTURBATION_LADDERS:
                 for s in fact["steps"]:
                     seen += 1
@@ -237,7 +237,7 @@ def summarize_caveat():
         rw[k] = rw.get(k, 0) + bool(r["reports_target"])
     wilson, wilson_end = {}, {}
     for model, _ in MODELS:
-        for iname, _ in CAVEAT_INSTRUCTIONS:
+        for iname, _ in SYSTEM_INSTRUCTIONS:
             for lv in SEVERITIES:
                 k = (model, iname, lv)
                 if tot.get(k):
@@ -246,7 +246,7 @@ def summarize_caveat():
     print("\nERROR-FLAGGING RATE vs PERTURBATION SEVERITY  (judge; severity 1=subtle .. 5=extreme)")
     print("  S0 = unperturbed control -- the error-flagging rate at S0 is the false-positive rate")
     for model, _ in MODELS:
-        for iname, _ in CAVEAT_INSTRUCTIONS:
+        for iname, _ in SYSTEM_INSTRUCTIONS:
             cells = []
             for lv in SEVERITIES:
                 k = (model, iname, lv)
@@ -259,7 +259,7 @@ def summarize_caveat():
     print("\nFALSE-REASSURANCE RATE vs PERTURBATION SEVERITY  (endorsed / n)")
     print("  S0 = unperturbed control -- endorsement at S0 vouches for a correct value and is benign")
     for model, _ in MODELS:
-        for iname, _ in CAVEAT_INSTRUCTIONS:
+        for iname, _ in SYSTEM_INSTRUCTIONS:
             cells = []
             for lv in SEVERITIES:
                 k = (model, iname, lv)
@@ -284,7 +284,7 @@ def summarize_caveat():
         w.writerow(["model", "instruction", "severity", "n", "questioned", "questioned_rate", "lo", "hi",
                     "endorsed", "endorsed_rate", "e_lo", "e_hi", "reports_target_rate", "lexical_caveat_rate"])
         for model, _ in MODELS:
-            for iname, _ in CAVEAT_INSTRUCTIONS:
+            for iname, _ in SYSTEM_INSTRUCTIONS:
                 for lv in SEVERITIES:
                     k = (model, iname, lv)
                     if k not in wilson:
@@ -346,8 +346,8 @@ def print_abstention_plan(n):
         print(f"  P{p['prior_strength']}  {p['item_id']:24} parametric_answer={p['parametric_answer']:10} {p['domain']} / {p['proximity']}")
         print(f"       q: {p['q']}")
     print("\n  note: the lexical parametric-answer check misses paraphrases (e.g. '28-day', '2.04 m') -- the judge is primary, lexical is a cross-check")
-    cells = len(MODELS) * len(ABSTENTION_INSTRUCTIONS) * len(UNANSWERABLE_ITEMS)
-    print(f"\n  {len(MODELS)} models x {len(ABSTENTION_INSTRUCTIONS)} instructions x {len(UNANSWERABLE_ITEMS)} items = {cells} cells")
+    cells = len(MODELS) * len(SYSTEM_INSTRUCTIONS) * len(UNANSWERABLE_ITEMS)
+    print(f"\n  {len(MODELS)} models x {len(SYSTEM_INSTRUCTIONS)} instructions x {len(UNANSWERABLE_ITEMS)} items = {cells} cells")
     print(f"  at N={n}: {cells * n} candidate calls + {cells * n} judge calls = {2 * cells * n} API calls")
     problems = validate_items()
     if problems:
@@ -363,10 +363,10 @@ def run_ungrounded(n):
         sys.exit(1)
     done = load_done(ABSTENTION_RESULTS, ["model", "instruction", "item_id"])
     out = open(ABSTENTION_RESULTS, "a")
-    total = len(MODELS) * len(ABSTENTION_INSTRUCTIONS) * len(UNANSWERABLE_ITEMS)
+    total = len(MODELS) * len(SYSTEM_INSTRUCTIONS) * len(UNANSWERABLE_ITEMS)
     seen = 0
     for model, prov in MODELS:
-        for iname, instr in ABSTENTION_INSTRUCTIONS:
+        for iname, instr in SYSTEM_INSTRUCTIONS:
             for p in UNANSWERABLE_ITEMS:
                 seen += 1
                 key = (model, iname, p["item_id"])
@@ -402,14 +402,14 @@ def summarize_ungrounded():
         vabst[k] = vabst.get(k, 0) + bool(r["verbatim_abstention"])
     wilson = {}
     for model, _ in MODELS:
-        for iname, _ in ABSTENTION_INSTRUCTIONS:
+        for iname, _ in SYSTEM_INSTRUCTIONS:
             for pr in PRIOR_STRENGTHS:
                 k = (model, iname, pr)
                 if tot.get(k):
                     wilson[k] = wilson_interval(ungrounded.get(k, 0), tot[k])
     print("\nPARAMETRIC-LEAKAGE RATE vs PRIOR STRENGTH  (judge; prior strength 1=obscure .. 5=universal)")
     for model, _ in MODELS:
-        for iname, _ in ABSTENTION_INSTRUCTIONS:
+        for iname, _ in SYSTEM_INSTRUCTIONS:
             cells = []
             for pr in PRIOR_STRENGTHS:
                 k = (model, iname, pr)
@@ -435,7 +435,7 @@ def summarize_ungrounded():
         w.writerow(["model", "instruction", "prior_strength", "n", "ungrounded", "ungrounded_rate", "lo", "hi",
                     "reports_parametric_answer_rate", "verbatim_abstention_rate"])
         for model, _ in MODELS:
-            for iname, _ in ABSTENTION_INSTRUCTIONS:
+            for iname, _ in SYSTEM_INSTRUCTIONS:
                 for pr in PRIOR_STRENGTHS:
                     k = (model, iname, pr)
                     if k not in wilson:
@@ -448,7 +448,7 @@ def summarize_ungrounded():
 def tradeoff_rows(caveat_rows, ungrounded_rows):
     entries = []
     for model, _ in MODELS:
-        for iname, _ in CAVEAT_INSTRUCTIONS: # compare the results between the tests
+        for iname, _ in SYSTEM_INSTRUCTIONS: # compare the results between the tests
             for lv in SEVERITIES:
                 f = [r for r in caveat_rows if r["model"] == model and r["instruction"] == iname and r["severity"] == lv]
                 l = [r for r in ungrounded_rows if r["model"] == model and r["instruction"] == iname and r["prior_strength"] == lv]
