@@ -419,23 +419,24 @@ class TestTradeoffRows(unittest.TestCase):
     def test_reports_each_severity_separately(self):
         caveat = [self._caveat("SOURCE_EXCLUSIVE", 5, QUESTIONED), self._caveat("SOURCE_EXCLUSIVE", 4, SILENT),
                 self._caveat("SOURCE_EXCLUSIVE", 1, QUESTIONED)]
-        ungrounded = [self._ungrounded("SOURCE_EXCLUSIVE", 5, UNGROUNDED), self._ungrounded("SOURCE_EXCLUSIVE", 3, UNGROUNDED)]
+        ungrounded = [self._ungrounded("SOURCE_EXCLUSIVE", 5, UNGROUNDED), self._ungrounded("SOURCE_EXCLUSIVE", 3, FAITHFUL)]
         entries = {e["severity"]: e for e in tradeoff_rows(caveat, ungrounded) if e["instruction"] == "SOURCE_EXCLUSIVE"}
         self.assertEqual(set(entries), {1, 3, 4, 5})
         self.assertEqual(entries[5]["caveat_n"], 1)
         self.assertAlmostEqual(entries[5]["caveat_rate"], 1.0)
-        self.assertEqual(entries[5]["ungrounded_n"], 1)
-        self.assertAlmostEqual(entries[5]["ungrounded_rate"], 1.0)
+        self.assertEqual(entries[5]["abstention_n"], 1)
+        self.assertAlmostEqual(entries[5]["faithful_rate"], 0.0)
         self.assertEqual(entries[4]["caveat_n"], 1)
         self.assertAlmostEqual(entries[4]["caveat_rate"], 0.0)
-        self.assertIsNone(entries[4]["ungrounded_rate"])
-        self.assertEqual(entries[3]["ungrounded_n"], 1)
+        self.assertIsNone(entries[4]["faithful_rate"])
+        self.assertEqual(entries[3]["abstention_n"], 1)
+        self.assertAlmostEqual(entries[3]["faithful_rate"], 1.0)
         self.assertIsNone(entries[3]["caveat_rate"])
 
     def test_one_side_missing_reports_other(self):
         entry = tradeoff_rows([self._caveat("FLAG_INVITING", 5, QUESTIONED)], [])[0]
         self.assertEqual(entry["severity"], 5)
-        self.assertIsNone(entry["ungrounded_rate"])
+        self.assertIsNone(entry["faithful_rate"])
         self.assertEqual(entry["caveat_n"], 1)
         self.assertAlmostEqual(entry["caveat_rate"], 1.0)
 

@@ -456,7 +456,7 @@ def tradeoff_rows(caveat_rows, ungrounded_rows):
                     continue
                 entries.append({"model": model, "instruction": iname, "severity": lv,
                                 "caveat_n": len(f), "caveat_rate": sum(r["label"] == QUESTIONED for r in f) / len(f) if f else None,
-                                "ungrounded_n": len(l), "ungrounded_rate": sum(r["label"] == UNGROUNDED for r in l) / len(l) if l else None})
+                                "abstention_n": len(l), "faithful_rate": sum(r["label"] == FAITHFUL for r in l) / len(l) if l else None})
     return entries
 
 def tradeoff():
@@ -474,14 +474,14 @@ def tradeoff():
     entries = tradeoff_rows(caveat_rows or [], ungrounded_rows or [])
     if not entries:
         return
-    print("TRADE-OFF -- error-flagging vs parametric leakage, per model x instruction x severity")
+    print("TRADE-OFF -- error-flagging vs faithful abstention, per model x instruction x severity (higher = better on both)")
     print("  flagging = error-flagging rate at this perturbation severity (denominator includes abstentions)")
-    print("  leakage = parametric-leakage rate at the matching prior-strength level")
+    print("  faithful = faithful rate (1 - parametric-leakage rate) at the matching prior-strength level")
     print("  S0 = unperturbed control: a flag at S0 is a false positive; it has no abstention counterpart")
     for e in entries:
         fr = "--" if e["caveat_rate"] is None else f"{e['caveat_rate']:.2f} (n={e['caveat_n']})"
-        lr = "--" if e["ungrounded_rate"] is None else f"{e['ungrounded_rate']:.2f} (n={e['ungrounded_n']})"
-        print(f"  {e['model']:<24} {e['instruction']:<10}  S{e['severity']}  flagging {fr:>14}   leakage {lr:>14}")
+        ar = "--" if e["faithful_rate"] is None else f"{e['faithful_rate']:.2f} (n={e['abstention_n']})"
+        print(f"  {e['model']:<24} {e['instruction']:<10}  S{e['severity']}  flagging {fr:>14}   faithful {ar:>14}")
 
 if __name__ == "__main__": # only run file if executed directly 
     args = sys.argv[1:] 
