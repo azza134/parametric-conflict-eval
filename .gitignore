@@ -3,7 +3,6 @@
 __pycache__/
 *.pyc
 archive/
-results.md
 abstention_judge_results.json
 caveat_judge_results.json
 discriminate_results.jsonl
