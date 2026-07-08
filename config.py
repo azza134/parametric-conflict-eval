@@ -1,4 +1,5 @@
 import anthropic
+import os
 import re
 import time
 from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
@@ -13,7 +14,7 @@ JUDGE_MODEL = "gpt-5.4-mini"  # LLM judge, ideally from a different model provid
 GOLD_CANDIDATE = ("claude-sonnet-5", "anthropic") # Model to be used for generating answers in the gold set
 N_PER_CELL = 8
 
-passage = open("document.txt").read()
+passage = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "document.txt")).read()
 
 # System Instructions
 SOURCE_EXCLUSIVE = (
