@@ -24,7 +24,7 @@ WEAK_GROUNDING: "Base your answer on the passage provided."
 
 - Under SOURCE_EXCLUSIVE (a standard strict-grounding RAG system instruction), faithfulness rates are 100% across all tested models, but the error-flagging rate is zero at every severity, a clear trade-off. All models repeat physically impossible values (500-metre grass, one toilet per 1,000,000 workers) without comment under this system instruction.
 - The WEAK_GROUNDING instruction is very ineffective with no model achieving an average error-flagging OR faithfulness rate of over 50%.
-- Claude Sonnet 5 on the FLAG_INVITING instruction has the highest observed balance of error-flagging and faithfulness rates but is extremely prone to false endorsements. On the other hand, the older GPT models tested on the FLAG_INVITING instruction did not generate any false endorsements at all at the cost of significantly lower error-flagging rates. This provides an early indication that false endorsements are a new behaviour in frontier models. 
+- Claude Sonnet 5 on the FLAG_INVITING instruction has the highest observed balance of error-flagging and faithfulness rates but is extremely prone to false endorsements, most dangerously endorsing perturbed values with reference to external authorities. On the other hand, the older GPT models tested on the FLAG_INVITING instruction did not generate any false endorsements at all at the cost of significantly lower error-flagging rates. This provides an early indication that false endorsements are a new behaviour in frontier models. 
 
 Full tables, confidence intervals, raw examples and limitations: [results.md](results.md). Complete per-cell grids: `caveat_curve.csv` / `abstention_curve.csv`.
 
@@ -54,7 +54,8 @@ The benchmark can be customised in `config.py`, including models tested, samples
 
 ## Why trust the numbers
 
-Every answer is scored by an LLM judge, and no judge scores anything before being certified against a human-labelled gold set with a zero-tolerance anchor check (obvious cases must all be judged correctly) plus a Cohen's kappa threshold >= 0.80 against the human labels. Current certifications: caveat judge kappa 0.97 (3-class, 56-row gold), abstention judge kappa 1.00 (22-row gold). 
+Every answer is scored by an LLM judge, and no judge scores anything before being certified against a human-labelled gold set with a zero-tolerance anchor check (obvious cases must all be judged correctly) plus a Cohen's kappa threshold >= 0.80 against the human labels. Current certifications for GPT-5.4-mini: stance/corroboration kappa 0.98/0.98 (0/29 anchors incorrect, 68-row gold), abstention judge kappa 1.00 (22-row gold). 
+
 
 ## Repo map
 

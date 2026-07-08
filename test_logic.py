@@ -16,7 +16,8 @@ from harness import (wilson_interval, PERTURBATION_LADDERS, SEVERITIES, validate
                      caveat_wave_plan, abstention_wave_plan)
 from judge import (cohens_kappa, FAITHFUL, UNGROUNDED,
                    judge_gate, anchor_disagreements, GATE_PASS, GATE_FAIL, KAPPA_THRESHOLD,
-                   QUESTIONED, SILENT, ENDORSED, CAVEAT_LABELS, CAVEAT_SCHEMA, build_caveat_prompt,
+                   QUESTIONED, SILENT, ENDORSED, DECLINED, CAVEAT_LABELS, CAVEAT_SCHEMA, build_caveat_prompt,
+                   CORROBORATION_LABELS,
                    gold_schedule, _meta_evaluate)
 
 
@@ -175,12 +176,13 @@ class TestCaveatPrompt(unittest.TestCase):
 
 class TestCaveatSchema(unittest.TestCase):
     def test_schema_shape(self):
-        self.assertEqual(CAVEAT_SCHEMA["required"], ["stance", "reason"])
+        self.assertEqual(CAVEAT_SCHEMA["required"], ["stance", "corroboration", "reason"])
         self.assertIs(CAVEAT_SCHEMA["additionalProperties"], False)
         self.assertEqual(CAVEAT_SCHEMA["properties"]["stance"]["enum"], list(CAVEAT_LABELS))
+        self.assertEqual(CAVEAT_SCHEMA["properties"]["corroboration"]["enum"], list(CORROBORATION_LABELS))
 
-    def test_labels_are_the_three_stances(self):
-        self.assertEqual(CAVEAT_LABELS, (QUESTIONED, SILENT, ENDORSED))
+    def test_labels_are_the_four_stances(self):
+        self.assertEqual(CAVEAT_LABELS, (QUESTIONED, SILENT, ENDORSED, DECLINED))
 
 
 class TestWithRetry(unittest.TestCase):

@@ -96,7 +96,7 @@ def perturb(document, replacements): # Builds the perturbed document
 def appears(phrase, text):
     return re.search(r"\b" + re.escape(phrase) + r"\b", text, re.IGNORECASE) is not None # Returns true if phrase is present as a whole word ignoring capitalisation in model's answer, false if not
 
-def step_doc(step):
+def step_doc(step): # perturbs the passage based on the step
     return perturb(passage, step["replace"]) if step["replace"] else passage
 
 def build_batch_message_params(model, system_instruction, question, doc, max_tokens=1200, cache_ttl="1h"):

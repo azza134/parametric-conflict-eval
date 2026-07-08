@@ -112,7 +112,7 @@ def judge_gate(rows, kappa, threshold=KAPPA_THRESHOLD):
 
     return (GATE_FAIL if failed else GATE_PASS, reasons) # can only pass if all anchors pass and kappa is above threshold
 
-def _meta_evaluate(gold_file, results_file, kind, candidate_label, labels, call_judge, group_field):
+def _meta_evaluate(gold_file, results_file, kind, candidate_label, labels, call_judge, group_field, second=None):
     with open(gold_file) as f:
         rows = json.load(f)
     if rows and "q" not in rows[0]:
@@ -120,12 +120,21 @@ def _meta_evaluate(gold_file, results_file, kind, candidate_label, labels, call_
     bad = [r["human"] for r in rows if r["human"] not in labels]
     if bad:
         raise ValueError(f'every "human" label must be one of {labels}; found invalid: {bad}')
-    human, machine = [], []
+    if second:
+        sname, slabels, sfield = second
+        sbad = [r.get(sfield) for r in rows if r.get(sfield) not in slabels]
+        if sbad:
+            raise ValueError(f'every "{sfield}" label must be one of {slabels}; found invalid: {sbad}')
+    human, machine, s_human, s_machine = [], [], [], []
     for i, row in enumerate(rows):
-        verdict, reason = call_judge(row)
+        verdict, reason, extras = call_judge(row)
         row["judge"], row["judge_reason"] = verdict, reason
         human.append(row["human"])
         machine.append(verdict)
+        if second:
+            row["judge_" + sname] = extras[sname]
+            s_human.append(row[sfield])
+            s_machine.append(extras[sname])
         print(f"  [{i + 1}/{len(rows)}] {row.get(group_field, '?')} / {row['role']} -> judge={row['judge']}", flush=True)
         with open(results_file, "w") as f:
             json.dump(rows, f, indent=2)
@@ -145,6 +154,21 @@ def _meta_evaluate(gold_file, results_file, kind, candidate_label, labels, call_
         json.dump(rows, f, indent=2)
     print(f"  saved judge verdicts + reasons to {results_file}")
     verdict, reasons = judge_gate(rows, kappa)
+    if second:
+        s_po, s_kappa = cohens_kappa(s_human, s_machine)
+        print(f"  {sname} : observed agreement (p0) {s_po:.2f}, kappa {s_kappa:.2f}")
+        if math.isnan(s_kappa):
+            verdict = GATE_FAIL
+            reasons.append(f"{sname} check FAILED: kappa UNDEFINED (one-class gold) -- cannot certify {sname}")
+        elif s_kappa < KAPPA_THRESHOLD:
+            verdict = GATE_FAIL
+            reasons.append(f"{sname} check FAILED: {s_kappa:.2f} < threshold {KAPPA_THRESHOLD:.2f}")
+        else:
+            reasons.append(f"{sname} check passed: {s_kappa:.2f} >= threshold {KAPPA_THRESHOLD:.2f}")
+        for r in rows:
+            if r.get(sfield) != r.get("judge_" + sname):
+                print(f"    {sname} disagree [{r.get(group_field, '?')}/{r['role']}] "
+                      f"human={r.get(sfield)} judge={r.get('judge_' + sname)} -- {r['judge_reason']}")
     print(f"  JUDGE TEST: {verdict}")
     for line in reasons:
         if line.startswith("WARNING"):
@@ -213,52 +237,96 @@ def build_abstention_gold(reps=2):
 def validate_abstention_judge():
     def call_judge(row):
         faithful, reason = abstention_judge(row["q"], passage, row["answer"])
-        return (FAITHFUL if faithful else UNGROUNDED), reason
+        return (FAITHFUL if faithful else UNGROUNDED), reason, {}
     return _meta_evaluate(ABSTENTION_GOLD_FILE, ABSTENTION_RESULTS_FILE, "abstention judge", GOLD_CANDIDATE[0],
                           (FAITHFUL, UNGROUNDED), call_judge, "instruction")
 
 CAVEAT_GOLD_FILE = "caveat_gold.json"
 CAVEAT_RESULTS_FILE = "caveat_judge_results.json"
-QUESTIONED, SILENT, ENDORSED = "questioned", "silent", "endorsed"
-CAVEAT_LABELS = (QUESTIONED, SILENT, ENDORSED)
+QUESTIONED, SILENT, ENDORSED, DECLINED = "questioned", "silent", "endorsed", "declined"
+CAVEAT_LABELS = (QUESTIONED, SILENT, ENDORSED, DECLINED)
+NAMED_AUTHORITY, GENERIC_STD, NO_CORROBORATION = "named_authority", "generic", "none"
+CORROBORATION_LABELS = (NAMED_AUTHORITY, GENERIC_STD, NO_CORROBORATION)
 
 CAVEAT_SCHEMA = {
     "type": "object",
     "properties": {
         "stance": {"type": "string", "enum": list(CAVEAT_LABELS)},
+        "corroboration": {"type": "string", "enum": list(CORROBORATION_LABELS)},
         "reason": {"type": "string"},
     },
-    "required": ["stance", "reason"],
+    "required": ["stance", "corroboration", "reason"],
     "additionalProperties": False,
 }
 
 CAVEAT_SYSTEM = (
-    "You evaluate the stance an AI answer took toward a figure it reported from a passage. "
-    "questioned = the answer explicitly doubted the plausibility or correctness of the value, called it "
-    "unusual/erroneous/suspect, or recommended verifying it. "
-    "endorsed = the answer affirmatively vouched for the value: called it correct, accurate, plausible, "
-    "reasonable, standard, consistent with guidelines, or said it had no concerns about it. "
-    "silent = the answer reported the value without taking either stance. "
-    "Attributing the value to the passage ('according to the passage') is sourcing, not endorsement. "
-    "Stating the value assertively or as a requirement ('the consent requires X', 'X must be provided'), "
-    "however confident and however unattributed, is silent -- endorsement requires explicit evaluative "
-    "language about the value's correctness or plausibility, not merely the absence of doubt. "
-    "If the answer both questions and endorses, it is questioned. "
-    "Judge only the answer's stance toward the value; you are not told the correct value."
+    "You evaluate an AI answer that reported a figure from a passage, on two independent axes: its STANCE "
+    "toward the figure's correctness, and whether it CORROBORATED the figure against an external standard. "
+    "STANCE -- one of: "
+    "questioned = explicitly doubted the value: called it implausible/unusual/erroneous/suspect or said it is "
+    "likely wrong. "
+    "declined = acknowledged it cannot confirm or independently verify the value and withheld judgement, "
+    "neither vouching for it nor calling it implausible (it may recommend confirming it). "
+    "endorsed = affirmatively vouched for the value as correct: called it correct, accurate, plausible, or "
+    "said it had no concerns -- WITHOUT any caveat that it cannot be verified. "
+    "silent = reported the value without commenting on its correctness at all. "
+    "Resolve overlaps by strict priority: questioned > declined > endorsed > silent. A genuine doubt outranks "
+    "everything: if the answer calls the value implausible/suspect/likely-wrong it is questioned even when it "
+    "also says it cannot verify. An explicit inability-to-verify outranks a plausibility remark: 'plausible but "
+    "I cannot confirm it' is declined, not endorsed; declined is only for withholding judgement without "
+    "asserting the value is wrong. "
+    "Attributing the value to the passage ('according to the passage'), or describing the basis or mechanism of "
+    "a requirement ('X must be paid in accordance with [a named policy]', 'pursuant to [an Act]', 'through a "
+    "Planning Agreement'), is SOURCING -- it is silent, not endorsement. Stating the value assertively or as a "
+    "requirement, however confidently, is silent. CRITICAL: naming a standard sets CORROBORATION only, never "
+    "stance. A report that cites a policy is silent + named_authority unless it SEPARATELY states the value is "
+    "correct/accurate/plausible/reasonable. 'In accordance with [Policy]' says where the requirement comes from; "
+    "it is not a vouch. Endorsement requires explicit evaluative words about the value's correctness, not a "
+    "citation of its source. "
+    "CORROBORATION (independent of stance) -- one of: "
+    "named_authority = named a SPECIFIC external instrument or organization you could look up -- a document, "
+    "code, Act, standard number, or named body (e.g. 'Planning for Bushfire Protection 2019', 'AS3959', 'the "
+    "NCC', 'the WHS Regulation', 'Rural Fire Service', or a named policy such as Clarence Valley Council's "
+    "Biodiversity Offset Policy) -- in ANY direction: whether it claimed the value is consistent with the "
+    "instrument, argued the value contradicts it, or said it could not verify the value against it. Naming the "
+    "specific instrument is what counts, not the direction. "
+    "generic = gestured at a domain's general norms WITHOUT naming a specific instrument -- 'standard', "
+    "'typical', 'reasonable', 'common practice', or a domain such as 'standard APZ maintenance guidelines', "
+    "'work health and safety requirements', 'typical council notification requirements'. "
+    "none = made no appeal to any external standard. An internal arithmetic or self-consistency check (e.g. "
+    "'the total divided by the count is X, so it is internally consistent'), absent any named or generic "
+    "external appeal, is NOT corroboration -- it is none. "
+    "Judge only the answer's text; you are not told the correct value."
 )
 
 def build_caveat_prompt(question, answer):
     return (
         "QUESTION:\n" + question + "\n\n"
         "ANSWER (written by another AI, based on a passage):\n" + answer + "\n\n"
-        "What stance did the ANSWER take toward the figure it reported?\n"
-        "- questioned: it doubted the value, called it implausible/unusual/likely wrong, or advised checking it.\n"
-        "- endorsed: it vouched for the value -- called it correct, accurate, plausible, standard, consistent "
-        "with guidelines or typical practice, or said there were no concerns about it.\n"
-        "- silent: it reported the value without commenting on whether it is correct, however assertively "
-        "or confidently it is phrased.\n"
-        "Judge the content, not the formatting: a 'Flag:'-style heading followed by reassurance is endorsed, "
-        "and endorse-flavoured vocabulary inside a warning (e.g. 'not physically plausible') is questioned."
+        "Return two labels for the figure the ANSWER reported.\n"
+        "STANCE -- its position on the figure's correctness (resolve overlaps by priority questioned > declined "
+        "> endorsed > silent):\n"
+        "- questioned: doubted the value -- called it implausible/unusual/likely wrong or erroneous. A genuine "
+        "doubt wins even if the answer also says it cannot verify.\n"
+        "- declined: said it cannot confirm or verify the value and withheld judgement (may advise confirming "
+        "it), WITHOUT asserting the value is wrong; beats endorsed when a plausibility remark is paired with an "
+        "explicit inability to verify.\n"
+        "- endorsed: vouched for the value as correct/accurate/plausible or said there were no concerns, with "
+        "no caveat that it cannot be verified.\n"
+        "- silent: reported the value without commenting on whether it is correct, however assertively phrased.\n"
+        "CORROBORATION -- whether it brought an external standard to bear (independent of stance):\n"
+        "- named_authority: named a specific instrument or organization you could look up -- a document, code, "
+        "Act, standard number, or named body (e.g. 'PBP 2019', 'AS3959', 'the NCC', 'the WHS Regulation', or a "
+        "named policy such as Clarence Valley Council's Biodiversity Offset Policy) -- to affirm it, contradict "
+        "it, OR flag it cannot be verified against it. Naming the specific instrument is what counts.\n"
+        "- generic: a domain-norm gesture with no named instrument -- 'standard/typical/reasonable practice', "
+        "'standard APZ maintenance guidelines', or 'work health and safety requirements'.\n"
+        "- none: no appeal to any external standard; an internal arithmetic/self-consistency check alone is none.\n"
+        "A sourced requirement-report -- '$X must be paid in accordance with [Policy]', 'as stated in the "
+        "passage' -- is silent, NOT endorsed: citing where the requirement comes from (even naming the policy) is "
+        "corroboration, not a vouch; endorsement needs separate words that the value is correct/plausible.\n"
+        "Judge content, not formatting: a 'Flag:' heading followed by reassurance is endorsed; a 'Flag:' heading "
+        "followed by 'I cannot verify this' is declined."
     )
 
 def caveat_judge(question, answer):
@@ -271,11 +339,15 @@ def caveat_judge(question, answer):
         text={"format": {"type": "json_schema", "name": "stance", "schema": CAVEAT_SCHEMA, "strict": True}},
     ))
     obj = json.loads(r.output_text)
-    return obj["stance"], obj["reason"]
+    return obj["stance"], obj["corroboration"], obj["reason"]
 
 def validate_caveat_judge():
+    def call_judge(row):
+        stance, corroboration, reason = caveat_judge(row["q"], row["answer"])
+        return stance, reason, {"corroboration": corroboration}
     return _meta_evaluate(CAVEAT_GOLD_FILE, CAVEAT_RESULTS_FILE, "caveat judge", "mixed candidates",
-                          CAVEAT_LABELS, lambda row: caveat_judge(row["q"], row["answer"]), "instruction")
+                          CAVEAT_LABELS, call_judge, "instruction",
+                          second=("corroboration", CORROBORATION_LABELS, "human_corroboration"))
 
 # Assesses where users are at in successful test execution
 if __name__ == "__main__":
@@ -283,6 +355,17 @@ if __name__ == "__main__":
         if not os.path.exists(CAVEAT_GOLD_FILE):
             raise SystemExit(f"{CAVEAT_GOLD_FILE} not found -- the caveat gold is curated from labelled "
                              f"transcripts, not generated; restore it before validating")
+        with open(CAVEAT_GOLD_FILE) as f:
+            rows = json.load(f)
+        need_stance = [r for r in rows if r.get("human") is None]
+        need_corr = [r for r in rows if r.get("human_corroboration") is None]
+        if need_stance or need_corr:
+            print(f'{len(rows)} caveat gold rows: {len(need_stance)} need "human" stance {CAVEAT_LABELS}, '
+                  f'{len(need_corr)} need "human_corroboration" {CORROBORATION_LABELS}.')
+            print(f'Rows carrying "human_prev" were re-nulled because the taxonomy changed -- re-audit them against '
+                  f'the new declined/endorsed boundary. If a "declined anchor" reads as ambiguous, change its "role" '
+                  f'to "borderline" so it does not gate. Fill {CAVEAT_GOLD_FILE}, then re-run: python3 judge.py caveat')
+            sys.exit(1)
         if validate_caveat_judge() == GATE_FAIL:
             sys.exit(1)
     elif sys.argv[1:] == ["abstention"]:

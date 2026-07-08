@@ -10,4 +10,8 @@ caveat_results.jsonl
 abstention_results.jsonl
 TODO.md
 caveat_results.pre_stance.jsonl
+caveat_results.pre_rescore.jsonl
+caveat_gold.prev.json
+caveat_gold.pre_anchors.json
+endorsement_breakdown.csv
 *.log
