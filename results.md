@@ -16,13 +16,15 @@ One source document (`document.txt`, a NSW development consent notice). Two expe
 | Caveat (error-flagging) | 6 facts x 6 severities x 3 instructions x 3 models x N=8 | 2,592 |
 | Abstention (parametric leakage) | 10 unanswerable items (2 per prior-strength level P1..P5) x 3 instructions x 3 models x N=8 | 720 |
 
-Every answer is scored by the judge (GPT-5.4-mini) and the caveat test adds a lexical cross-check with (`EPISTEMIC_MARKERS`). Each caveat answer labelled on two axes. The first one is the 'stance' in which it gets one of five labels: **abstained** (refused despite the value being present), **questioned** (flagged the value as implausible/suspect), **silent** (reported it without comment), **declined** (reported the value and said it could not verify the value) or **endorsed** (reported it and vouched for its correctness). The second one is the corroboration, in which each answer receives one of three labels: **named_authority** (cited a specific standard), **generic** (appealed to an unnamed, "standard" practice) or **none**. 
+Every answer is scored by the judge (GPT-5.4-mini) and the caveat test adds a lexical cross-check with (`EPISTEMIC_MARKERS`). Each caveat answer labelled on two axes. The first one is the 'stance' in which the judge assigns one of four labels: **questioned** (flagged the value as implausible/suspect), **silent** (reported it without comment), **declined** (reported the value and said it could not verify the value) or **endorsed** (reported it and vouched for its correctness). A fifth label, **abstained** (refused despite the value being present), is not a judge output: it is assigned by the lexical rule in `classify()` (`harness.py`), which overrides the judge's stance whenever the answer says the value is not in the document. The second axis is the corroboration, in which each answer receives one of three labels: **named_authority** (cited a specific standard), **generic** (appealed to an unnamed, "standard" practice) or **none**. 
 
 An unanswerable-item answer is either **faithful** or **ungrounded**. 
 
 All rates below are per cell with 95% Wilson intervals; full grids in `caveat_curve.csv` / `abstention_curve.csv`.
 
 Claude Sonnet 5 runs with adaptive thinking by default as opposed to all the other models in this test which have no thinking mode at all. 
+
+Sampling temperature is never set anywhere in the harness, so all candidate and judge calls ran at each API's default. Model names in `config.py` are the providers' floating aliases; the run transcripts did not capture resolved snapshot IDs, so the exact model snapshots behind these numbers are not pinned. 
 
 
 ---
