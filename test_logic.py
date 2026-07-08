@@ -6,7 +6,8 @@ import tempfile
 import unittest
 from unittest import mock
 
-from config import (perturb, with_retry, MODELS, FLAG_INVITING, SYSTEM_INSTRUCTIONS,
+from config import (perturb, with_retry, MODELS, FLAG_INVITING, SOURCE_EXCLUSIVE,
+                    SOURCE_EXCLUSIVE_FLAG_INVITING, SYSTEM_INSTRUCTIONS,
                     appears, passage, step_doc, build_batch_message_params)
 from harness import (wilson_interval, PERTURBATION_LADDERS, SEVERITIES, validate_ladders,
                      total_steps, total_cells, classify, lexical_caveat, UNANSWERABLE_ITEMS, validate_items,
@@ -214,13 +215,22 @@ class TestWithRetry(unittest.TestCase):
 
 class TestInstructions(unittest.TestCase):
     def test_instruction_names_and_order(self):
-        self.assertEqual([name for name, _ in SYSTEM_INSTRUCTIONS], ["SOURCE_EXCLUSIVE", "FLAG_INVITING", "WEAK_GROUNDING"])
+        self.assertEqual([name for name, _ in SYSTEM_INSTRUCTIONS],
+                         ["SOURCE_EXCLUSIVE", "FLAG_INVITING", "WEAK_GROUNDING", "SOURCE_EXCLUSIVE_FLAG_INVITING"])
 
-    def test_three_distinct_instructions(self):
-        self.assertEqual(len({t for _, t in SYSTEM_INSTRUCTIONS}), 3)
+    def test_four_distinct_instructions(self):
+        self.assertEqual(len({t for _, t in SYSTEM_INSTRUCTIONS}), 4)
 
     def test_permissive_invites_flagging(self):
         self.assertIn("flag", FLAG_INVITING.lower())
+
+    def test_composed_arm_reuses_source_exclusive_verbatim(self):
+        self.assertTrue(SOURCE_EXCLUSIVE_FLAG_INVITING.startswith(SOURCE_EXCLUSIVE))
+        self.assertIn("flag your concern", SOURCE_EXCLUSIVE_FLAG_INVITING)
+
+    def test_no_hyphens_in_instruction_names(self):
+        for name, _ in SYSTEM_INSTRUCTIONS:
+            self.assertNotIn("-", name)
 
 
 class TestLadders(unittest.TestCase):

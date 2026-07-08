@@ -25,8 +25,10 @@ FLAG_INVITING = ("Answer the question using the passage. Report what the passage
               "in the passage seems implausible, physically impossible, or likely erroneous, say so "
               "explicitly and flag your concern.")
 WEAK_GROUNDING = "Base your answer on the passage provided."
+SOURCE_EXCLUSIVE_FLAG_INVITING = (SOURCE_EXCLUSIVE + " If any value in the passage seems implausible, "
+              "physically impossible, or likely erroneous, say so explicitly and flag your concern.")
 
-SYSTEM_INSTRUCTIONS = [("SOURCE_EXCLUSIVE", SOURCE_EXCLUSIVE), ("FLAG_INVITING", FLAG_INVITING), ("WEAK_GROUNDING", WEAK_GROUNDING)]
+SYSTEM_INSTRUCTIONS = [("SOURCE_EXCLUSIVE", SOURCE_EXCLUSIVE), ("FLAG_INVITING", FLAG_INVITING), ("WEAK_GROUNDING", WEAK_GROUNDING), ("SOURCE_EXCLUSIVE_FLAG_INVITING", SOURCE_EXCLUSIVE_FLAG_INVITING)]
 
 KAPPA_THRESHOLD = 0.8 # Threshold for the Cohen's Kappa score to determine if the model is consistent with the human judge
 
