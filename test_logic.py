@@ -14,7 +14,7 @@ from harness import (wilson_interval, PERTURBATION_LADDERS, SEVERITIES, validate
                      load_done, tradeoff_rows, PRIOR_STRENGTHS,
                      encode_caveat_custom_id, decode_caveat_custom_id,
                      encode_abstention_custom_id, decode_abstention_custom_id,
-                     caveat_wave_plan, abstention_wave_plan)
+                     caveat_wave_plan, abstention_wave_plan, concurrent_map)
 from judge import (cohens_kappa, FAITHFUL, UNGROUNDED,
                    judge_gate, anchor_disagreements, GATE_PASS, GATE_FAIL, KAPPA_THRESHOLD,
                    QUESTIONED, SILENT, ENDORSED, DECLINED, CAVEAT_LABELS, CAVEAT_SCHEMA, build_caveat_prompt,
@@ -231,6 +231,27 @@ class TestInstructions(unittest.TestCase):
     def test_no_hyphens_in_instruction_names(self):
         for name, _ in SYSTEM_INSTRUCTIONS:
             self.assertNotIn("-", name)
+
+
+class TestConcurrentMap(unittest.TestCase):
+    def test_preserves_order(self):
+        items = list(range(50))
+        self.assertEqual(concurrent_map(lambda x: x * x, items, workers=8), [x * x for x in items])
+
+    def test_serial_fallback_matches(self):
+        self.assertEqual(concurrent_map(str, [1, 2, 3], workers=1), ["1", "2", "3"])
+
+    def test_empty_and_singleton(self):
+        self.assertEqual(concurrent_map(lambda x: x, [], workers=8), [])
+        self.assertEqual(concurrent_map(lambda x: x + 1, [41], workers=8), [42])
+
+    def test_propagates_exception(self):
+        def boom(x):
+            if x == 3:
+                raise ValueError("boom")
+            return x
+        with self.assertRaises(ValueError):
+            concurrent_map(boom, [1, 2, 3, 4], workers=4)
 
 
 class TestLadders(unittest.TestCase):

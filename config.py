@@ -13,6 +13,7 @@ MODELS = [("gpt-4o-mini", "openai"), ("gpt-5.4-nano", "openai"), ("claude-sonnet
 JUDGE_MODEL = "gpt-5.4-mini"  # LLM judge, ideally from a different model provider to the candidate model
 GOLD_CANDIDATE = ("claude-sonnet-5", "anthropic") # Model to be used for generating answers in the gold set
 N_PER_CELL = 8
+JUDGE_CONCURRENCY = 4
 
 passage = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "document.txt")).read()
 

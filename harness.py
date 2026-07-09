@@ -5,7 +5,8 @@ import json
 import csv
 import shutil
 import pandas as pd
-from config import (passage, MODELS, N_PER_CELL, SYSTEM_INSTRUCTIONS,
+from concurrent.futures import ThreadPoolExecutor
+from config import (passage, MODELS, N_PER_CELL, JUDGE_CONCURRENCY, SYSTEM_INSTRUCTIONS,
                     call, with_retry, perturb, appears, step_doc,
                     build_batch_message_params, extract_anthropic_text,
                     submit_anthropic_batch, poll_anthropic_batch, anthropic_batch_results)
@@ -13,6 +14,12 @@ from judge import (caveat_judge, abstention_judge, FAITHFUL, UNGROUNDED, QUESTIO
                    DECLINED, NAMED_AUTHORITY)
 
 INSTR_BY_NAME = dict(SYSTEM_INSTRUCTIONS)
+
+def concurrent_map(fn, items, workers=JUDGE_CONCURRENCY):
+    if workers <= 1 or len(items) <= 1:
+        return [fn(x) for x in items]
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        return list(ex.map(fn, items))
 
 def wilson_interval(passes, n): # 95% Wilson score interval: chosen over Wald's interval to manage small sample size and extremely high/low results
     z = 1.96
@@ -332,18 +339,30 @@ def rescore_caveat(models=None):
     src = [json.loads(l) for l in open(CAVEAT_RESULTS)]
     scope = "all models" if models is None else "/".join(models)
     n_scope = len([r for r in src if models is None or r["model"] in models])
-    print(f"rescoring {n_scope}/{len(src)} transcripts ({scope}) under the certified judge ({already} already done)")
-    out = open(CAVEAT_RESCORE_PARTIAL, "a")
-    for i in range(already, len(src)):
-        r = dict(src[i])
+    print(f"rescoring {n_scope}/{len(src)} transcripts ({scope}) under the certified judge "
+          f"({already} already done, {JUDGE_CONCURRENCY}-way)")
+
+    def rescore_one(r):
+        r = dict(r)
         if models is None or r["model"] in models:
             stance, corroboration, reason = caveat_judge(q_by_fact[r["fact"]], r["answer"])
             r.pop("caveat_judge", None)
             r.pop("caveat_reason", None)
             r["stance"], r["corroboration"], r["stance_reason"] = stance, corroboration, reason
             r["label"] = classify(r["answer"], stance)
-            print(f"  [{i + 1}/{len(src)}] {r['model']} / {r['instruction']} / {r['fact']} S{r['severity']} -> {r['label']} / {corroboration}", flush=True)
-        out.write(json.dumps(r) + "\n")
+            r["_rescored"] = True
+        return r
+
+    out = open(CAVEAT_RESCORE_PARTIAL, "a")
+    chunk = max(JUDGE_CONCURRENCY * 4, 1)
+    done = already
+    for start in range(already, len(src), chunk):
+        for r in concurrent_map(rescore_one, src[start:start + chunk]):
+            done += 1
+            if r.pop("_rescored", False):
+                print(f"  [{done}/{len(src)}] {r['model']} / {r['instruction']} / {r['fact']} S{r['severity']} "
+                      f"-> {r['label']} / {r.get('corroboration')}", flush=True)
+            out.write(json.dumps(r) + "\n")
         out.flush()
     out.close()
     os.replace(CAVEAT_RESCORE_PARTIAL, CAVEAT_RESULTS)
