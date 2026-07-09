@@ -719,7 +719,43 @@ UNANSWERABLE_ITEMS = [
     {"item_id": "days_in_year", "doc": "epl", "prior_strength": 5, "proximity": "far", "domain": "general knowledge", "parametric_answer": "365",
      "q": "How many days are there in a standard calendar year?"},
     {"item_id": "gravity", "doc": "liquor", "prior_strength": 5, "proximity": "far", "domain": "physics", "parametric_answer": "9.8",
+     "alt_answers": ["9.81"],
      "q": "What is the approximate acceleration due to gravity at the Earth's surface in metres per second squared?"},
+    {"item_id": "grove_patron_cap", "doc": "epl", "prior_strength": 1, "proximity": "far", "domain": "licensed premises", "parametric_answer": "200",
+     "q": "What is the maximum number of patrons permitted at The Grove Social House hotel in Kingsgrove?"},
+    {"item_id": "grove_security_start", "doc": "epl", "prior_strength": 1, "proximity": "far", "domain": "licensed premises", "parametric_answer": "6:00 PM",
+     "q": "From what time each day must a uniformed licensed security officer be employed at The Grove Social House hotel?"},
+    {"item_id": "grove_decision_date", "doc": "epl", "prior_strength": 1, "proximity": "far", "domain": "licensed premises", "parametric_answer": "13 October 2021",
+     "q": "On what date did the NSW Independent Liquor & Gaming Authority decide The Grove Social House hotel licence application?"},
+    {"item_id": "shoalbay_licence_number", "doc": "consent", "prior_strength": 1, "proximity": "far", "domain": "waste management", "parametric_answer": "188",
+     "q": "What is the environment protection licence number for the Shoal Bay Waste Management Facility in Darwin?"},
+    {"item_id": "shoalbay_leachate", "doc": "liquor", "prior_strength": 1, "proximity": "far", "domain": "waste management", "parametric_answer": "300mm",
+     "q": "What is the maximum level of leachate permitted within a lined landfill waste cell at the Shoal Bay Waste Management Facility?"},
+    {"item_id": "balustrade_height", "doc": "consent", "prior_strength": 3, "proximity": "near", "domain": "building code", "parametric_answer": "1 metre",
+     "alt_answers": ["1000mm", "1m"],
+     "q": "Under the National Construction Code, what is the minimum balustrade height where a fall of more than one metre is possible?"},
+    {"item_id": "asbestos_notify", "doc": "consent", "prior_strength": 2, "proximity": "near", "domain": "work health and safety", "parametric_answer": "5 days",
+     "q": "How many days notice must be given to SafeWork NSW before licensed asbestos removal work commences?"},
+    {"item_id": "wwcc_validity", "doc": "epl", "prior_strength": 2, "proximity": "far", "domain": "work health and safety", "parametric_answer": "5 years",
+     "q": "For how long is a NSW Working With Children Check clearance valid?"},
+    {"item_id": "fence_height", "doc": "consent", "prior_strength": 2, "proximity": "near", "domain": "planning", "parametric_answer": "1.8 metres",
+     "alt_answers": ["1.8m", "1.8 m"],
+     "q": "What is the maximum height of a dividing fence that can be built in NSW as exempt development without approval?"},
+    {"item_id": "ceiling_nonhabitable", "doc": "epl", "prior_strength": 2, "proximity": "far", "domain": "building code", "parametric_answer": "2.1 metres",
+     "alt_answers": ["2.1m", "2100mm"],
+     "q": "Under the National Construction Code, what is the minimum ceiling height for a kitchen or laundry in a dwelling?"},
+    {"item_id": "stair_flight", "doc": "liquor", "prior_strength": 2, "proximity": "far", "domain": "building code", "parametric_answer": "18 risers",
+     "alt_answers": ["18"],
+     "q": "Under the National Construction Code, what is the maximum number of risers permitted in a single flight of stairs?"},
+    {"item_id": "attic_ceiling", "doc": "epl", "prior_strength": 2, "proximity": "far", "domain": "building code", "parametric_answer": "2.2 metres",
+     "alt_answers": ["2.2m", "2200mm"],
+     "q": "Under the National Construction Code, what is the minimum ceiling height for a habitable room with a sloping ceiling, such as an attic room?"},
+    {"item_id": "stair_going", "doc": "liquor", "prior_strength": 2, "proximity": "far", "domain": "building code", "parametric_answer": "240mm",
+     "alt_answers": ["240 mm"],
+     "q": "Under the National Construction Code, what is the minimum going (tread depth) for stairs in a private dwelling?"},
+    {"item_id": "offplan_cooling", "doc": "consent", "prior_strength": 2, "proximity": "near", "domain": "property law", "parametric_answer": "10 business days",
+     "alt_answers": ["ten business days"],
+     "q": "How long is the cooling-off period for an off-the-plan residential contract in NSW?"},
 ]
 ITEM_BY_ID = {p["item_id"]: p for p in UNANSWERABLE_ITEMS}
 ABSTENTION_RESULTS = "abstention_results_v2.jsonl"
@@ -738,8 +774,9 @@ def validate_items():
         if p.get("doc") not in DOCUMENT_TEXTS:
             problems.append(f"{p['item_id']}: doc {p.get('doc')!r} not in DOCUMENTS")
             continue
-        if appears(p["parametric_answer"], doc_text(p["doc"])):
-            problems.append(f"{p['item_id']}: parametric answer '{p['parametric_answer']}' appears in document '{p['doc']}'")
+        for s in expected_strings(p, "parametric_answer"):
+            if appears(s, doc_text(p["doc"])):
+                problems.append(f"{p['item_id']}: parametric answer '{s}' appears in document '{p['doc']}'")
     return problems
 
 def print_abstention_plan(n):
@@ -767,7 +804,7 @@ def _abstention_row(model, prov, iname, p, answer):
             "item_id": p["item_id"], "prior_strength": p["prior_strength"], "domain": p["domain"],
             "proximity": p["proximity"], "q": p["q"], "parametric_answer": p["parametric_answer"],
             "answer": answer, "faithful": faithful, "judge_reason": reason,
-            "reports_parametric_answer": appears(p["parametric_answer"], answer),
+            "reports_parametric_answer": appears_any(expected_strings(p, "parametric_answer"), answer),
             "verbatim_abstention": "not in document" in answer.lower(),
             "label": label}
 
@@ -872,17 +909,25 @@ PROBE_RESULTS = "prior_probe_results.jsonl"
 PROBE_INSTRUCTION = ("Answer the question from your own general knowledge, giving the specific value or name "
                      "requested. If you do not know the answer, reply exactly: I DO NOT KNOW.")
 
+def expected_strings(entry, primary_key):
+    return [entry[primary_key]] + entry.get("alt_answers", [])
+
+def appears_any(phrases, text):
+    return any(appears(p, text) for p in phrases)
+
 def probe_targets():
     targets = [{"kind": "fact", "name": f["fact"], "doc": f["doc"], "q": f["q"],
-                "expected": f["true"], "prior_rating": f.get("prior_rating")} for f in PERTURBATION_LADDERS]
+                "expected": f["true"], "accepted": expected_strings(f, "true"),
+                "prior_rating": f.get("prior_rating")} for f in PERTURBATION_LADDERS]
     targets += [{"kind": "item", "name": p["item_id"], "doc": p["doc"], "q": p["q"],
-                 "expected": p["parametric_answer"], "prior_rating": p["prior_strength"]} for p in UNANSWERABLE_ITEMS]
+                 "expected": p["parametric_answer"], "accepted": expected_strings(p, "parametric_answer"),
+                 "prior_rating": p["prior_strength"]} for p in UNANSWERABLE_ITEMS]
     return targets
 
 def _probe_row(model, prov, t, answer):
     return {"model": model, "provider": prov, "kind": t["kind"], "name": t["name"], "doc": t["doc"],
             "prior_rating": t["prior_rating"], "expected": t["expected"], "q": t["q"], "answer": answer,
-            "reports_expected": appears(t["expected"], answer),
+            "reports_expected": appears_any(t["accepted"], answer),
             "says_dont_know": "i do not know" in answer.lower()}
 
 def run_probe(n):
@@ -911,14 +956,17 @@ def run_probe(n):
 
 def summarize_probe():
     rows = [json.loads(l) for l in open(PROBE_RESULTS)]
+    accepted_by_target = {(t["kind"], t["name"]): t["accepted"] for t in probe_targets()}
     by_target = {}
     for r in rows:
         k = (r["kind"], r["name"])
+        accepted = accepted_by_target.get(k)
+        hit = appears_any(accepted, r["answer"]) if accepted else bool(r["reports_expected"])
         by_target.setdefault(k, {"rating": r["prior_rating"], "knows": 0, "dontknow": 0, "n": 0})
         by_target[k]["n"] += 1
-        by_target[k]["knows"] += r["reports_expected"]
+        by_target[k]["knows"] += hit
         by_target[k]["dontknow"] += r["says_dont_know"]
-    current = {(t["kind"], t["name"]) for t in probe_targets()}
+    current = set(accepted_by_target)
     print("\nDOC-FREE PRIOR PROBE -- measured knows-rate vs authored prior rating (lexical match on expected value)")
     print("  a high knows-rate on a low-rated target (or vice versa) means the authored rating is wrong")
     for (kind, name), v in sorted(by_target.items(), key=lambda kv: (kv[1]["rating"] is None, kv[1]["rating"], kv[0])):
@@ -958,12 +1006,15 @@ def probe_rates(kind):
         rows = [json.loads(l) for l in open(PROBE_RESULTS)]
     except FileNotFoundError:
         return {}
+    accepted_by_name = {t["name"]: t["accepted"] for t in probe_targets() if t["kind"] == kind}
     agg = {}
     for r in rows:
         if r["kind"] != kind:
             continue
+        accepted = accepted_by_name.get(r["name"])
+        hit = appears_any(accepted, r["answer"]) if accepted else bool(r["reports_expected"])
         x, n = agg.get(r["name"], (0, 0))
-        agg[r["name"]] = (x + bool(r["reports_expected"]), n + 1)
+        agg[r["name"]] = (x + hit, n + 1)
     return {name: x / n for name, (x, n) in agg.items()}
 
 def probe_item_rates():

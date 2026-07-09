@@ -339,7 +339,7 @@ class TestPriorProbe(unittest.TestCase):
         self.assertEqual(t["prior_rating"], 5)
 
     def test_probe_row_lexical_flags(self):
-        t = {"kind": "fact", "name": "x", "doc": "consent", "q": "?", "expected": "20", "prior_rating": 3}
+        t = {"kind": "fact", "name": "x", "doc": "consent", "q": "?", "expected": "20", "accepted": ["20"], "prior_rating": 3}
         row = _probe_row("m", "openai", t, "The value is 20 persons.")
         self.assertTrue(row["reports_expected"])
         self.assertFalse(row["says_dont_know"])
@@ -518,8 +518,8 @@ class TestUnanswerableItems(unittest.TestCase):
         for p in UNANSWERABLE_ITEMS:
             self.assertFalse(appears(p["parametric_answer"], doc_text(p["doc"])), p["item_id"])
 
-    def test_ten_items_after_top_bin_cut(self):
-        self.assertEqual(len(UNANSWERABLE_ITEMS), 10)
+    def test_twenty_four_items_after_bin_filling(self):
+        self.assertEqual(len(UNANSWERABLE_ITEMS), 24)
 
     def test_item_ids_unique(self):
         item_ids = [p["item_id"] for p in UNANSWERABLE_ITEMS]
@@ -576,8 +576,8 @@ class TestLoadDone(unittest.TestCase):
 
 
 class TestGoldSchedule(unittest.TestCase):
-    def test_twenty_rows_at_reps_2(self):
-        self.assertEqual(len(gold_schedule(UNANSWERABLE_ITEMS, 2)), 20)
+    def test_forty_eight_rows_at_reps_2(self):
+        self.assertEqual(len(gold_schedule(UNANSWERABLE_ITEMS, 2)), 48)
 
     def test_both_anchor_classes_present(self):
         roles = {role for _, _, role in gold_schedule(UNANSWERABLE_ITEMS, 2)}
