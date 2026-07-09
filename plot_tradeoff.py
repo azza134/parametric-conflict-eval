@@ -14,6 +14,7 @@ INSTRUCTION_COLOR = {
     "SOURCE_EXCLUSIVE": "#2a78d6",
     "FLAG_INVITING": "#e34948",
     "WEAK_GROUNDING": "#008300",
+    "SOURCE_EXCLUSIVE_FLAG_INVITING": "#8a4fbf",
 }
 MODEL_MARKER = {
     "gpt-4o-mini": "o",
@@ -78,6 +79,7 @@ label_offsets = {
     "SOURCE_EXCLUSIVE": (10, 16),
     "FLAG_INVITING": (10, -14),
     "WEAK_GROUNDING": (10, 6),
+    "SOURCE_EXCLUSIVE_FLAG_INVITING": (12, 10),
 }
 for instr in INSTRUCTIONS:
     x, y = points[("claude-sonnet-5", instr)]

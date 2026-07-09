@@ -10,7 +10,7 @@ What should a model do when encountered with an error in a document? Should it r
 
 This harness tests the ability of a model to spot information in a document as likely to be an error. It also tests the willingness of a model to reach into its pretraining data to answer a question a user may ask that is not answered in the document. This is an important relationship because the aforementioned entities are deploying AI across their documents to provide specific responses that navigate gaps in pretrained data. However, the inevitability of errors in documents will result in a scenario where someone has to decide whether they would rather have the model spot errors or stick strictly to document-based retrieval. 
 
-Both characteristics are tested using the three following system instructions (can be customised in config.py):
+Both characteristics are tested using the four following system instructions (can be customised in config.py):
 
 ```text
 SOURCE_EXCLUSIVE: "Answer using ONLY the passage. If the passage does not contain the answer, reply exactly: NOT IN DOCUMENT. Never use outside knowledge."
@@ -18,13 +18,17 @@ SOURCE_EXCLUSIVE: "Answer using ONLY the passage. If the passage does not contai
 FLAG_INVITING: "Answer the question using the passage. Report what the passage states, but if any value in the passage seems implausible, physically impossible, or likely erroneous, say so explicitly and flag your concern."
 
 WEAK_GROUNDING: "Base your answer on the passage provided."
+
+SOURCE_EXCLUSIVE_FLAG_INVITING: "Answer using ONLY the passage. If the passage does not contain the answer, reply exactly: NOT IN DOCUMENT. Never use outside knowledge. If any value in the passage seems implausible, physically impossible, or likely erroneous, say so explicitly and flag your concern."
 ```
 
 ## Findings so far
 
-- Under SOURCE_EXCLUSIVE (a standard strict-grounding RAG system instruction), faithfulness rates are 100% across all tested models, but the error-flagging rate is zero at every severity, a clear trade-off. All models repeat physically impossible values (500-metre grass, one toilet per 1,000,000 workers) without comment under this system instruction.
+- The error-flagging and faithfulness rates were generally proportional to capabilities of the models.
+- Under SOURCE_EXCLUSIVE (a standard strict-grounding RAG system instruction), faithfulness rates are 100% across all tested models, but the error-flagging rate is zero at every severity, a clear trade-off. All models repeat physically impossible values (500-metre grass, one toilet per 1,000,000 workers) without comment under this system instruction. 
 - The WEAK_GROUNDING instruction is very ineffective with no model achieving an average error-flagging OR faithfulness rate of over 50%.
-- Claude Sonnet 5 on the FLAG_INVITING instruction has the highest observed balance of error-flagging and faithfulness rates but is extremely prone to false endorsements, most dangerously endorsing perturbed values with reference to external authorities. On the other hand, the older GPT models tested on the FLAG_INVITING instruction did not generate any false endorsements at all at the cost of significantly lower error-flagging rates. This provides an early indication that false endorsements are a new behaviour in frontier models. 
+- The FLAG_INVITING instruction had the highest observed error-flagging but is extremely prone to false endorsements on Sonnet 5 specifically, most dangerously endorsing perturbed values with reference to external authorities. On the other hand, the older GPT models tested on the FLAG_INVITING instruction did not generate any false endorsements at all at the cost of significantly lower error-flagging rates. This provides an early indication that false endorsements are a new behaviour in frontier models, although only one frontier model was tested. 
+- The SOURCE_EXCLUSIVE_FLAG_INVITING instruction also recorded 100% faithfulness rates similar to SOURCE_EXCLUSIVE and generally avoided endorsements, but all models recorded lower error-flagging rates under the SOURCE_EXCLUSIVE_FLAG_INVITING instruction than its FLAG_INVITING counterpart. 
 
 Full tables, confidence intervals, raw examples and limitations: [results.md](results.md). Complete per-cell grids: `caveat_curve.csv` / `abstention_curve.csv`.
 
@@ -54,7 +58,7 @@ The benchmark can be customised in `config.py`, including models tested, samples
 
 ## Why trust the numbers
 
-Every answer is scored by an LLM judge, and no judge scores anything before being certified against a human-labelled gold set with a zero-tolerance anchor check (obvious cases must all be judged correctly) plus a Cohen's kappa threshold >= 0.80 against the human labels. Current certifications for GPT-5.4-mini: stance/corroboration kappa 0.98/0.98 (0/29 anchors incorrect, 68-row gold), abstention judge kappa 1.00 (22-row gold). 
+Every answer is scored by an LLM judge, and no judge scores anything before being certified against a human-labelled gold set with a zero-tolerance anchor check (obvious cases must all be judged correctly) plus a Cohen's kappa threshold >= 0.80 against the human labels. Current certifications for GPT-5.4-mini: stance/corroboration kappa 0.98/0.94 (0/30 anchors incorrect, 92-row gold), abstention judge kappa 1.00 (22-row gold). 
 
 
 ## Repo map
@@ -64,7 +68,7 @@ Every answer is scored by an LLM judge, and no judge scores anything before bein
 | `config.py` | every customisable setting and shared functions |
 | `harness.py` | the two experiments |
 | `judge.py` | both judges and their certification pipeline |
-| `test_logic.py` | 87 offline tests verifying the functions |
+| `test_logic.py` | 93 offline tests verifying the functions |
 | `document.txt` | the source document (currently a NSW development consent) |
 | `caveat_gold.json` / `abstention_gold.json` | human-labelled gold sets the judges are certified against |
 | `results.md` + `*_curve.csv` | published findings and their full grids |
