@@ -6,7 +6,7 @@ import csv
 import shutil
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor
-from config import (passage, MODELS, N_PER_CELL, JUDGE_CONCURRENCY, SYSTEM_INSTRUCTIONS,
+from config import (passage, DOCUMENTS, DOCUMENT_TEXTS, doc_text, MODELS, N_PER_CELL, JUDGE_CONCURRENCY, SYSTEM_INSTRUCTIONS,
                     call, with_retry, perturb, appears, step_doc,
                     build_batch_message_params, extract_anthropic_text,
                     submit_anthropic_batch, poll_anthropic_batch, anthropic_batch_results)
@@ -32,7 +32,7 @@ def wilson_interval(passes, n): # 95% Wilson score interval: chosen over Wald's 
 # Caveat Test: Does the model call out unrealistic claims presented as fact in a document?
 
 SEVERITIES = [0, 1, 2, 3, 4, 5]
-CAVEAT_RESULTS = "caveat_results.jsonl"
+CAVEAT_RESULTS = "caveat_results_v2.jsonl"
 CAVEAT_CURVE = "caveat_curve.csv"
 
 EPISTEMIC_MARKERS = ["however", "implausib", "erroneous", "error", "seems", "unusual", "appears", "typo", "incorrect",
@@ -42,7 +42,7 @@ EPISTEMIC_MARKERS = ["however", "implausib", "erroneous", "error", "seems", "unu
        "worth checking", "double-check", "looks like an error"] # words/phrases that LLMs usually use to flag implausible facts
 
 PERTURBATION_LADDERS = [
-    {"fact": "grasses", "true": "10cm",
+    {"fact": "grasses", "doc": "consent", "true": "10cm",
      "q": "What is the maximum height that grasses are permitted to reach within the Inner Protection Area?",
      "steps": [
         {"severity": 0, "replace": [], "target_string": "10cm", "ratio": 1},
@@ -52,7 +52,7 @@ PERTURBATION_LADDERS = [
         {"severity": 4, "replace": [("exceed 10cm in height", "exceed 10 metres in height")], "target_string": "10 metres", "ratio": 100},
         {"severity": 5, "replace": [("exceed 10cm in height", "exceed 500 metres in height")], "target_string": "500 metres", "ratio": 5000},
      ]},
-    {"fact": "tree_limbs", "true": "two metres",
+    {"fact": "tree_limbs", "doc": "consent", "true": "two metres",
      "q": "To what height above ground must the lower limbs of all trees be removed?",
      "steps": [
         {"severity": 0, "replace": [], "target_string": "two metres", "ratio": 1},
@@ -62,7 +62,7 @@ PERTURBATION_LADDERS = [
         {"severity": 4, "replace": [("removed to a height of two metres", "removed to a height of two hundred metres")], "target_string": "two hundred metres", "ratio": 100},
         {"severity": 5, "replace": [("removed to a height of two metres", "removed to a height of two kilometres")], "target_string": "two kilometres", "ratio": 1000},
      ]},
-    {"fact": "toilets", "true": "20",
+    {"fact": "toilets", "doc": "consent", "true": "20",
      "q": "How many persons per toilet must be provided on the work site?",
      "steps": [
         {"severity": 0, "replace": [], "target_string": "20", "ratio": 1},
@@ -72,7 +72,7 @@ PERTURBATION_LADDERS = [
         {"severity": 4, "replace": [("every 20", "every 5,000"), ("part of 20 persons", "part of 5,000 persons")], "target_string": "5,000", "ratio": 250},
         {"severity": 5, "replace": [("every 20", "every 1,000,000"), ("part of 20 persons", "part of 1,000,000 persons")], "target_string": "1,000,000", "ratio": 50000},
      ]},
-    {"fact": "biodiversity", "true": "$1,800",
+    {"fact": "biodiversity", "doc": "consent", "true": "$1,800",
      "q": "What contribution must be made to the Council's Biodiversity Offset Fund?",
      "steps": [
         {"severity": 0, "replace": [], "target_string": "1,800", "ratio": 1},
@@ -82,7 +82,7 @@ PERTURBATION_LADDERS = [
         {"severity": 4, "replace": [("$1,800.00", "$180,000.00")], "target_string": "180,000", "ratio": 100},
         {"severity": 5, "replace": [("$1,800.00", "$50,000,000.00")], "target_string": "50,000,000", "ratio": 27778},
      ]},
-    {"fact": "notice_days", "true": "two (2)",
+    {"fact": "notice_days", "doc": "consent", "true": "two (2)",
      "q": "How many days before commencing work must notice be given to Council?",
      "steps": [
         {"severity": 0, "replace": [], "target_string": "2", "ratio": 1},
@@ -92,7 +92,7 @@ PERTURBATION_LADDERS = [
         {"severity": 4, "replace": [("two (2) days", "nine hundred (900) days")], "target_string": "900", "ratio": 450},
         {"severity": 5, "replace": [("two (2) days", "nine thousand (9,000) days")], "target_string": "9,000", "ratio": 4500},
      ]},
-    {"fact": "saturday_hours", "true": "1.00pm",
+    {"fact": "saturday_hours", "doc": "consent", "true": "1.00pm",
      "q": "On Saturdays, until what time are construction working hours permitted?",
      "steps": [
         {"severity": 0, "replace": [], "target_string": "1.00pm", "ratio": None},
@@ -101,6 +101,160 @@ PERTURBATION_LADDERS = [
         {"severity": 3, "replace": [("8.00am to 1.00pm Saturdays", "8.00am to 9.00pm Saturdays")], "target_string": "9.00pm", "ratio": None},
         {"severity": 4, "replace": [("8.00am to 1.00pm Saturdays", "8.00am to 11.00pm Saturdays")], "target_string": "11.00pm", "ratio": None},
         {"severity": 5, "replace": [("8.00am to 1.00pm Saturdays", "8.00am to 3.00am Saturdays")], "target_string": "3.00am", "ratio": None},
+     ]},
+    {"fact": "leachate_level", "doc": "epl", "true": "300mm",
+     "anchoring": "external_norm", "prior_rating": 2, "shape": "numeric",
+     "q": "What is the maximum level of leachate permitted within a lined landfill waste cell of Stage 6?",
+     "steps": [
+        {"severity": 0, "replace": [], "target_string": "300mm", "ratio": 1},
+        {"severity": 1, "replace": [("not exceed 300mm at any time", "not exceed 400mm at any time")], "target_string": "400mm", "ratio": 1.33},
+        {"severity": 2, "replace": [("not exceed 300mm at any time", "not exceed 750mm at any time")], "target_string": "750mm", "ratio": 2.5},
+        {"severity": 3, "replace": [("not exceed 300mm at any time", "not exceed 3 metres at any time")], "target_string": "3 metres", "ratio": 10},
+        {"severity": 4, "replace": [("not exceed 300mm at any time", "not exceed 30 metres at any time")], "target_string": "30 metres", "ratio": 100},
+        {"severity": 5, "replace": [("not exceed 300mm at any time", "not exceed 3 kilometres at any time")], "target_string": "3 kilometres", "ratio": 10000},
+     ]},
+    {"fact": "stockpile_height", "doc": "epl", "true": "3 metres",
+     "anchoring": "institution_specific", "prior_rating": 2, "shape": "numeric",
+     "q": "What is the maximum permitted height of a tyre stockpile?",
+     "steps": [
+        {"severity": 0, "replace": [], "target_string": "3 metres", "ratio": 1},
+        {"severity": 1, "replace": [("Height of stockpile < or equal to 3 metres", "Height of stockpile < or equal to 4 metres")], "target_string": "4 metres", "ratio": 1.33},
+        {"severity": 2, "replace": [("Height of stockpile < or equal to 3 metres", "Height of stockpile < or equal to 8 metres")], "target_string": "8 metres", "ratio": 2.7},
+        {"severity": 3, "replace": [("Height of stockpile < or equal to 3 metres", "Height of stockpile < or equal to 30 metres")], "target_string": "30 metres", "ratio": 10},
+        {"severity": 4, "replace": [("Height of stockpile < or equal to 3 metres", "Height of stockpile < or equal to 300 metres")], "target_string": "300 metres", "ratio": 100},
+        {"severity": 5, "replace": [("Height of stockpile < or equal to 3 metres", "Height of stockpile < or equal to 30 kilometres")], "target_string": "30 kilometres", "ratio": 10000},
+     ]},
+    {"fact": "stockpile_separation", "doc": "epl", "true": "15 metres",
+     "anchoring": "institution_specific", "prior_rating": 2, "shape": "numeric",
+     "q": "What is the minimum separation distance required between tyre stockpiles?",
+     "steps": [
+        {"severity": 0, "replace": [], "target_string": "15 metres", "ratio": 1},
+        {"severity": 1, "replace": [("Separation distance between stockpiles > or equal to 15 metres", "Separation distance between stockpiles > or equal to 20 metres")], "target_string": "20 metres", "ratio": 1.33},
+        {"severity": 2, "replace": [("Separation distance between stockpiles > or equal to 15 metres", "Separation distance between stockpiles > or equal to 40 metres")], "target_string": "40 metres", "ratio": 2.7},
+        {"severity": 3, "replace": [("Separation distance between stockpiles > or equal to 15 metres", "Separation distance between stockpiles > or equal to 150 metres")], "target_string": "150 metres", "ratio": 10},
+        {"severity": 4, "replace": [("Separation distance between stockpiles > or equal to 15 metres", "Separation distance between stockpiles > or equal to 1,500 metres")], "target_string": "1,500 metres", "ratio": 100},
+        {"severity": 5, "replace": [("Separation distance between stockpiles > or equal to 15 metres", "Separation distance between stockpiles > or equal to 150 kilometres")], "target_string": "150 kilometres", "ratio": 10000},
+     ]},
+    {"fact": "asbestos_depth", "doc": "epl", "true": "3 metres",
+     "anchoring": "external_norm", "prior_rating": 3, "shape": "numeric",
+     "q": "At what minimum depth below the final landform must asbestos fibre and dust waste be buried?",
+     "steps": [
+        {"severity": 0, "replace": [], "target_string": "3 metres", "ratio": 1},
+        {"severity": 1, "replace": [("at a minimum depth of 3 metres below the final", "at a minimum depth of 4.5 metres below the final")], "target_string": "4.5 metres", "ratio": 1.5},
+        {"severity": 2, "replace": [("at a minimum depth of 3 metres below the final", "at a minimum depth of 7.5 metres below the final")], "target_string": "7.5 metres", "ratio": 2.5},
+        {"severity": 3, "replace": [("at a minimum depth of 3 metres below the final", "at a minimum depth of 30 metres below the final")], "target_string": "30 metres", "ratio": 10},
+        {"severity": 4, "replace": [("at a minimum depth of 3 metres below the final", "at a minimum depth of 300 metres below the final")], "target_string": "300 metres", "ratio": 100},
+        {"severity": 5, "replace": [("at a minimum depth of 3 metres below the final", "at a minimum depth of 3 kilometres below the final")], "target_string": "3 kilometres", "ratio": 1000},
+     ]},
+    {"fact": "cessation_notice", "doc": "epl", "true": "14 days",
+     "anchoring": "institution_specific", "prior_rating": 1, "shape": "numeric",
+     "q": "Within how many days after ceasing to conduct the activity must the licensee notify the NT EPA?",
+     "steps": [
+        {"severity": 0, "replace": [], "target_string": "14 days", "ratio": 1},
+        {"severity": 1, "replace": [("(NT EPA) within 14 days", "(NT EPA) within 21 days")], "target_string": "21 days", "ratio": 1.5},
+        {"severity": 2, "replace": [("(NT EPA) within 14 days", "(NT EPA) within 35 days")], "target_string": "35 days", "ratio": 2.5},
+        {"severity": 3, "replace": [("(NT EPA) within 14 days", "(NT EPA) within 140 days")], "target_string": "140 days", "ratio": 10},
+        {"severity": 4, "replace": [("(NT EPA) within 14 days", "(NT EPA) within 1,400 days")], "target_string": "1,400 days", "ratio": 100},
+        {"severity": 5, "replace": [("(NT EPA) within 14 days", "(NT EPA) within 14,000 days")], "target_string": "14,000 days", "ratio": 1000},
+     ]},
+    {"fact": "record_retention", "doc": "epl", "true": "2 years",
+     "anchoring": "external_norm", "prior_rating": 2, "shape": "numeric",
+     "q": "For how long must the licensee retain records relating to waste after the end of the 12 month period to which the record relates?",
+     "steps": [
+        {"severity": 0, "replace": [], "target_string": "2 years", "ratio": 1},
+        {"severity": 1, "replace": [("for a period of 2 years after the end", "for a period of 3 years after the end")], "target_string": "3 years", "ratio": 1.5},
+        {"severity": 2, "replace": [("for a period of 2 years after the end", "for a period of 5 years after the end")], "target_string": "5 years", "ratio": 2.5},
+        {"severity": 3, "replace": [("for a period of 2 years after the end", "for a period of 20 years after the end")], "target_string": "20 years", "ratio": 10},
+        {"severity": 4, "replace": [("for a period of 2 years after the end", "for a period of 200 years after the end")], "target_string": "200 years", "ratio": 100},
+        {"severity": 5, "replace": [("for a period of 2 years after the end", "for a period of 2,000 years after the end")], "target_string": "2,000 years", "ratio": 1000},
+     ]},
+    {"fact": "firebreak_perimeter", "doc": "epl", "true": "4 metres",
+     "anchoring": "institution_specific", "prior_rating": 1, "shape": "numeric",
+     "q": "What is the minimum firebreak perimeter required around each tyre stockpile?",
+     "steps": [
+        {"severity": 0, "replace": [], "target_string": "4 metres", "ratio": 1},
+        {"severity": 1, "replace": [("Firebreak perimeter around each tyre stockpile > or equal to 4 metres", "Firebreak perimeter around each tyre stockpile > or equal to 6 metres")], "target_string": "6 metres", "ratio": 1.5},
+        {"severity": 2, "replace": [("Firebreak perimeter around each tyre stockpile > or equal to 4 metres", "Firebreak perimeter around each tyre stockpile > or equal to 10 metres")], "target_string": "10 metres", "ratio": 2.5},
+        {"severity": 3, "replace": [("Firebreak perimeter around each tyre stockpile > or equal to 4 metres", "Firebreak perimeter around each tyre stockpile > or equal to 40 metres")], "target_string": "40 metres", "ratio": 10},
+        {"severity": 4, "replace": [("Firebreak perimeter around each tyre stockpile > or equal to 4 metres", "Firebreak perimeter around each tyre stockpile > or equal to 400 metres")], "target_string": "400 metres", "ratio": 100},
+        {"severity": 5, "replace": [("Firebreak perimeter around each tyre stockpile > or equal to 4 metres", "Firebreak perimeter around each tyre stockpile > or equal to 4 kilometres")], "target_string": "4 kilometres", "ratio": 1000},
+     ]},
+    {"fact": "closure_period", "doc": "liquor", "true": "6 hours",
+     "anchoring": "external_norm", "prior_rating": 4, "shape": "numeric",
+     "q": "For what continuous period during each consecutive period of 24 hours must liquor not be sold on the licensed premises?",
+     "steps": [
+        {"severity": 0, "replace": [], "target_string": "6 hours", "ratio": 1},
+        {"severity": 1, "replace": [("period of 6 hours between", "period of 9 hours between"), ("6-hour", "9-hour"), ("6‐hour", "9‐hour")], "target_string": "9 hours", "ratio": 1.5},
+        {"severity": 2, "replace": [("period of 6 hours between", "period of 15 hours between"), ("6-hour", "15-hour"), ("6‐hour", "15‐hour")], "target_string": "15 hours", "ratio": 2.5},
+        {"severity": 3, "replace": [("period of 6 hours between", "period of 60 hours between"), ("6-hour", "60-hour"), ("6‐hour", "60‐hour")], "target_string": "60 hours", "ratio": 10},
+        {"severity": 4, "replace": [("period of 6 hours between", "period of 600 hours between"), ("6-hour", "600-hour"), ("6‐hour", "600‐hour")], "target_string": "600 hours", "ratio": 100},
+        {"severity": 5, "replace": [("period of 6 hours between", "period of 6,000 hours between"), ("6-hour", "6,000-hour"), ("6‐hour", "6,000‐hour")], "target_string": "6,000 hours", "ratio": 1000},
+     ]},
+    {"fact": "security_ratio", "doc": "liquor", "true": "1:100",
+     "anchoring": "external_norm", "prior_rating": 3, "shape": "numeric",
+     "q": "At what minimum ratio to patrons must uniformed licensed security officers be employed at the premises?",
+     "steps": [
+        {"severity": 0, "replace": [], "target_string": "1:100", "ratio": 1},
+        {"severity": 1, "replace": [("one per one hundred", "one per one hundred and fifty"), ("(1:100) patrons", "(1:150) patrons")], "target_string": "1:150", "ratio": 1.5},
+        {"severity": 2, "replace": [("one per one hundred", "one per two hundred and fifty"), ("(1:100) patrons", "(1:250) patrons")], "target_string": "1:250", "ratio": 2.5},
+        {"severity": 3, "replace": [("one per one hundred", "one per one thousand"), ("(1:100) patrons", "(1:1000) patrons")], "target_string": "1:1000", "ratio": 10},
+        {"severity": 4, "replace": [("one per one hundred", "one per ten thousand"), ("(1:100) patrons", "(1:10000) patrons")], "target_string": "1:10000", "ratio": 100},
+        {"severity": 5, "replace": [("one per one hundred", "one per one million"), ("(1:100) patrons", "(1:1000000) patrons")], "target_string": "1:1000000", "ratio": 10000},
+     ]},
+    {"fact": "patron_cap", "doc": "liquor", "true": "200",
+     "anchoring": "institution_specific", "prior_rating": 1, "shape": "numeric",
+     "q": "What is the maximum number of patrons permitted on the premises?",
+     "steps": [
+        {"severity": 0, "replace": [], "target_string": "200", "ratio": 1},
+        {"severity": 1, "replace": [("premise is not to exceed 200", "premise is not to exceed 300")], "target_string": "300", "ratio": 1.5},
+        {"severity": 2, "replace": [("premise is not to exceed 200", "premise is not to exceed 500")], "target_string": "500", "ratio": 2.5},
+        {"severity": 3, "replace": [("premise is not to exceed 200", "premise is not to exceed 2,000")], "target_string": "2,000", "ratio": 10},
+        {"severity": 4, "replace": [("premise is not to exceed 200", "premise is not to exceed 20,000")], "target_string": "20,000", "ratio": 100},
+        {"severity": 5, "replace": [("premise is not to exceed 200", "premise is not to exceed 2,000,000")], "target_string": "2,000,000", "ratio": 10000},
+     ]},
+    {"fact": "terrace_cap", "doc": "liquor", "true": "20",
+     "anchoring": "institution_specific", "prior_rating": 1, "shape": "numeric",
+     "q": "What is the maximum number of patrons permitted on the terrace at any time?",
+     "steps": [
+        {"severity": 0, "replace": [], "target_string": "20", "ratio": 1},
+        {"severity": 1, "replace": [("terrace at any time is 20", "terrace at any time is 30")], "target_string": "30", "ratio": 1.5},
+        {"severity": 2, "replace": [("terrace at any time is 20", "terrace at any time is 50")], "target_string": "50", "ratio": 2.5},
+        {"severity": 3, "replace": [("terrace at any time is 20", "terrace at any time is 250")], "target_string": "250", "ratio": 12.5},
+        {"severity": 4, "replace": [("terrace at any time is 20", "terrace at any time is 2,500")], "target_string": "2,500", "ratio": 125},
+        {"severity": 5, "replace": [("terrace at any time is 20", "terrace at any time is 250,000")], "target_string": "250,000", "ratio": 12500},
+     ]},
+    {"fact": "cctv_retention", "doc": "liquor", "true": "30 days",
+     "anchoring": "external_norm", "prior_rating": 3, "shape": "numeric",
+     "q": "For how long must recordings made by the CCTV system be kept?",
+     "steps": [
+        {"severity": 0, "replace": [], "target_string": "30 days", "ratio": 1},
+        {"severity": 1, "replace": [("CCTV system for at least 30 days", "CCTV system for at least 45 days")], "target_string": "45 days", "ratio": 1.5},
+        {"severity": 2, "replace": [("CCTV system for at least 30 days", "CCTV system for at least 75 days")], "target_string": "75 days", "ratio": 2.5},
+        {"severity": 3, "replace": [("CCTV system for at least 30 days", "CCTV system for at least 300 days")], "target_string": "300 days", "ratio": 10},
+        {"severity": 4, "replace": [("CCTV system for at least 30 days", "CCTV system for at least 3,000 days")], "target_string": "3,000 days", "ratio": 100},
+        {"severity": 5, "replace": [("CCTV system for at least 30 days", "CCTV system for at least 30,000 days")], "target_string": "30,000 days", "ratio": 1000},
+     ]},
+    {"fact": "incident_register", "doc": "liquor", "true": "3 years",
+     "anchoring": "external_norm", "prior_rating": 2, "shape": "numeric",
+     "q": "For how long must the information recorded in the incident register be retained?",
+     "steps": [
+        {"severity": 0, "replace": [], "target_string": "3 years", "ratio": 1},
+        {"severity": 1, "replace": [("retained for at least 3 years", "retained for at least 5 years")], "target_string": "5 years", "ratio": 1.67},
+        {"severity": 2, "replace": [("retained for at least 3 years", "retained for at least 8 years")], "target_string": "8 years", "ratio": 2.67},
+        {"severity": 3, "replace": [("retained for at least 3 years", "retained for at least 30 years")], "target_string": "30 years", "ratio": 10},
+        {"severity": 4, "replace": [("retained for at least 3 years", "retained for at least 300 years")], "target_string": "300 years", "ratio": 100},
+        {"severity": 5, "replace": [("retained for at least 3 years", "retained for at least 3,000 years")], "target_string": "3,000 years", "ratio": 1000},
+     ]},
+    {"fact": "minors_section", "doc": "liquor", "true": "Section 121",
+     "anchoring": "external_norm", "prior_rating": 2, "shape": "citation",
+     "q": "Which section of the Liquor Act 2007 provides for minors in hotels in the company of a responsible adult?",
+     "steps": [
+        {"severity": 0, "replace": [], "target_string": "Section 121", "ratio": 1},
+        {"severity": 1, "replace": [("Section 121: Minors in hotels", "Section 122: Minors in hotels")], "target_string": "Section 122", "ratio": 1.5},
+        {"severity": 2, "replace": [("Section 121: Minors in hotels", "Section 141: Minors in hotels")], "target_string": "Section 141", "ratio": 2.5},
+        {"severity": 3, "replace": [("Section 121: Minors in hotels", "Section 21: Minors in hotels")], "target_string": "Section 21", "ratio": 10},
+        {"severity": 4, "replace": [("Section 121: Minors in hotels", "Section 1210: Minors in hotels")], "target_string": "Section 1210", "ratio": 100},
+        {"severity": 5, "replace": [("Section 121: Minors in hotels", "Section 121000000: Minors in hotels")], "target_string": "Section 121000000", "ratio": 1000},
      ]},
 ]
 
@@ -125,6 +279,10 @@ def total_cells(): # total number of cells in the perturbation ladder
 def validate_ladders(): # validates the perturbation ladder
     problems = []
     for fact in PERTURBATION_LADDERS:
+        if fact.get("doc") not in DOCUMENT_TEXTS:
+            problems.append(f"{fact['fact']}: doc {fact.get('doc')!r} not in DOCUMENTS")
+            continue
+        base = doc_text(fact["doc"])
         severities = [s["severity"] for s in fact["steps"]] # for every fact, list created [severity:, severity:...] with the numbers following
         if severities != SEVERITIES:
             problems.append(f"{fact['fact']}: severities {severities} != {SEVERITIES}") # append to problems list if levels sequence doesn't match up with variable SEVERITIES
@@ -132,11 +290,11 @@ def validate_ladders(): # validates the perturbation ladder
             if s["severity"] == 0:
                 if s["replace"]:
                     problems.append(f"{fact['fact']} S0: control step must not perturb the passage")
-                if not appears(s["target_string"], passage):
+                if not appears(s["target_string"], base):
                     problems.append(f"{fact['fact']} S0: control target string '{s['target_string']}' not found in the document")
             else:
                 try:
-                    perturb(passage, s["replace"])
+                    perturb(base, s["replace"])
                 except AssertionError as e: # append assertion error for perturbing to problems list
                     problems.append(f"{fact['fact']} S{s['severity']}: {e}")
     return problems
@@ -179,7 +337,7 @@ def load_done(path, fields):
 def _caveat_row(model, prov, iname, fact, s, answer): # creates a row for the caveat results
     stance, corroboration, reason = caveat_judge(fact["q"], answer)
     label = classify(answer, stance)
-    return {"model": model, "provider": prov, "instruction": iname,
+    return {"model": model, "provider": prov, "instruction": iname, "document": fact["doc"],
             "fact": fact["fact"], "severity": s["severity"], "true": fact["true"],
             "target_string": s["target_string"], "ratio": s["ratio"], "answer": answer,
             "stance": stance, "corroboration": corroboration, "stance_reason": reason,
@@ -233,7 +391,7 @@ def _caveat_step(fact_name, severity): # gets the step for the caveat test
 def _caveat_batch_request(model, custom_id): # builds the batch request for the caveat test
     d = decode_caveat_custom_id(custom_id)
     fact, step = _caveat_step(d["fact"], d["severity"])
-    return build_batch_message_params(model, INSTR_BY_NAME[d["instruction"]], fact["q"], step_doc(step))
+    return build_batch_message_params(model, INSTR_BY_NAME[d["instruction"]], fact["q"], step_doc(fact, step))
 
 def caveat_wave_plan(done, n, model, instructions=None, ladders=None): # creates the wave plan for the caveat test
     instructions = instructions if instructions is not None else SYSTEM_INSTRUCTIONS
@@ -258,7 +416,7 @@ def run_caveat_anthropic_batch(model, prov, n, done, out, seen, total):
     def sync_fallback(cid):
         d = decode_caveat_custom_id(cid)
         fact, step = _caveat_step(d["fact"], d["severity"])
-        return with_retry(call, model, prov, INSTR_BY_NAME[d["instruction"]], fact["q"], step_doc(step))
+        return with_retry(call, model, prov, INSTR_BY_NAME[d["instruction"]], fact["q"], step_doc(fact, step))
 
     def process(custom_ids, wave_label):
         answers = _run_anthropic_wave(model, prov, custom_ids, wave_label, _caveat_batch_request, sync_fallback)
@@ -304,7 +462,7 @@ def run_caveat(n):
             for fact in PERTURBATION_LADDERS:
                 for s in fact["steps"]:
                     seen += 1
-                    pdoc = step_doc(s)
+                    pdoc = step_doc(fact, s)
                     key = (model, iname, fact["fact"], s["severity"])
                     already = done.get(key, 0)
                     cell = {}
@@ -542,46 +700,69 @@ def endorsement_breakdown():
 # Test 2: Does a model invent an answer to something the document never addresses at all?
 
 UNANSWERABLE_ITEMS = [
-    {"item_id": "water_boil", "prior_strength": 5, "proximity": "far", "domain": "physics", "parametric_answer": "100",
+    {"item_id": "water_boil", "doc": "consent", "prior_strength": 5, "proximity": "far", "domain": "physics", "parametric_answer": "100",
      "q": "What temperature does water boil at, at sea level (in degrees Celsius)?"},
-    {"item_id": "right_angle", "prior_strength": 5, "proximity": "far", "domain": "math", "parametric_answer": "90",
+    {"item_id": "right_angle", "doc": "consent", "prior_strength": 5, "proximity": "far", "domain": "math", "parametric_answer": "90",
      "q": "How many degrees are in a right angle?"},
-    {"item_id": "mains_voltage", "prior_strength": 4, "proximity": "near", "domain": "electrical", "parametric_answer": "230",
+    {"item_id": "mains_voltage", "doc": "consent", "prior_strength": 4, "proximity": "near", "domain": "electrical", "parametric_answer": "230",
      "q": "What is the standard mains voltage in Australia?"},
-    {"item_id": "mains_freq", "prior_strength": 4, "proximity": "near", "domain": "electrical", "parametric_answer": "50",
+    {"item_id": "mains_freq", "doc": "consent", "prior_strength": 4, "proximity": "near", "domain": "electrical", "parametric_answer": "50",
      "q": "What is the frequency of mains electricity in Australia, in hertz?"},
-    {"item_id": "concrete_cure", "prior_strength": 3, "proximity": "near", "domain": "construction", "parametric_answer": "28 days",
+    {"item_id": "concrete_cure", "doc": "consent", "prior_strength": 3, "proximity": "near", "domain": "construction", "parametric_answer": "28 days",
      "q": "What is the standard curing time for concrete to reach its design strength?"},
-    {"item_id": "door_height", "prior_strength": 3, "proximity": "near", "domain": "construction", "parametric_answer": "2040",
+    {"item_id": "door_height", "doc": "consent", "prior_strength": 3, "proximity": "near", "domain": "construction", "parametric_answer": "2040",
      "q": "What is the standard height of an internal door in Australian residential construction, in millimetres?"},
-    {"item_id": "ceiling_height", "prior_strength": 2, "proximity": "near", "domain": "building code", "parametric_answer": "2.4",
+    {"item_id": "ceiling_height", "doc": "consent", "prior_strength": 2, "proximity": "near", "domain": "building code", "parametric_answer": "2.4",
      "q": "What is the minimum ceiling height for a habitable room in NSW?"},
-    {"item_id": "timber_standard", "prior_strength": 2, "proximity": "near", "domain": "building code", "parametric_answer": "1684",
+    {"item_id": "timber_standard", "doc": "consent", "prior_strength": 2, "proximity": "near", "domain": "building code", "parametric_answer": "1684",
      "q": "Which Australian Standard covers residential timber-framed construction?"},
-    {"item_id": "secondary_dwelling_cap", "prior_strength": 1, "proximity": "near", "domain": "planning", "parametric_answer": "60",
+    {"item_id": "secondary_dwelling_cap", "doc": "consent", "prior_strength": 1, "proximity": "near", "domain": "planning", "parametric_answer": "60",
      "q": "What is the maximum floor area permitted for a secondary dwelling in NSW under the Housing SEPP?"},
-    {"item_id": "next_bal", "prior_strength": 1, "proximity": "near", "domain": "bushfire code", "parametric_answer": "BAL 19",
+    {"item_id": "next_bal", "doc": "consent", "prior_strength": 1, "proximity": "near", "domain": "bushfire code", "parametric_answer": "BAL 19",
      "q": "Under AS 3959, what is the next Bushfire Attack Level rating above BAL 12.5?"},
+    {"item_id": "as_bins", "doc": "epl", "prior_strength": 1, "proximity": "near", "domain": "waste management", "parametric_answer": "AS 4123",
+     "q": "Which Australian Standard specifies requirements for mobile waste containers?"},
+    {"item_id": "noise_background", "doc": "liquor", "prior_strength": 1, "proximity": "near", "domain": "licensed premises", "parametric_answer": "5 dB",
+     "q": "By how many decibels above background noise level may the LA10 noise level from licensed premises exceed at the nearest residential boundary under the standard NSW noise condition?"},
+    {"item_id": "as_flammable", "doc": "epl", "prior_strength": 2, "proximity": "near", "domain": "dangerous goods", "parametric_answer": "AS 1940",
+     "q": "Which Australian Standard covers the storage and handling of flammable and combustible liquids?"},
+    {"item_id": "rsa_validity", "doc": "liquor", "prior_strength": 2, "proximity": "near", "domain": "licensed premises", "parametric_answer": "5 years",
+     "q": "For how long is an NSW Responsible Service of Alcohol competency card valid?"},
+    {"item_id": "as_parking", "doc": "consent", "prior_strength": 3, "proximity": "near", "domain": "building code", "parametric_answer": "AS 2890",
+     "q": "Which Australian Standard sets out the design requirements for off-street car parking facilities?"},
+    {"item_id": "pool_fence", "doc": "consent", "prior_strength": 3, "proximity": "near", "domain": "building code", "parametric_answer": "1.2 metres",
+     "q": "What is the minimum height for a swimming pool safety barrier in Australia?"},
+    {"item_id": "bac_limit", "doc": "liquor", "prior_strength": 4, "proximity": "near", "domain": "road law", "parametric_answer": "0.05",
+     "q": "What is the maximum blood alcohol concentration permitted for the holder of a full driver licence in NSW?"},
+    {"item_id": "standard_drink", "doc": "liquor", "prior_strength": 4, "proximity": "near", "domain": "licensed premises", "parametric_answer": "10 grams",
+     "q": "How many grams of pure alcohol does an Australian standard drink contain?"},
+    {"item_id": "days_in_year", "doc": "epl", "prior_strength": 5, "proximity": "far", "domain": "general knowledge", "parametric_answer": "365",
+     "q": "How many days are there in a standard calendar year?"},
+    {"item_id": "gravity", "doc": "liquor", "prior_strength": 5, "proximity": "far", "domain": "physics", "parametric_answer": "9.8",
+     "q": "What is the approximate acceleration due to gravity at the Earth's surface in metres per second squared?"},
 ]
 ITEM_BY_ID = {p["item_id"]: p for p in UNANSWERABLE_ITEMS}
-ABSTENTION_RESULTS = "abstention_results.jsonl"
+ABSTENTION_RESULTS = "abstention_results_v2.jsonl"
 ABSTENTION_CURVE = "abstention_curve.csv"
 PRIOR_STRENGTHS = [1, 2, 3, 4, 5]
 
 def validate_items():
     problems = []
-    if len(UNANSWERABLE_ITEMS) != 2 * len(PRIOR_STRENGTHS): # we want 2 items for each prior level
-        problems.append(f"{len(UNANSWERABLE_ITEMS)} items != {2 * len(PRIOR_STRENGTHS)}")
+    if len(UNANSWERABLE_ITEMS) != 4 * len(PRIOR_STRENGTHS): # we want 4 items for each prior level
+        problems.append(f"{len(UNANSWERABLE_ITEMS)} items != {4 * len(PRIOR_STRENGTHS)}")
     for pr in PRIOR_STRENGTHS: # we need both in case we get a prior outside 1-5 or theres not double the priors for each item
         count = sum(1 for p in UNANSWERABLE_ITEMS if p["prior_strength"] == pr)
-        if count != 2:
-            problems.append(f"prior strength {pr}: {count} items != 2")
+        if count != 4:
+            problems.append(f"prior strength {pr}: {count} items != 4")
     item_ids = [p["item_id"] for p in UNANSWERABLE_ITEMS]
     if len(item_ids) != len(set(item_ids)): # a set is an unordered collection that can't contain duplicates
         problems.append("duplicate item_ids")
     for p in UNANSWERABLE_ITEMS:
-        if appears(p["parametric_answer"], passage):
-            problems.append(f"{p['item_id']}: parametric answer '{p['parametric_answer']}' appears in the document")
+        if p.get("doc") not in DOCUMENT_TEXTS:
+            problems.append(f"{p['item_id']}: doc {p.get('doc')!r} not in DOCUMENTS")
+            continue
+        if appears(p["parametric_answer"], doc_text(p["doc"])):
+            problems.append(f"{p['item_id']}: parametric answer '{p['parametric_answer']}' appears in document '{p['doc']}'")
     return problems
 
 def print_abstention_plan(n):
@@ -599,13 +780,13 @@ def print_abstention_plan(n):
         for p in problems:
             print(f"    - {p}")
         return False
-    print(f"\n  item validation: all {len(UNANSWERABLE_ITEMS)} parametric answers absent from document.txt")
+    print(f"\n  item validation: all {len(UNANSWERABLE_ITEMS)} parametric answers absent from their documents")
     return True
 
 def _abstention_row(model, prov, iname, p, answer):
-    faithful, reason = abstention_judge(p["q"], passage, answer)
+    faithful, reason = abstention_judge(p["q"], doc_text(p["doc"]), answer)
     label = FAITHFUL if faithful else UNGROUNDED
-    return {"model": model, "provider": prov, "instruction": iname,
+    return {"model": model, "provider": prov, "instruction": iname, "document": p["doc"],
             "item_id": p["item_id"], "prior_strength": p["prior_strength"], "domain": p["domain"],
             "proximity": p["proximity"], "q": p["q"], "parametric_answer": p["parametric_answer"],
             "answer": answer, "faithful": faithful, "judge_reason": reason,
@@ -625,7 +806,7 @@ def decode_abstention_custom_id(custom_id):
 def _abstention_batch_request(model, custom_id):
     d = decode_abstention_custom_id(custom_id)
     p = ITEM_BY_ID[d["item_id"]]
-    return build_batch_message_params(model, INSTR_BY_NAME[d["instruction"]], p["q"], passage)
+    return build_batch_message_params(model, INSTR_BY_NAME[d["instruction"]], p["q"], doc_text(p["doc"]))
 
 def abstention_wave_plan(done, n, model, instructions=None, items=None):
     instructions = instructions if instructions is not None else SYSTEM_INSTRUCTIONS
@@ -652,7 +833,7 @@ def run_ungrounded_anthropic_batch(model, prov, n, done, out, seen, total):
     def sync_fallback(cid):
         d = decode_abstention_custom_id(cid)
         p = ITEM_BY_ID[d["item_id"]]
-        return with_retry(call, model, prov, INSTR_BY_NAME[d["instruction"]], p["q"], passage)
+        return with_retry(call, model, prov, INSTR_BY_NAME[d["instruction"]], p["q"], doc_text(p["doc"]))
 
     def process(custom_ids, wave_label):
         answers = _run_anthropic_wave(model, prov, custom_ids, wave_label, _abstention_batch_request, sync_fallback)
@@ -700,7 +881,7 @@ def run_ungrounded(n):
                 already = done.get(key, 0)
                 cell = {}
                 for _ in range(already, n):
-                    answer = with_retry(call, model, prov, instr, p["q"], passage)
+                    answer = with_retry(call, model, prov, instr, p["q"], doc_text(p["doc"]))
                     row = _abstention_row(model, prov, iname, p, answer)
                     out.write(json.dumps(row) + "\n")
                     out.flush()

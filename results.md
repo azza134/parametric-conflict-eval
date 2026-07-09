@@ -9,7 +9,7 @@
 
 ## 1. Protocol
 
-One source document (`document.txt`, a NSW development consent notice). Two experiments, four instructions (texts in `config.py`):
+One source document (`document1_consent.txt`, a NSW development consent notice). Two experiments, four instructions (texts in `config.py`):
 
 | Test | Design | Answers |
 |---|---|---|

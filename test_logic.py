@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from unittest import mock
 
-from config import (perturb, with_retry, MODELS, FLAG_INVITING, SOURCE_EXCLUSIVE,
+from config import (perturb, with_retry, DOCUMENTS, doc_text, MODELS, FLAG_INVITING, SOURCE_EXCLUSIVE,
                     SOURCE_EXCLUSIVE_FLAG_INVITING, SYSTEM_INSTRUCTIONS,
                     appears, passage, step_doc, build_batch_message_params)
 from harness import (wilson_interval, PERTURBATION_LADDERS, SEVERITIES, validate_ladders,
@@ -300,8 +300,8 @@ class TestLadders(unittest.TestCase):
         for fact in PERTURBATION_LADDERS:
             self.assertEqual([s["severity"] for s in fact["steps"]], SEVERITIES)
 
-    def test_thirty_six_steps_total(self):
-        self.assertEqual(total_steps(), 36)
+    def test_one_hundred_twenty_steps_total(self):
+        self.assertEqual(total_steps(), 120)
 
     def test_ratio_increases_where_present(self):
         for fact in PERTURBATION_LADDERS:
@@ -328,29 +328,61 @@ class TestControlRung(unittest.TestCase):
 
     def test_control_target_strings_present_in_document(self):
         for fact in PERTURBATION_LADDERS:
-            self.assertTrue(appears(fact["steps"][0]["target_string"], passage), fact["fact"])
+            self.assertTrue(appears(fact["steps"][0]["target_string"], doc_text(fact["doc"])), fact["fact"])
 
     def test_step_doc_control_is_the_real_passage(self):
-        self.assertEqual(step_doc({"replace": []}), passage)
+        self.assertEqual(step_doc({"doc": "consent"}, {"replace": []}), passage)
 
     def test_step_doc_applies_perturbation(self):
-        doc = step_doc({"replace": [("every 20", "every 13")]})
+        doc = step_doc({"doc": "consent"}, {"replace": [("every 20", "every 13")]})
         self.assertNotEqual(doc, passage)
         self.assertIn("every 13", doc)
 
     def test_perturbing_control_fails_validation(self):
-        bad = [{"fact": "grasses", "true": "10cm", "q": "?", "steps": [
+        bad = [{"fact": "grasses", "doc": "consent", "true": "10cm", "q": "?", "steps": [
             {"severity": 0, "replace": [("exceed 10cm", "exceed 15cm")], "target_string": "10cm", "ratio": 1}]}]
         with mock.patch("harness.PERTURBATION_LADDERS", bad):
             problems = validate_ladders()
         self.assertTrue(any("must not perturb" in p for p in problems))
 
     def test_control_target_string_absent_fails_validation(self):
-        bad = [{"fact": "grasses", "true": "10cm", "q": "?", "steps": [
+        bad = [{"fact": "grasses", "doc": "consent", "true": "10cm", "q": "?", "steps": [
             {"severity": 0, "replace": [], "target_string": "zzqx", "ratio": 1}]}]
         with mock.patch("harness.PERTURBATION_LADDERS", bad):
             problems = validate_ladders()
         self.assertTrue(any("not found in the document" in p for p in problems))
+
+
+class TestMultiDocument(unittest.TestCase):
+    def test_registry_loads_three_documents(self):
+        self.assertEqual(set(DOCUMENTS), {"consent", "epl", "liquor"})
+        for name in DOCUMENTS:
+            self.assertGreater(len(doc_text(name).split()), 1000, name)
+
+    def test_every_fact_and_item_declares_a_known_doc(self):
+        for fact in PERTURBATION_LADDERS:
+            self.assertIn(fact.get("doc"), DOCUMENTS, fact["fact"])
+        for p in UNANSWERABLE_ITEMS:
+            self.assertIn(p.get("doc"), DOCUMENTS, p["item_id"])
+
+    def test_step_doc_uses_the_facts_own_document(self):
+        base = step_doc({"doc": "liquor"}, {"replace": []})
+        self.assertEqual(base, doc_text("liquor"))
+        self.assertNotEqual(base, passage)
+
+    def test_fact_with_unknown_doc_fails_validation(self):
+        bad = [{"fact": "grasses", "doc": "zzqx", "true": "10cm", "q": "?", "steps": [
+            {"severity": 0, "replace": [], "target_string": "10cm", "ratio": 1}]}]
+        with mock.patch("harness.PERTURBATION_LADDERS", bad):
+            problems = validate_ladders()
+        self.assertTrue(any("not in DOCUMENTS" in p for p in problems))
+
+    def test_item_with_missing_doc_fails_validation(self):
+        bad = [dict(p) for p in UNANSWERABLE_ITEMS]
+        del bad[0]["doc"]
+        with mock.patch("harness.UNANSWERABLE_ITEMS", bad):
+            problems = validate_items()
+        self.assertTrue(any("not in DOCUMENTS" in p for p in problems))
 
 
 class TestSeverityClassify(unittest.TestCase):
@@ -394,11 +426,11 @@ class TestUnanswerableItems(unittest.TestCase):
 
     def test_parametric_answers_absent_from_document(self):
         for p in UNANSWERABLE_ITEMS:
-            self.assertFalse(appears(p["parametric_answer"], passage), p["item_id"])
+            self.assertFalse(appears(p["parametric_answer"], doc_text(p["doc"])), p["item_id"])
 
-    def test_two_probes_per_prior_level(self):
+    def test_four_probes_per_prior_level(self):
         for lv in PRIOR_STRENGTHS:
-            self.assertEqual(sum(1 for p in UNANSWERABLE_ITEMS if p["prior_strength"] == lv), 2)
+            self.assertEqual(sum(1 for p in UNANSWERABLE_ITEMS if p["prior_strength"] == lv), 4)
 
     def test_item_ids_unique(self):
         item_ids = [p["item_id"] for p in UNANSWERABLE_ITEMS]
@@ -406,7 +438,7 @@ class TestUnanswerableItems(unittest.TestCase):
 
     def test_required_fields(self):
         for p in UNANSWERABLE_ITEMS:
-            for field in ("item_id", "prior_strength", "proximity", "domain", "parametric_answer", "q"):
+            for field in ("item_id", "doc", "prior_strength", "proximity", "domain", "parametric_answer", "q"):
                 self.assertIn(field, p)
             self.assertIn(p["proximity"], ("near", "far"))
 
@@ -455,8 +487,8 @@ class TestLoadDone(unittest.TestCase):
 
 
 class TestGoldSchedule(unittest.TestCase):
-    def test_twenty_rows_at_reps_2(self):
-        self.assertEqual(len(gold_schedule(UNANSWERABLE_ITEMS, 2)), 20)
+    def test_forty_rows_at_reps_2(self):
+        self.assertEqual(len(gold_schedule(UNANSWERABLE_ITEMS, 2)), 40)
 
     def test_both_anchor_classes_present(self):
         roles = {role for _, _, role in gold_schedule(UNANSWERABLE_ITEMS, 2)}

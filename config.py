@@ -12,10 +12,20 @@ load_dotenv()
 MODELS = [("gpt-4o-mini", "openai"), ("gpt-5.4-nano", "openai"), ("claude-sonnet-5", "anthropic")]
 JUDGE_MODEL = "gpt-5.4-mini"  # LLM judge, ideally from a different model provider to the candidate model
 GOLD_CANDIDATE = ("claude-sonnet-5", "anthropic") # Model to be used for generating answers in the gold set
-N_PER_CELL = 4
+N_PER_CELL = 3
 JUDGE_CONCURRENCY = 4
 
-passage = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "document.txt")).read()
+DOCUMENTS = {
+    "consent": "document1_consent.txt",
+    "epl": "document2_epl.txt",
+    "liquor": "document3_liquor.txt",
+}
+_here = os.path.dirname(os.path.abspath(__file__))
+DOCUMENT_TEXTS = {name: open(os.path.join(_here, fname)).read() for name, fname in DOCUMENTS.items()}
+passage = DOCUMENT_TEXTS["consent"]
+
+def doc_text(ref):
+    return DOCUMENT_TEXTS[ref]
 
 # System Instructions
 SOURCE_EXCLUSIVE = (
@@ -101,8 +111,9 @@ def perturb(document, replacements): # Builds the perturbed document
 def appears(phrase, text):
     return re.search(r"\b" + re.escape(phrase) + r"\b", text, re.IGNORECASE) is not None # Returns true if phrase is present as a whole word ignoring capitalisation in model's answer, false if not
 
-def step_doc(step): # perturbs the passage based on the step
-    return perturb(passage, step["replace"]) if step["replace"] else passage
+def step_doc(fact, step): # perturbs the fact's document based on the step
+    base = doc_text(fact["doc"])
+    return perturb(base, step["replace"]) if step["replace"] else base
 
 def build_batch_message_params(model, system_instruction, question, doc, max_tokens=1200, cache_ttl="1h"):
     return {

@@ -1,0 +1,79 @@
+# v2 expansion design — facts, documents, models
+
+Draft for review. Every section header states a decision; **bold** = proposed default, open questions marked ⚑.
+
+## What v2 fixes
+
+One run on a better instrument instead of patching v1 piecemeal:
+
+1. **Clustering** (both external reviews): facts are the experimental unit; 6 facts → ~20 lifts effective n from ~6–16 to ~20+ per cell.
+2. **Single document, single domain** (v1 limitation #1).
+3. **n=1 frontier** (v1 limitation #5): add a second frontier candidate, retest everyone.
+4. **Abstention item paucity**: 2 items per prior level supports no interval (n_eff prints as 2.0).
+5. **Prior-strength confound → designed factor**: the S3 bimodality (external-norm facts flag, institution-specific facts don't) becomes a manipulated variable instead of a post-hoc reading.
+
+v1 data is frozen as published. v2 writes fresh results files.
+
+## Documents
+
+**3 documents, 3 genres**: the existing NSW DA determination, plus 2 new genres. Selection constraints: publicly available (transcripts ship un-gitignored), regulated grounded-QA family (the thesis domain), dense in specific numeric/citation-shaped requirements, ~2-5k words.
+
+- **Doc 2: environment protection licence — IN HAND, verified.** NT EPA EPL-188 (City of Darwin landfill), 21pp / 6,641 words, saved as `document2_epl_source.pdf`. Verified facts, all requirement-shaped: leachate level cap 300mm at any time; tyre-stockpile limits table (height <=3 m, width <=5 m, length <=45 m, separation >=15 m, firebreak >=4 m); no tyre storage within 50 m of vegetation over 50mm; daily-cover 300mm; records retained 2 years; NT EPA notification within 14 days; renewal window 90/30 days. Third jurisdiction (NT) for free. Weakness: no numbered-standard citations, so the citation-shaped stratum must come from docs 1 and 3. At ~2.3x v1's length, consider a defined extract if per-request cost bites (prompt cache makes it cheap regardless).
+- **Doc 3: liquor licence decision — IN HAND, verified.** ILGA hotel licence decision, The Grove Social House Kingsgrove (Apr 2022), 7pp / 2,770 words, saved as `document3_liquor_source.pdf`. Verified facts: trading hours Mon-Sat 10:00 AM-12:00 AM / Sun 10:00 PM; statutory 6-hour daily closure (external norm, s11A Liquor Act); security ratio 1:100 patrons from 6:00 PM; patron cap 200; terrace cap 20; incident register 3 years; CCTV 30 days / 24 hours; licensee training 6 months; statute-citation-shaped references.
+
+Why one document per genre (not two consents): with 3 documents, documents are the clusters — n=2 within a genre attributes nothing (the same clustering lesson as facts), so a second consent buys only a qualitative stability check while leaving the "singular domain" limitation half-standing. Three genres makes the generality claim categorical. Cost: a third answer-style surface in the judge gold. Rationale for 3 not 5+ stands: every genre grows the gold surface (v1 limitation #4).
+
+## Facts
+
+**20 total: the 6 existing + 14 new**, stratified at authoring on two axes:
+
+| axis | levels | why |
+|---|---|---|
+| prior anchoring | external-norm vs institution-specific | the S3 bimodality axis, now balanced by design |
+| answer shape | plain numeric vs citation-shaped (answer IS a standard/rating name) | the timber_standard/next_bal leak finding, now a designed condition |
+
+Every fact gets a **prior-strength rating (1–5) assigned at authoring time**, before any model sees it. The doc-free probe (banked 2026-07-05) then measures each fact's actual prior empirically; authoring ratings vs probe results is itself a reportable calibration check. Three independent arrivals at this idea (banked note, review #1, review #2) — it unifies the caveat and abstention experiments under one construct.
+
+Ladders: unchanged design — S0 control + S1–S5 ordinal severity, `validate_ladders()` now asserts per-replacement. Bounded/non-ratio facts permitted but tagged (v1 limitation #2 stands, disclosed not solved).
+
+## Abstention items
+
+**4 items per prior level (2 → 4, i.e. 10 → 20 items)** — DONE. Citation-shaped answers deliberately span P1–P3 (`as_bins`/`next_bal`, `as_flammable`/`timber_standard`, `as_parking`); no P4/P5 citation items exist because no standard number is famous enough to carry a strong prior — a bound of the world, not the design. P3's two new items both sit on the consent doc (pool fencing and parking are building-code-natural questions; a forced liquor/EPL P3 would be a worse defect than the imbalance).
+
+## Models
+
+**4 candidates: the v1 three + gpt-5.6-terra** (public 2026-07-09; frontier-generation balanced tier, $2.5/$15 per M tokens). All sampling params and reasoning effort at API defaults, disclosed; snapshot ID captured at run time (v1 disclosure debt). Describe as "frontier-generation balanced tier" not bare "frontier" — Sol is the 5.6 flagship; if Terra shows false endorsements the claim generalises cross-lab anyway, if not "does Sol?" is a cheap follow-up.
+
+Caveat carried from review #1: the judge is GPT-5.4-mini. Judging a same-family frontier model sharpens the same-provider concern — mitigation is the judge-gold spot-check on the new model's answers (mandatory anyway) ⚑ plus optionally a one-cell Anthropic-judge cross-check.
+
+## Reps and cost
+
+**3 reps** (`N_PER_CELL` 4 → 3). At ICC ≈ 0.5, 20 facts × 3 reps ≈ n_eff 30 per cell vs v1's ~11.
+
+Rough call count: caveat 4 models × 4 instructions × 20 facts × 6 severities × 3 reps = **5,760** + abstention 4 × 4 × 20 × 3 = **960**, plus equal judge calls, plus the doc-free prior probe (~20 facts × 4 models × 3 reps ≈ 240). Ballpark **$40–90** depending on the frontier pick. Dry-run planner prints exact plan before spend.
+
+## Judge
+
+Gate, not afterthought — the long pole alongside fact authoring:
+
+1. Pilot one model × one new document; sample answers into the gold (labelled in-place via the CLI helper).
+2. Expand gold to cover: both new documents, the new genre's answer style, the new frontier model's answer style, citation-shaped caveat facts.
+3. Recertify (kappa threshold + zero-tolerance anchors) before any v2 number is read.
+
+## Harness changes
+
+- Documents registry in config; each fact carries a `doc` reference; `step_doc`/wave batching/cache-warming key on the document (prompt cache is per-document now).
+- `document` field in result rows; fresh `caveat_results_v2.jsonl` / `abstention_results_v2.jsonl`.
+- Fact and item names stay hyphen-free (test-pinned) and must be unique across documents.
+- All keyless tests extended to the multi-document paths, especially resume.
+
+## Order of operations
+
+1. Sign off this design (⚑ items resolved)
+2. Select docs 2–3; author 14 facts + 10 abstention items with strata + prior ratings
+3. Config restructure + tests (no API)
+4. Doc-free prior probe (small spend, validates ratings)
+5. Dry-run plan → pilot (1 model × 1 new doc)
+6. Judge gold expansion + recertification ← gate
+7. Full v2 run (resumable, two-wave, concurrent judge)
+8. Analysis: existing `vectors`/ICC machinery reads v2 files as-is

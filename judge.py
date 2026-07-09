@@ -3,7 +3,7 @@ import json
 import os
 import math
 import sys
-from config import (openai_client, passage, JUDGE_MODEL, GOLD_CANDIDATE, KAPPA_THRESHOLD, SOURCE_EXCLUSIVE, WEAK_GROUNDING,
+from config import (openai_client, passage, doc_text, JUDGE_MODEL, GOLD_CANDIDATE, KAPPA_THRESHOLD, SOURCE_EXCLUSIVE, WEAK_GROUNDING,
                     call, with_retry)
 
 ABSTENTION_GOLD_FILE = "abstention_gold.json"        # ground truth
@@ -224,7 +224,7 @@ def build_abstention_gold(reps=2):
     schedule = gold_schedule(UNANSWERABLE_ITEMS, reps)
     rows = []
     for i, (p, iname, role) in enumerate(schedule):
-        answer = with_retry(call, model, prov, instructions[iname], p["q"], passage)
+        answer = with_retry(call, model, prov, instructions[iname], p["q"], doc_text(p["doc"]))
         rows.append({**p, "role": role, "instruction": iname, "candidate": model, "answer": answer, "human": None})
         print(f"  [{i + 1}/{len(schedule)}] {iname} / P{p['prior_strength']} {p['item_id']} / {role}", flush=True)
         with open(ABSTENTION_GOLD_FILE, "w") as f:

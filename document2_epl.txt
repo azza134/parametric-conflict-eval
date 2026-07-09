@@ -1,0 +1,706 @@
+Page of 1 21
+NVIRONMENT ROTECTION ICENCEE P L
+(Pursuant to section 34 of the )Waste Management and Pollution Control Act
+Licensee City of Darwin
+Licence Number EPL188 - 07
+Registered Business 
+Address
+City of Darwin
+1 Harry Chan Avenue
+Darwin NT 0800
+ABN 11 503 313 301
+Premises Address Lot 03952 Town of Sanderson plan(s) S 79/149A
+VANDERLIN DR, HOLMES
+Anniversary Date: 02 July
+Commencement Date: 02/07/2026
+Expiry Date: 01/07/2036
+Scheduled Activity Operating for the disposal of by burial that premises waste
+service, or are designed to service, the disposal waste
+requirements of more than 1000 persons.
+Collecting, transporting, storing, re-cycling, treating or 
+disposing of a (as per Table 1) on a commercial or listed waste
+fee for service basis, other than in or for the purpose of a 
+sewage treatment plant.
+Operating , other than a sewage treatment plant, premises
+associated with collecting, transporting, storing, re-cycling, 
+treating or disposing of a (as per Table 1) on a listed waste
+commercial or fee for service basis.
+ 
+ 
+ENVIRONMENT ROTECTION ICENCEP L 188 - 07
+Page of 2 21
+ 
+Description The Shoal Bay Waste Management Facility is a municipal 
+waste resource recovery and disposal site operated by the City 
+of Darwin. It is authorised to operate the following facilities 
+under this licence:
+Stage 1 to 6 and 2A landfill waste cells
+Three temporary leachate storage tanks
+Three leachate storage ponds
+A leachate treatment plant.
+ENVIRONMENT ROTECTION ICENCEP L 188 - 07
+Page of 3 21
+Table 1 - Listed Wastes Authorised to be Handled
+Listed Waste
+Animal effluent and residues
+Acidic solutions or acids in solid form
+Asbestos
+Clinical and related wastes
+Encapsulated, chemically fixed, solidified or polymerised wastes
+Lead, lead compounds
+Sewage sludge and residues including nightsoil and septic tank 
+sludge
+Soils contaminated with a listed waste
+Tyres
+Waste from the production, formulation and use of inks, dyes, 
+pigments, paints, lacquers and varnish
+Waste mineral oils unfit for their original intended use
+Waste substances and articles containing or contaminated with per- 
+and polyfluoroalkyl substances (PFAS)
+Containers that are contaminated with residues of a listed waste
+Filter cake
+Non-toxic salts
+Residue from industrial waste treatment or disposal operations
+Tannery wastes (including leather dust, ash sludges and flours)
+ Activity authorised by this licence 
+ Activity not authorised by this licence
+
+ENVIRONMENT ROTECTION ICENCEP L 188 - 07
+Page of 4 21
+TABLE OF CONTENTS
+INFORMATION ABOUT THIS LICENCE ................................................................................................................ 5
+RULES FOR INTERPRETING THE CONDITIONS OF THIS LICENCE ................................................................. 7
+LICENCE CONDITIONS .......................................................................................................................................... 8
+GENERAL ................................................................................................................................................................ 8
+EARLY SURRENDER OF LICENCE ....................................................................................................................... 9
+OPERATIONAL ....................................................................................................................................................... 9
+DISCHARGES AND EMISSIONS ......................................................................................................................... 13
+MONITORING ....................................................................................................................................................... 13
+RECORDING AND REPORTING .......................................................................................................................... 14
+PERFORMANCE IMPROVEMENT ....................................................................................................................... 16
+DEFINITIONS ........................................................................................................................................................ 18
+ATTACHMENTS
+1 Attachment 1 - Waste Acceptance Criteria.pdf
+2 Attachment 2 - Site Layout and Monitoring Locations.pdf
+3 Attachment 3 - Surface Water Monitoring Program and Trigger Values.pdf
+4 Attachment 4 - Groundwater Monitoring Program.pdf
+5 Attachment 5 - Leachate Monitoring Program.pdf
+ENVIRONMENT ROTECTION ICENCEP L 188 - 07
+Page of 5 21
+a. 
+b. 
+c. 
+INFORMATION ABOUT THIS LICENCE
+This licence does not in any way relieve the licence holder from its obligations to comply with the Waste 
+ (WMPC Act), including the general environmental duty in section Management and Pollution Control Act
+12 of the WMPC Act and the duty to notify of incidents causing or threating to cause pollution under 
+section 14 of the WMPC Act.
+Duration of a licence (section 40, 43 and 45 of the WMPC Act)
+A licence will remain in force until its expiry date or until it is surrendered by the Licensee or is suspended 
+or cancelled in accordance with the WMPC Act.
+The Licensee must notify the Northern Territory Environment Protection Authority (NT EPA) within 14 days 
+after ceasing to conduct the activity.
+The Licensee may, with the approval of the NT EPA, surrender the licence to the NT EPA.
+Amendment or Revocation of a licence (section 37 of the WMPC Act)
+The Licensee may apply to amend or revoke a condition of this licence.
+A fee applies and the application must be made using the designated form via NT EPA Online.
+The NT EPA may also amend or revoke a condition of this licence as set out in section 38 of the WMPC 
+Act.
+Transfer of a licence (section 46 of the WMPC Act)
+The Licensee can apply to transfer their licence to another person.
+A fee applies and the application must be made via NT EPA Online.
+Renewal of a licence (section 40 of the WMPC Act and section 3 of the Regulations)
+The Licensee may apply for the renewal of their licence not earlier than 90 days, and not later than 30 
+days, before their licence expires.
+A fee applies and the application must be made via NT EPA Online.
+Public Register
+A copy of environment protection licences and any plans for environmental management, reports, 
+submissions or documents required as a condition of an environment protection licence, will be placed on 
+a register in accordance with section 9 of the WMPC Act.
+A copy of the Annual Return will be placed on the register.
+The NT EPA makes this register freely available from the NT EPA website.
+Environment Protection Objectives (Part 4 of the WMPC Act), and Water Quality Standards (section 73 of the 
+)Water Act
+An Environment Protection Objective (EPO) is a statutory instrument to establish principles on which:
+environmental quality is to be maintained, enhanced, managed or protected;
+pollution, or environmental harm resulting from pollution, is to be assessed, prevented, reduced, 
+controlled, rectified or cleaned up; and
+effective waste management is to be implemented or evaluated.
+ENVIRONMENT ROTECTION ICENCEP L 188 - 07
+Page of 6 21
+In accordance with section 18 of the WMPC Act a beneficial use, quality standard, criteria or objective 
+declared under section 73 of the and in force is an environment protection objective for the Water Act
+purposes of the WMPC Act.
+The following EPOs and Beneficial Use Declarations (BUDs) are relevant to this licence:
+Declared Beneficial Use for the Darwin Harbour Area: Water Quality Objectives, NTG Gazette 29 
+June 2010.
+Environmental Interests
+This section highlights sensitivity of the surrounding land use and environment associated with the location 
+of the approved activity:
+Sites of Conservation Significance
+SOC 6 - Darwin Harbour
+SOC 8 - Shoal Bay
+Cultural Interests
+It is the Licensee's responsibility to contact the Aboriginal Areas Protection Authority, appropriate land 
+council or other governing body and ensure that any Authority Certificates required as a result of 
+conducting the licensed activity are obtained and complied with.
+ENVIRONMENT ROTECTION ICENCEP L 188 - 07
+Page of 7 21
+RULES FOR INTERPRETING THE CONDITIONS OF THIS LICENCE
+Where there is a discrepancy between the conditions of this licence and any plan, standard, guideline or 
+other document referred to in this licence, the conditions of this licence prevail to the extent of the 
+inconsistency.
+Any reference to any standard (Australian or international) in this licence means the relevant parts of the 
+current version of that standard.
+A reference to any guideline or code of practice (or to the relevant parts of any guideline or code of 
+practice) in this licence means the current version of the guideline or code of practice.
+Under section 39 of the WMPC Act, any contravention of or failure to comply with this licence by the 
+licensee may be an offence.
+In determining whether the Licensee has committed an offence, the Licensee may be liable for the 
+conduct of its directors, employees or agents.
+The Licensee should ensure that each of its directors, employees, contractors or agents are aware of, and 
+comply with, this licence.
+In this licence, unless the contrary intention appears, words that are defined in the WMPC Act are 
+intended to have the meaning given to them in that Act.
+ENVIRONMENT ROTECTION ICENCEP L 188 - 07
+Page of 8 21
+LICENCE CONDITIONS
+GENERAL
+1 The Licensee must ensure the contact details recorded in NT EPA Online for this licence are correct at 
+all times.
+2 The Licensee must at all times have a 24 hour emergency contact.
+3 The licensee must pay via NT EPA Online the annual fee calculated in accordance with the method 
+prescribed in the Regulations within 10 business days of the anniversary date of this licence, for each 
+year or part of a year that this licence is in force.
+4 The Licensee must cause clear and legible signage, in English, to be displayed in a prominent location 
+at each public entrance to the premises that includes the following details:
+4.1 environment protection licence number issued under the WMPC Act; and
+4.2 24 hour emergency contact details.
+5 The Licensee must cause a copy of this licence to be available for inspection by any person, in hard 
+copy form, at the premises.
+6 The Licensee must provide to the NT EPA, within 10 business days of a request, a copy of any 
+document, monitoring data or other information in relation to the activity, in the format requested by the 
+NT EPA.
+7 All notices, reports, documents or other correspondence required to be provided as a condition of this 
+licence, unless otherwise specified as a condition of this licence, must be provided in electronic form by 
+uploading the document via NT EPA Online (or by emailing environmentalregulation@nt.gov.au).
+8 Within 10 business days of any amendment being made to a document listed in Table 2 the Licensee 
+must provide the amended document to the NT EPA, along with:
+8.1 a tabulated summary of the amendment(s) with document references;
+8.2 reasons for the amendment(s); and
+8.3 an assessment of environmental risk associated with the amendment(s).
+ 
+Table 2: Documents to apply
+ 
+Document Title Document 
+Reference
+Environmental Management Plan - Shoal Bay Waste Management 
+Facility - City of Darwin 217373-98
+9 The NT EPA may require the Licensee to revise or amend and resubmit any amended document. 
+Where the NT EPA requires a document to be resubmitted, the Licensee must submit it to the NT EPA 
+by the date specified by the NT EPA.
+10 The Licensee must operate and maintain a community feedback number.
+11 The Licensee must display the community feedback number:
+11.1 where the Licensee has a website, in a prominent location on the Licensees website;
+ENVIRONMENT ROTECTION ICENCEP L 188 - 07
+Page of 9 21
+11.2 in other publicly available documents relating to the activity.
+12 The Licensee must maintain a Complaint Log for all complaints received by the licensee in relation to 
+the activity.
+13 The Licensee must ensure that the Complaint Log includes, for each complaint received by the 
+Licensee, the following information:
+13.1 the person to whom the complaint was made;
+13.2 the person responsible for managing the complaint;
+13.3 the date and time the complaint was reported;
+13.4 the date and time of the event(s) that led to the complaint;
+13.5 the contact details of the complainant if known, or where no details are provided a note to that 
+effect;
+13.6 the nature of the complaint;
+13.7 the nature of event(s) giving rise to the complaint;
+13.8 prevailing weather conditions at the time (where relevant to the complaint);
+13.9 the action taken in relation to the complaint, including any follow-up contact with the 
+complainant; and
+13.10 if no action was taken, why no action was taken.
+14 The Licensee must implement, maintain and follow an Emergency Response Plan that addresses 
+procedures for responding to emergencies associated with the activity that may cause environmental 
+harm.
+EARLY SURRENDER OF LICENCE
+15 Any reports, records or other information required or able to be provided by the Licensee under this 
+licence must be submitted to the NT EPA prior to the Licensee surrendering the licence. If the date on 
+which a report, record or other information is required falls after the date the Licensee requests to 
+surrender this Licensee, the Licensee must provide the report, record or information as far as possible 
+using data available to the Licensee up to and including the date the request to surrender the licence is 
+made.
+OPERATIONAL
+16 Waste must only be accepted that meets the waste classification and acceptance criteria detailed in 
+Attachment 1 of this licence, except where specific restrictions apply to individual landfill stages as set 
+out below.
+ 
+16.1 Stage 1 and Stage 2 are unlined and must not accept wastes subject to the classification and 
+acceptance criteria in Attachment 1.
+16.2 Stage 2 must only be used for the disposal of asbestos, in accordance with the locations 
+specified in Table 3.
+16.3 Stage 2A incorporates a geosynthetic clay liner (GCL) system and must only be used for the 
+disposal of asbestos and inert waste.
+ENVIRONMENT ROTECTION ICENCEP L 188 - 07
+Page of 10 21
+16.4 Stage 3 and Stage 4 are closed and must not be used to dispose of waste.
+16.5 Stage 5 and Stage 6 use a composite liner system and must not accept waste with 
+concentrations greater than the upper limits defined for composite liners in Attachment 1. 
+17 The maximum interim waste filling height of landfill waste cells 6A and 6B must not exceed RL50mAHD.
+18 The Licensee must maintain a clear and legible survey marker showing where RL50mAHD is located for 
+line of sight for landfill waste cells 6A and 6B.
+19 The Licensee must ensure that wastewater generated from washing plant and equipment associated 
+with the activity does not cause pollution.
+20 The Licensee must segregate waste received and generated at the premises in clearly designated areas 
+for recycling, re-use or disposal.
+21 The Licensee must cover waste in accordance with the NT EPA Guideline for the Siting, Design and 
+ in the Northern Territory.Management of Solid Waste Disposal Sites
+22 The Licensee must ensure that litter:
+22.1 is contained within the boundary of the operational footprint.
+22.2 is not deposited or allowed to accumulate in stormwater drain(s), water or leachate dam(s).
+22.3 does not accumulate along the boundary of the operational footprint.
+22.4 is collected and disposed of on a daily basis.
+23 The Licensee must not cause or permit waste to be burned at the premises.
+24 The Licensee must maintain a log of fires occurring within the operational footprint including the 
+following information:
+24.1 the time and date of when the fire was reported;
+24.2 the circumstance which ignited the fire;
+24.3 the time and date of when the fire ceased and whether it burnt out or was extinguished;
+24.4 the location of the fire within the operational footprint (e.g. timber stockpile, putrescible waste);
+24.5 prevailing weather conditions;
+24.6 observations made in regard to smoke direction and dispersion;
+24.7 the amount of waste combusted by the fire; and
+24.8 action taken to extinguish the fire.
+24.9 measures taken to reduce the risk of further fire at the premises.
+25 The Licensee must ensure that neither leachate nor water pond on the surface of the premises.
+26 The Licensee may only store water on the surface of the premises in the northern borrow pit identified in 
+Attachment 2.
+27 The Licensee must only store leachate:
+27.1 in covered ponds identified as 'leachate storage ponds' in Attachment 2; or
+27.2 in enclosed storage tanks with bunded areas constructed, sized, operated and maintained to 
+contain 110% capacity of the largest container within the bund.
+ENVIRONMENT ROTECTION ICENCEP L 188 - 07
+Page of 11 21
+28 The Licensee must not directly cause or pump any leachate (including treated or concentrate leachate) 
+into any landfill waste cell or landfill of Stage 6 without NT EPA approval.
+29 The Licensee must ensure that the level of leachate within any lined landfill waste cell of Stage 6 does 
+not exceed 300mm at any time.
+30 The Licensee must ensure that all materials that are likely to cause environmental harm are handled and 
+stored in areas with a containment system in accordance with the relevant Australian Standard. Where 
+no relevant Australian Standard exists, the containment system must be sized to contain 110% of the 
+volume of the largest container within the area.
+ 
+Listed Wastes
+31 The Licensee must not collect, transport, store, treat, recycle or dispose of listed waste other than the 
+listed waste specified in Table 1.
+31.1 Encapsulated/immobilised waste must only be accepted for disposal where it meets the 
+requirements set out in the documents listed in Table 2, and is limited to the following listed 
+waste:
+Containers that are contaminated with residues of a listed waste
+Filter cake
+Non-toxic salts
+Residue from industrial waste treatment or disposal operations
+Sewerage sludge and residues including nightsoil and septic tank sludge
+Soils contaminated with a listed waste
+Tannery wastes (including leather dust, ash, sludges and flours)
+Waste from the production, formulation and use of inks, dyes, pigments, paints, lacquers 
+and varnish
+Waste mineral oils unfit for their original intended use
+31.2 The following wastes must be encapsulated/immobilised prior to disposal:
+Containers that are contaminated with residues of a listed waste
+Filter cake
+Non-toxic salts
+Residue from industrial waste treatment or disposal operations
+Tannery wastes (including leather dust, ash, sludges and flours)
+Waste from the production, formulation and use of inks, dyes, pigments, paints, lacquers 
+and varnish
+Waste mineral oils unfit for their original intended use
+32 Soils contaminated with a listed waste may include any of the listed waste prescribed in Schedule 1 of 
+the and/or or per-and poly-Waste Management and Pollution Control (Administration) Regulations 1998
+fluoro alkyl substances (PFAS). 
+33 The Licensee must only handle asbestos containing material which is packed and contained in 
+accordance with Section 4.8 of the NT Worksafe Code of Practice. How to Safely Remove Asbestos 
+34 The Licensee must dispose of asbestos containing material in designated areas only as defined by 
+boundary coordinates in Table 3.
+  
+Table 3: Designated Asbestos Burial Areas
+ENVIRONMENT ROTECTION ICENCEP L 188 - 07
+Page of 12 21
+GDA94 / MGA Zone 52 boundary coordinates
+Stages 2 and 2A Stages 3, 5 and 6
+Easting Northing Easting Northing
+709528 8630587 709165 8630276
+709703 8630587 709166 8630075
+709726 8630520 709216 8630025
+709823 8630482 709463 8630021
+709891 8630007 709459 8630280
+709518 8630001    
+709535 8630550    
+709528 8630573    
+35 The Licensee must maintain a record of all asbestos containing material buried at the premises including 
+the quantity of the material buried.
+36 The Licensee must dispose of asbestos containing material by burying it:
+36.1 in the case of asbestos fibre and dust waste, at a minimum depth of 3 metres below the final 
+landform; and
+36.2 in the case of stabilised asbestos waste in a bonded matrix, at a minimum depth of 1 metre 
+below the final landform.
+37 The Licensee must ensure that any tyres stored on the premises do not exceed the limits specified in 
+Table 4:
+  
+Table 4: Tyre Stockpile Limits
+Height of stockpile < or equal to 3 metres
+Width of stockpile < or equal to 5 metres
+Length of stockpile < or equal to 45 metres
+Separation distance between stockpiles > or equal to 15 metres
+Separation to distance from end of stockpile > or equal to 10 metres
+Firebreak perimeter around each tyre stockpile > or equal to 4 metres
+38 The Licensee must not store tyres within 50 metres of any vegetation that is more that 50mm high.
+39 The Licensee must ensure that all listed waste being transported from the premises is transported by a 
+person suitably licenced under section 30 of the WMPC Act to transport the listed waste.
+ 
+Incidents
+40 The Licensee must notify the NT EPA of any incidents at the premises causing or threatening to cause 
+pollution including but not limited to fires, leachate breakouts, loss of containment from dams or storage. 
+41 The Licensee, as soon as practicable after (and in any case, within 24 hours after) first becoming aware 
+of any incident, must:
+41.1 contact the Pollution Hotline on telephone number 1800 064 567 and include the status of the 
+incident and this licence number; and
+ENVIRONMENT ROTECTION ICENCEP L 188 - 07
+Page of 13 21
+41.2 complete a section 14 incident report form and submit to both environmentalregulation@nt.gov.
+ and . au pollution@nt.gov.au
+42 Following any notification of an incident the Licensee must submit to the NT EPA an incident 
+investigation report within 14 days. The incident investigation report must include:
+42.1 when the incident was detected and by whom;
+42.2 the date and time of the incident;
+42.3 the actual or potential causes and potential contributing factors to the incident;
+42.4 the risk of environmental harm arising from the incident;
+42.5 the action(s) that were or will be undertaken to mitigate any environmental harm arising from the 
+incident;
+42.6 correction actions that have or will be undertaken to ensure the incident does not reoccur; and
+42.7 if no action was taken, why no action was taken.
+43 For any incidents continuously occuring for more than 14 days, an interim investigation report must be 
+submitted within 14 days of the Licensee first becoming aware of the incident, and a final investigation 
+report submitted within 14 days of when the incident has ceased.
+DISCHARGES AND EMISSIONS
+44 The Licensee must ensure there is no migration or overflow of a contaminant or waste, which causes or 
+may cause environmental harm, beyond the operational footprint. The operational footprint is the area of 
+land within the perimeter fence (shown as a white outline in Attachment 2) and includes infrastructure at 
+the GWILP monitoring point.
+ 
+(For the avoidance of doubt, this condition is not intended to authorise the discharge of a contaminant or 
+waste to any land or water which discharge has not been specifically authorised by another condition of 
+this licence).
+45 The Licensee must not allow a contaminant or waste, which causes or may cause environmental harm, 
+to enter water.
+ 
+46 The Licensee must ensure that the quality of surface water leaving the operational footprint does not 
+exceed the limits specified in Attachment 3 of this licence.
+47 The Licensee must ensure that stormwater is diverted away from all landfill waste cells.
+Emissions to air
+48 The activity must not cause environmental nuisance or harm beyond the boundary of the operational 
+footprint by the emission or release of:
+48.1 visible steam;
+48.2 smoke;
+48.3 offensive odour;
+48.4 dust or particulates; or
+48.5 noise.
+ENVIRONMENT ROTECTION ICENCEP L 188 - 07
+Page of 14 21
+MONITORING
+49 The Licensee must implement and undertake the following monitoring programs from the 
+commencement date of this licence:
+49.1 surface water as detailed in Attachment 3 of this licence;
+49.2 groundwater monitoring as detailed in Attachment 4 of this licence;
+49.3 leachate monitoring as detailed in Attachment 5 of this licence;
+For the purposes of this condition, the word "land" does not include water or air on or above land.
+50 The Licensee must for all land based monitoring points:
+50.1 install and maintain appropriate identification signage so that they are reasonably identifiable at 
+all times.
+50.2 maintain safe access and egress, as is reasonably practicable.
+51 The Licensee must ensure any samples collected in connection with the activity or this licence, are 
+obtained by, or under the supervision of a qualified sampler.
+52 The Licensee must ensure that, for each sample collected in connection with the activity or this licence, 
+the following information must be recorded and retained:
+52.1 the date on which the sample was collected;
+52.2 the time at which the sample was collected;
+52.3 the location at which the sample was collected;
+52.4 the name of the person who collected the sample;
+52.5 the chain of custody forms relating to the sample;
+52.6 the field measurements (if any) and analytical results (if any) relating to the sample; and
+52.7 laboratory quality assurance and quality control documentation.
+53 The Licensee must ensure that every sampling location is sampled according to the frequency specified 
+for each monitoring program. Where a sampling location is inaccessible or dry during the sampling 
+period the Licensee must provide reasons for the absence of any sample results.
+54 The Licensee must ensure that all monitoring samples are analysed at a laboratory with current NATA 
+accreditation or equivalent.
+55 The Licensee must ensure that laboratory results for all surface water, groundwater, and leachate 
+monitoring undertaken in accordance with this licence are made available to the NT EPA within one 
+month of sampling.
+56 The licensee must at all times maintain an up to date monitoring database which records:
+56.1 leachate pumping volumes or leachate relocated or moved within the operational footprint; and
+56.2 monitoring results for any monitoring required under this licence from January 2010 to present.
+RECORDING AND REPORTING
+57
+ENVIRONMENT ROTECTION ICENCEP L 188 - 07
+Page of 15 21
+The Licensee must maintain records of the nature, quantities and source of waste, other than listed
+waste, received at the premises in each successive 12 month period following the commencement date 
+of this licence.
+58 The Licensee must keep and maintain records relating to the activity undertaken and the listed waste 
+handled by the Licensee in each successive 12 month period following the commencement of this 
+licence, which includes:
+58.1 the date of collection;
+58.2 the source of the listed waste;
+58.3 the name of the transport company;
+58.4 the vehicle registration;
+58.5 a description of the listed waste;
+58.6 the quantity of the listed waste;
+58.7 the final destination of the listed waste; and
+58.8 whether the listed waste was stored, recycled, treated or disposed of.
+59 The Licensee must retain records relating to waste, including listed waste, as required by the conditions 
+of this licence, for a period of 2 years after the end of the 12 month period to which the record relates.
+60 The Licensee must keep records of all non-compliances with this licence. These records must be 
+adequate to enable the licensee to comply with the non-compliance notification conditions of this licence.
+61 The Licensee must notify the NT EPA of any non-compliance with this licence by completing the Non-
+Compliance Notification via NT EPA Online or emailing environmentalregulation@nt.gov.au, as soon as 
+practicable after (and in any case within 24 hours after) first becoming aware of the non-compliance.
+62 The Licensee must keep records of all exceedances of surface water trigger values detailed in 
+Attachment 3 of this licence. These records must be adequate to enable the Licensee to comply with the 
+exceedance notification conditions of this licence.
+63 A non-compliance of surface water monitoring detailed in Attachment 3 of this licence includes an 
+exceedance at any sample location:
+63.1 of the trigger values on three consecutive sampling occasions; or
+63.2 greater than or equal to two times the trigger value; or
+63.3 of the trigger value by the median value from six consecutive samples.
+64 The Licensee must ensure that the notifications of exceedances include the following information:
+64.1 when the exceedance was detected and by whom;
+64.2 the date and time of the exceedance;
+64.3 the actual and potential causes and contributing factors to the exceedance;
+64.4 the risk of environmental harm arising from the exceedance;
+64.5 the action(s) that have or will be undertaken to address the exceedance and/or environmental 
+harm;
+64.6 if no action was taken, why no action was taken; and
+ENVIRONMENT ROTECTION ICENCEP L 188 - 07
+Page of 16 21
+64.7 a date when an incident investigation report will be submitted to the NT EPA.
+65 The Licensee must submit a completed Annual Return via NT EPA Online within 10 business days after 
+each anniversary date of this licence which relates to the preceeding 12 month period.
+66 The NT EPA may require the Licensee to revise or amend and resubmit any Annual Return. Where the 
+NT EPA requires the Annual Return to be resubmitted, the Licensee must submit it to the NT EPA by the 
+date specified by the NT EPA.
+67 The Licensee must complete and provide to the NT EPA a Monitoring Report, as prescribed by this 
+licence, within 20 business days after each anniversary date of this licence.
+68 The Licensee must ensure that each Monitoring Report:
+68.1 is prepared in accordance with the requirements of the NT EPA 'Guideline for Reporting on 
+;Environmental Monitoring'
+68.2 reports on all surface water, groundwater, and leachate monitoring undertaken for this licence 
+and as part of the environmental monitoring program for the site and the:
+results for surface water are analysed by a person with expertise in hydrology;
+results for groundwater are analysed by a person with expertise in hydrogeology.
+68.3 includes a tabulation of all monitoring data required as a condition of this licence. Data must be 
+provided electronically in Microsoft Excel format;
+68.4 includes long term trend analysis of monitoring data to demonstrate any environmental impact 
+associated with the activity over a minimum period of three years (where the data is available). 
+Data used in this analysis must be provided electronically in Microsoft Excel format;
+68.5 reports on all environmental monitoring exceedances and investigations undertaken for this 
+licence; and
+68.6 includes an assessment of the environmental impacts outside the operational footprint by the 
+licensed activity.
+69 The NT EPA may require the Licensee to revise or amend and resubmit any Monitoring Report. Where 
+the NT EPA requires the Monitoring Report to be resubmitted, the Licensee must submit it to the NT 
+EPA by the date specified by the NT EPA.
+PERFORMANCE IMPROVEMENT
+70 The Licensee must undertake, in June of each year, a licence audit by a person suitably experienced 
+with licence auditing or a qualified person to evaluate the extent to which compliance has been achieved 
+with this licence.
+71 The Licensee must ensure that for each licence audit undertaken by the Licensee:
+71.1 a written report is prepared and signed by the person who conducted the audit;
+71.2 the written report is completed within 2 calendar months; and 
+71.3 the written report is provided in full to the NT EPA within 10 business days of being signed by 
+the person who conducted the audit.
+ENVIRONMENT ROTECTION ICENCEP L 188 - 07
+Page of 17 21
+END OF LICENCE CONDITIONS
+This licence is not valid unless signed below:
+Claudia Hunter 
+A/Director Environmental Regulation
+Delegate of the Northern Territory
+Environment Protection Authority
+Dated: 01/07/2026
+ENVIRONMENT ROTECTION ICENCEP L 188 - 07
+Page of 18 21
+DEFINITIONS
+All terms in the Licence which are defined in the have the meaning Waste Management and Pollution Control Act
+given in that Act unless otherwise or further defined in this section.
+DEFINITION In this licence, unless a contrary intention appears:
+24 hour emergency 
+contact
+the phone number of a person who can be contacted at any time and be capable of 
+responding to and providing information about any incident associated with the 
+activity.
+Activity the Scheduled activity as described on the covering page of this licence.
+AHD Australian Height Datum is the official national vertical datum for Australia.
+Air includes any layer of the atmosphere.
+Annual fee yearly fee payable in respect of the activity as specified in the WMPC Act and the 
+Regulations.
+Annual Return an NT EPA prescribed format for demonstrating and reporting compliance with the 
+conditions of this licence and providing information on waste volumes for the 
+preceding 12 month period.
+ANZECC/ARMCANZ Australian and New Zealand Environment and Conservation Council and 
+Agriculture and Resource Management Council of Australia and New Zealand, 
+2000: National Water Quality Management Strategy: Australian Guidelines for 
+Water Quality Monitoring and Reporting.
+Asbestos containing 
+material any material that contains asbestos.
+Business days a day not Saturday, Sunday or a public holiday, in the Northern Territory.
+Community feedback 
+number
+a telephone number enabling members of the public to contact, at any time, a 
+person or voice mail system that can accept, on behalf of the licensee, enquiries or 
+complaints about the activity, and to which the licensee must respond.
+Complaint Log a register of complaints to be maintained by the Licensee that records the details of 
+each complaint received in relation to the activity.
+Consultation and 
+Communication Plan
+a written plan documenting proposed consultation and communications for the 
+activity before, during and after the activity which includes a strategy for 
+communicating with members of the public who are likely to have a real interest in, 
+or be affected by, the activity.
+Contact details includes the 24 hour emergency contact, and name, position title and phone 
+number of a representative of the licensee who can be contacted about the licence 
+and activity.
+Contaminant a solid, liquid or gas or any combination of such substances and includes:
+(a) noise, odour, heat and electromagnetic radiation;
+(b) a prescribed substance or prescribed class of substances; and
+(c) a substance having a prescribed property or prescribed class of properties.
+Discharges allow a liquid, gas or other substance to flow out from where it has been confined.
+Emergency Response a written plan documenting the licensee's procedures for responding to 
+ENVIRONMENT ROTECTION ICENCEP L 188 - 07
+Page of 19 21
+Plan emergencies caused by, resulting from or associated with the activity and that may 
+cause environmental harm.
+Environmental audit has the meaning given in section 47 of the WMPC Act.
+Environmental harm (a) any harm to or adverse effect on the environment; or 
+(b) any potential harm (including the risk of harm and future harm) to or potential 
+adverse effect on the environment, of any degree or duration and includes 
+environmental nuisance.
+Environmental nuisance means:
+(a) an adverse effect on the amenity of an area that:
+(i) is caused by noise, smoke, dust, fumes or odour; and
+(ii) unreasonably interferes with or is likely to unreasonably interfere with the 
+enjoyment of the area by persons who occupy a place within the area or are 
+otherwise lawfully in the area; or
+(b) an unsightly or offensive condition caused by contaminants or waste.
+Incident includes:
+(a) an accident, emergency or malfunction; and
+(b) a deliberate action, whether or not that action was taken by the person 
+conducting the activity in the course of which the incident occurred.
+Land includes water and air on, above or under land.
+Landfill a waste disposal site for the controlled deposit of solid waste by burial onto or into 
+land.
+Landfill cell a purpose built area for the disposal of waste within a landfill.
+Landfill Closure and Post 
+Closure Plan
+a written plan which specifies the landfill closure and post-closure activities as set 
+out in the NT EPA Guidelines for the Siting, Design and Management of Solid 
+Waste Disposal Sites in the Northern Territory.
+Leachate any liquid produced by the action of water percolating through waste, and that 
+contains contaminants.
+Listed waste a waste included under Schedule 2 of the Regulations.
+Litter litter, garbage, rubbish, refuse or waste matter, and includes the body of a dead 
+animal.
+Maintain kept in a manner that it does not present or cause a risk of environmental harm or a 
+hazard to persons or property or, for the purposes of documents including plans, a 
+process of reviewing and amending documentation to ensure it is relevant.
+Material environmental 
+harm
+environmental harm that: 
+(a) is not trivial or negligible in nature;
+(b) consists of an environmental nuisance of a high impact or on a wide scale;
+(c) results, or is likely to result, in not more than $50,000 or the prescribed amount
+(whichever is greater) being spent in taking appropriate action to prevent or 
+minimise the environmental harm or rehabilitate the environment; or
+(d) results in actual or potential loss or damage to the value of not more than 
+$50,000 or the prescribed amount (whichever is greater).
+NATA National Association of Testing Authorities, Australia.
+Non-compliance failure or refusal to comply, whether by act or omission, with obligations or 
+requirements and includes any exceedance of a licence limit.
+ENVIRONMENT ROTECTION ICENCEP L 188 - 07
+Page of 20 21
+Non-compliance 
+notification
+an NT EPA prescribed format for notifying the NT EPA of a non-compliance.
+NT EPA Online online system for Environment Protection Licence (EPL), Environment Protection 
+Approval (EPA) and Waste Discharge Licence (WDL) lodgement and maintenance.
+Operational footprint the area within the perimeter fence as shown in Attachment 2 and includes the 
+infrastructure for the GWILP monitoring location.
+Plant and equipment all material items used in association with the activity, including (but not limited to) 
+storage vessels and containers, pipe work and hosing, vehicles (including vessels), 
+tools, and measuring equipment.
+Point source discharge means any discernible, confined or discrete conveyance from which contaminants 
+or waste are or may be discharged.
+Pollute (a) emit, discharge, deposit, or disturb, directly or indirectly, a contaminant or 
+waste; or
+(b) cause, permit, or fail to prevent, directly or indirectly, the emission, discharge, 
+deposition, disturbance or escape of a contaminant or waste.
+Pollution (a) a contaminant or waste that is emitted, discharged, deposited or disturbed or 
+that escapes; or
+(b) a contaminant or waste, effect or phenomenon, that is present in the 
+environment as a consequence of an emission, discharge, deposition, escape or 
+disturbance or a contaminant or waste.
+Premises the premises identified on page 1 of this licence and includes equipment, plant and 
+structures, whether stationary or portable, and the land on which premises are 
+situated including the operational footprint.
+Public entrance access to the premises that is utilised by the public.
+Putrescible waste the component of the waste stream liable to become putrid. For example, organic 
+matter that has the potential to decompose with the formation of malodorous 
+substances, usually refers to vegetative, food and animal products.
+Qualified person a person registered under Section 68 of the WMPC Act.
+Qualified sampler a person who has training and experience in obtaining samples from the relevant 
+environmental medium.
+Regulations .Waste Management and Pollution Control (Administration) Regulations
+Rehabilitation Plan a written plan to ensure that the objectives of rehabilitation are achieved as set out 
+in the NT EPA Guidelines for the Siting, Design and Management of Solid Waste 
+Disposal Sites in the Northern Territory.
+RL50mAHD Reduced Level 50 metres above Australian Height Datum
+Serious environmental 
+harm
+environmental harm that is more serious than material environmental harm and 
+includes environmental harm that:
+(a) is irreversible or otherwise of a high impact or on a wide scale;
+(b) damages an aspect of the environment that is of a high conservation value, high 
+cultural value or high community value or is of special significance;
+(c) results or is likely to result in more than $50,000 or the prescribed amount
+ENVIRONMENT ROTECTION ICENCEP L 188 - 07
+Page of 21 21
+(whichever is greater) being spent in taking appropriate action to prevent or 
+minimise the environmental harm or rehabilitate the environment; or
+(d) results in actual or potential loss or damage to the value of more than $50,000 
+or the prescribed amount (whichever is greater).
+Solid inert waste solid waste that has no active chemical or biological properties. These wastes do 
+not undergo environmentally significant physical, chemical or biological 
+transformation.
+Stormwater water flowing over ground surfaces, in natural streams and drains as a direct result 
+of rainfall over a catchment and consists primarily of rainfall runoff.
+Trigger values assigned value for each indicator used to assess the risk to an environmental 
+value, a value that initiates some type of pre-defined management action.
+Waste (a) a solid, a liquid or a gas; or
+(b) a mixture of such substances,
+that is or are left over, surplus or an unwanted by-product from any activity (whether 
+or not the substance is of value) and includes a prescribed substance or class of 
+substances.
+Waste Transport 
+Certificate
+the NT EPA waste tracking documentation used to track listed waste being 
+transported interstate as required in accordance with the National Environment 
+Protection (Movement of Controlled Waste between States and Territories) 
+Measures.
+Wastewater water that contains a contaminant or waste.
+Water includes:
+(a) surface water, ground water and tidal waters; 
+(b) coastal waters of the Territory, within the meaning of the Coastal Waters
+(Northern Territory Powers) Act 1980 of the Commonwealth; and
+(c) water containing an impurity.
+WMPC Act the Northern Territory .Waste Management and Pollution Control Act

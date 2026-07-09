@@ -55,7 +55,7 @@ Both sweeps at the default N=4 (the published runs used N=8; reps within a fact 
 
 ## Customisation
 
-The benchmark can be customised in `config.py`, including models tested, samples per cell (n), the system instructions. Currently, swapping in your own document is deliberately **not** config-only: a new `document.txt` needs its own `PERTURBATION_LADDERS` (which facts to perturb, at which severities) and `UNANSWERABLE_ITEMS`. 
+The benchmark can be customised in `config.py`, including models tested, samples per cell (n), the system instructions. Currently, swapping in your own document is deliberately **not** config-only: a new `document1_consent.txt` needs its own `PERTURBATION_LADDERS` (which facts to perturb, at which severities) and `UNANSWERABLE_ITEMS`. 
 
 ## Why trust the numbers
 
@@ -70,7 +70,7 @@ Every answer is scored by an LLM judge, and no judge scores anything before bein
 | `harness.py` | the two experiments |
 | `judge.py` | both judges and their certification pipeline |
 | `test_logic.py` | 93 offline tests verifying the functions |
-| `document.txt` | the source document (currently a NSW development consent) |
+| `document1_consent.txt` | the source document (currently a NSW development consent) |
 | `caveat_gold.json` / `abstention_gold.json` | human-labelled gold sets the judges are certified against |
 | `results.md` + `*_curve.csv` | published findings and their full grids |
 | `plot_tradeoff.py` + `tradeoff_scatter.png` | the trade-off scatter plot in results.md and its generator |
