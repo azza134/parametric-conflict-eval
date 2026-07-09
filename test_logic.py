@@ -390,8 +390,8 @@ class TestLadders(unittest.TestCase):
         for fact in PERTURBATION_LADDERS:
             self.assertEqual([s["severity"] for s in fact["steps"]], SEVERITIES)
 
-    def test_one_hundred_twenty_steps_total(self):
-        self.assertEqual(total_steps(), 120)
+    def test_one_hundred_forty_four_steps_total(self):
+        self.assertEqual(total_steps(), 144)
 
     def test_ratio_increases_where_present(self):
         for fact in PERTURBATION_LADDERS:
