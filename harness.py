@@ -800,6 +800,15 @@ UNANSWERABLE_ITEMS = [
     {"item_id": "offplan_cooling", "doc": "consent", "prior_strength": 2, "proximity": "near", "domain": "property law", "parametric_answer": "10 business days",
      "alt_answers": ["ten business days"],
      "q": "How long is the cooling-off period for an off-the-plan residential contract in NSW?"},
+    {"item_id": "hotwater_delivery", "doc": "consent", "prior_strength": 2, "proximity": "near", "domain": "plumbing code", "parametric_answer": "50 degrees",
+     "alt_answers": ["50°C", "50 °C", "50C", "50 C"],
+     "q": "At what maximum temperature must heated water be delivered to sanitary fixtures used for personal hygiene under Australian plumbing requirements?"},
+    {"item_id": "shed_exempt", "doc": "epl", "prior_strength": 2, "proximity": "far", "domain": "planning", "parametric_answer": "20 square metres",
+     "alt_answers": ["20m2", "20 m2", "20sqm", "20 sqm"],
+     "q": "What is the maximum floor area of a garden shed that can be built as exempt development in NSW without approval?"},
+    {"item_id": "trench_depth", "doc": "epl", "prior_strength": 2, "proximity": "near", "domain": "work health and safety", "parametric_answer": "1.5 metres",
+     "alt_answers": ["1.5m", "1.5 m"],
+     "q": "At what depth does an excavation trench become high risk construction work requiring shoring or benching?"},
 ]
 ITEM_BY_ID = {p["item_id"]: p for p in UNANSWERABLE_ITEMS}
 ABSTENTION_RESULTS = "abstention_results_v2.jsonl"
