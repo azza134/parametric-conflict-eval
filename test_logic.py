@@ -6,12 +6,13 @@ import tempfile
 import unittest
 from unittest import mock
 
-from config import (perturb, with_retry, DOCUMENTS, doc_text, MODELS, FLAG_INVITING, SOURCE_EXCLUSIVE,
+from config import (perturb, with_retry, DOCUMENTS, doc_text, openai_reasoning, MODELS, FLAG_INVITING, SOURCE_EXCLUSIVE,
                     SOURCE_EXCLUSIVE_FLAG_INVITING, SYSTEM_INSTRUCTIONS,
                     appears, passage, step_doc, build_batch_message_params)
 from harness import (wilson_interval, PERTURBATION_LADDERS, SEVERITIES, validate_ladders,
                      total_steps, total_cells, classify, lexical_caveat, UNANSWERABLE_ITEMS, validate_items,
                      load_done, tradeoff_rows, PRIOR_STRENGTHS, cluster_icc, vector_cells,
+                     probe_targets, _probe_row,
                      encode_caveat_custom_id, decode_caveat_custom_id,
                      encode_abstention_custom_id, decode_abstention_custom_id,
                      caveat_wave_plan, abstention_wave_plan, concurrent_map)
@@ -256,6 +257,39 @@ class TestClusterIcc(unittest.TestCase):
         p, rho, neff = cluster_icc([(1, 8), (0, 8), (0, 8), (0, 8), (1, 8), (0, 8)])
         self.assertEqual(rho, 0.0)
         self.assertAlmostEqual(neff, 48.0)
+
+
+class TestEffortConvention(unittest.TestCase):
+    def test_v1_gpt54_candidates_stay_pinned_low(self):
+        self.assertEqual(openai_reasoning("gpt-5.4-nano"), {"reasoning": {"effort": "low"}})
+        self.assertEqual(openai_reasoning("gpt-5.4-mini"), {"reasoning": {"effort": "low"}})
+
+    def test_new_models_run_at_vendor_default(self):
+        self.assertEqual(openai_reasoning("gpt-5.6-terra"), {})
+        self.assertEqual(openai_reasoning("gpt-4o-mini"), {})
+
+
+class TestPriorProbe(unittest.TestCase):
+    def test_forty_targets_covering_all_facts_and_items(self):
+        targets = probe_targets()
+        self.assertEqual(len(targets), len(PERTURBATION_LADDERS) + len(UNANSWERABLE_ITEMS))
+        self.assertEqual({t["kind"] for t in targets}, {"fact", "item"})
+        for t in targets:
+            self.assertIn(t["doc"], DOCUMENTS)
+            self.assertTrue(t["q"] and t["expected"])
+
+    def test_item_targets_use_prior_strength_as_rating(self):
+        t = next(t for t in probe_targets() if t["name"] == "water_boil")
+        self.assertEqual(t["prior_rating"], 5)
+
+    def test_probe_row_lexical_flags(self):
+        t = {"kind": "fact", "name": "x", "doc": "consent", "q": "?", "expected": "20", "prior_rating": 3}
+        row = _probe_row("m", "openai", t, "The value is 20 persons.")
+        self.assertTrue(row["reports_expected"])
+        self.assertFalse(row["says_dont_know"])
+        row = _probe_row("m", "openai", t, "I do not know.")
+        self.assertFalse(row["reports_expected"])
+        self.assertTrue(row["says_dont_know"])
 
 
 class TestVectorCells(unittest.TestCase):

@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-MODELS = [("gpt-4o-mini", "openai"), ("gpt-5.4-nano", "openai"), ("claude-sonnet-5", "anthropic")]
+MODELS = [("gpt-4o-mini", "openai"), ("gpt-5.4-nano", "openai"), ("claude-sonnet-5", "anthropic"), ("gpt-5.6-terra", "openai")]
 JUDGE_MODEL = "gpt-5.4-mini"  # LLM judge, ideally from a different model provider to the candidate model
 GOLD_CANDIDATE = ("claude-sonnet-5", "anthropic") # Model to be used for generating answers in the gold set
 N_PER_CELL = 3
@@ -59,8 +59,11 @@ def ask_anthropic(system_instruction, question, doc, model):
         print(f"    WARNING: answer truncated at max_tokens ({model})", flush=True)
     return "".join(b.text for b in response.content if b.type == "text") # Returns only text sections of the model output
 
+def openai_reasoning(model):
+    return {"reasoning": {"effort": "low"}} if model.startswith("gpt-5.4") else {}
+
 def ask_openai(system_instruction, question, doc, model):
-    reasoning = {"reasoning": {"effort": "low"}} if model.startswith("gpt-5") else {}
+    reasoning = openai_reasoning(model)
     r = openai_client().responses.create(model=model, instructions=system_instruction,
         input="Passage:\n" + doc + "\n\nQuestion: " + question,
         max_output_tokens=2000, **reasoning)
@@ -72,6 +75,18 @@ def call(model, provider, system, question, doc):
     if provider == "anthropic":
         return ask_anthropic(system, question, doc, model)
     return ask_openai(system, question, doc, model)
+
+def call_docfree(model, provider, system, question):
+    if provider == "anthropic":
+        response = anthropic_client().messages.create(model=model, max_tokens=1200, system=system,
+            messages=[{"role": "user", "content": question}])
+        return "".join(b.text for b in response.content if b.type == "text")
+    reasoning = openai_reasoning(model)
+    r = openai_client().responses.create(model=model, instructions=system, input=question,
+        max_output_tokens=2000, **reasoning)
+    if r.status == "incomplete":
+        print(f"    WARNING: answer truncated at max_output_tokens ({model})", flush=True)
+    return r.output_text or ""
 
 def with_retry(fn, *args, attempts=5):
     for i in range(attempts):

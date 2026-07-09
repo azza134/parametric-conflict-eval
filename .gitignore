@@ -14,3 +14,4 @@ caveat_gold.pre_anchors.json
 endorsement_breakdown.csv
 *.log
 spotcheck_2x2.json
+.DS_Store

@@ -42,7 +42,17 @@ Ladders: unchanged design — S0 control + S1–S5 ordinal severity, `validate_l
 
 ## Models
 
-**4 candidates: the v1 three + gpt-5.6-terra** (public 2026-07-09; frontier-generation balanced tier, $2.5/$15 per M tokens). All sampling params and reasoning effort at API defaults, disclosed; snapshot ID captured at run time (v1 disclosure debt). Describe as "frontier-generation balanced tier" not bare "frontier" — Sol is the 5.6 flagship; if Terra shows false endorsements the claim generalises cross-lab anyway, if not "does Sol?" is a cheap follow-up.
+**4 candidates: the v1 three + gpt-5.6-terra** (public 2026-07-09; frontier-generation balanced tier, $2.5/$15 per M tokens). Effort convention — the principle: **candidates run deployment-realistic; instruments stay frozen at their certified config.**
+
+| model | effort | why |
+|---|---|---|
+| claude-sonnet-5 | vendor default (adaptive thinking, effort "high") | deployment-realistic + v1 parity |
+| gpt-5.6-terra | vendor default (no reasoning param passed) | deployment-realistic; no v1 constraint; avoids "you crippled it" in the null branch |
+| gpt-5.4-nano | pinned "low" (above its "none" default) | v1 parity — its published numbers were generated at low; deviation from realism disclosed |
+| gpt-4o-mini | n/a (no reasoning support) | — |
+| gpt-5.4-mini (judge) | pinned "low" | certified at this config (kappa 0.98/0.94, 0/30 anchors attest to the judge-as-configured); changing it voids certification |
+
+The comparison is deployment-realistic, NOT effort-matched (and effort labels aren't calibrated across vendors, so label-matching would be false comfort): Sonnet sits near the top of its scale, nano near the bottom. Part of Sonnet's capability-artifact advantage could be effort allocation — disclose in v2 results. Ablation branch if challenged (or if Terra nulls on false endorsement): a Sonnet arm at output_config effort "low" — DECISION DEFERRED (fifth arm ~$8-12 full grid, or key cells only: FLAG_INVITING + 2x2 at S1/S3/S5). Other sampling params at API defaults (Sonnet 5 rejects non-default temperature/top_p anyway); snapshot IDs captured at run time (v1 disclosure debt). Describe as "frontier-generation balanced tier" not bare "frontier" — Sol is the 5.6 flagship; if Terra shows false endorsements the claim generalises cross-lab anyway, if not "does Sol?" is a cheap follow-up.
 
 Caveat carried from review #1: the judge is GPT-5.4-mini. Judging a same-family frontier model sharpens the same-provider concern — mitigation is the judge-gold spot-check on the new model's answers (mandatory anyway) ⚑ plus optionally a one-cell Anthropic-judge cross-check.
 

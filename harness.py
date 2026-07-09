@@ -7,7 +7,7 @@ import shutil
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor
 from config import (passage, DOCUMENTS, DOCUMENT_TEXTS, doc_text, MODELS, N_PER_CELL, JUDGE_CONCURRENCY, SYSTEM_INSTRUCTIONS,
-                    call, with_retry, perturb, appears, step_doc,
+                    call, call_docfree, with_retry, perturb, appears, step_doc,
                     build_batch_message_params, extract_anthropic_text,
                     submit_anthropic_batch, poll_anthropic_batch, anthropic_batch_results)
 from judge import (caveat_judge, abstention_judge, FAITHFUL, UNGROUNDED, QUESTIONED, SILENT, ENDORSED,
@@ -891,6 +891,62 @@ def run_ungrounded(n):
     out.close()
     summarize_ungrounded()
 
+PROBE_RESULTS = "prior_probe_results.jsonl"
+PROBE_INSTRUCTION = ("Answer the question from your own general knowledge, giving the specific value or name "
+                     "requested. If you do not know the answer, reply exactly: I DO NOT KNOW.")
+
+def probe_targets():
+    targets = [{"kind": "fact", "name": f["fact"], "doc": f["doc"], "q": f["q"],
+                "expected": f["true"], "prior_rating": f.get("prior_rating")} for f in PERTURBATION_LADDERS]
+    targets += [{"kind": "item", "name": p["item_id"], "doc": p["doc"], "q": p["q"],
+                 "expected": p["parametric_answer"], "prior_rating": p["prior_strength"]} for p in UNANSWERABLE_ITEMS]
+    return targets
+
+def _probe_row(model, prov, t, answer):
+    return {"model": model, "provider": prov, "kind": t["kind"], "name": t["name"], "doc": t["doc"],
+            "prior_rating": t["prior_rating"], "expected": t["expected"], "q": t["q"], "answer": answer,
+            "reports_expected": appears(t["expected"], answer),
+            "says_dont_know": "i do not know" in answer.lower()}
+
+def run_probe(n):
+    targets = probe_targets()
+    done = load_done(PROBE_RESULTS, ["model", "kind", "name"])
+    out = open(PROBE_RESULTS, "a")
+    total = len(MODELS) * len(targets)
+    seen = 0
+    for model, prov in MODELS:
+        for t in targets:
+            seen += 1
+            key = (model, t["kind"], t["name"])
+            already = done.get(key, 0)
+            tally = {}
+            for _ in range(already, n):
+                answer = with_retry(call_docfree, model, prov, PROBE_INSTRUCTION, t["q"])
+                row = _probe_row(model, prov, t, answer)
+                out.write(json.dumps(row) + "\n")
+                out.flush()
+                k = "knows" if row["reports_expected"] else ("dontknow" if row["says_dont_know"] else "other")
+                tally[k] = tally.get(k, 0) + 1
+            status = "complete (resumed)" if already >= n else " ".join(f"{k}={v}" for k, v in sorted(tally.items()))
+            print(f"  [{seen}/{total}] {model} / {t['kind']} {t['name']} (rated P{t['prior_rating']})  {status}", flush=True)
+    out.close()
+    summarize_probe()
+
+def summarize_probe():
+    rows = [json.loads(l) for l in open(PROBE_RESULTS)]
+    by_target = {}
+    for r in rows:
+        k = (r["kind"], r["name"])
+        by_target.setdefault(k, {"rating": r["prior_rating"], "knows": 0, "dontknow": 0, "n": 0})
+        by_target[k]["n"] += 1
+        by_target[k]["knows"] += r["reports_expected"]
+        by_target[k]["dontknow"] += r["says_dont_know"]
+    print("\nDOC-FREE PRIOR PROBE -- measured knows-rate vs authored prior rating (lexical match on expected value)")
+    print("  a high knows-rate on a low-rated target (or vice versa) means the authored rating is wrong")
+    for (kind, name), v in sorted(by_target.items(), key=lambda kv: (kv[1]["rating"] is None, kv[1]["rating"], kv[0])):
+        rating = "--" if v["rating"] is None else f"P{v['rating']}"
+        print(f"  {rating:>3}  {kind:<5} {name:<24} knows {v['knows']}/{v['n']}   dontknow {v['dontknow']}/{v['n']}")
+
 def summarize_ungrounded():
     df = pd.read_json(ABSTENTION_RESULTS, lines=True)
     stats = df.groupby(["model", "instruction", "prior_strength"]).agg(
@@ -1054,12 +1110,14 @@ if __name__ == "__main__": # only run file if executed directly
         tradeoff()
     elif args and args[0] == "vectors":
         vectors()
+    elif args and args[0] == "probe":
+        run_probe(int(args[1]) if len(args) > 1 else N_PER_CELL)
     elif args and args[0] == "rescore":
         rescore_caveat(args[1:] or None)
     elif args and args[0] == "endorsement":
         endorsement_breakdown()
     elif args and not args[0].isdigit():
-        print("usage: python3 harness.py [N] | caveat [N] | abstention [N] | rescore | endorsement | tradeoff | vectors")
+        print("usage: python3 harness.py [N] | caveat [N] | abstention [N] | probe [N] | rescore | endorsement | tradeoff | vectors")
         sys.exit(1)
     else:
         n = int(args[0]) if args else N_PER_CELL
