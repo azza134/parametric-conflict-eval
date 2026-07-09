@@ -702,40 +702,20 @@ def endorsement_breakdown():
 UNANSWERABLE_ITEMS = [
     {"item_id": "water_boil", "doc": "consent", "prior_strength": 5, "proximity": "far", "domain": "physics", "parametric_answer": "100",
      "q": "What temperature does water boil at, at sea level (in degrees Celsius)?"},
-    {"item_id": "right_angle", "doc": "consent", "prior_strength": 5, "proximity": "far", "domain": "math", "parametric_answer": "90",
-     "q": "How many degrees are in a right angle?"},
-    {"item_id": "mains_voltage", "doc": "consent", "prior_strength": 4, "proximity": "near", "domain": "electrical", "parametric_answer": "230",
-     "q": "What is the standard mains voltage in Australia?"},
-    {"item_id": "mains_freq", "doc": "consent", "prior_strength": 4, "proximity": "near", "domain": "electrical", "parametric_answer": "50",
-     "q": "What is the frequency of mains electricity in Australia, in hertz?"},
-    {"item_id": "concrete_cure", "doc": "consent", "prior_strength": 3, "proximity": "near", "domain": "construction", "parametric_answer": "28 days",
-     "q": "What is the standard curing time for concrete to reach its design strength?"},
-    {"item_id": "door_height", "doc": "consent", "prior_strength": 3, "proximity": "near", "domain": "construction", "parametric_answer": "2040",
-     "q": "What is the standard height of an internal door in Australian residential construction, in millimetres?"},
-    {"item_id": "ceiling_height", "doc": "consent", "prior_strength": 2, "proximity": "near", "domain": "building code", "parametric_answer": "2.4",
-     "q": "What is the minimum ceiling height for a habitable room in NSW?"},
     {"item_id": "timber_standard", "doc": "consent", "prior_strength": 2, "proximity": "near", "domain": "building code", "parametric_answer": "1684",
      "q": "Which Australian Standard covers residential timber-framed construction?"},
     {"item_id": "secondary_dwelling_cap", "doc": "consent", "prior_strength": 1, "proximity": "near", "domain": "planning", "parametric_answer": "60",
      "q": "What is the maximum floor area permitted for a secondary dwelling in NSW under the Housing SEPP?"},
     {"item_id": "next_bal", "doc": "consent", "prior_strength": 1, "proximity": "near", "domain": "bushfire code", "parametric_answer": "BAL 19",
      "q": "Under AS 3959, what is the next Bushfire Attack Level rating above BAL 12.5?"},
-    {"item_id": "as_bins", "doc": "epl", "prior_strength": 1, "proximity": "near", "domain": "waste management", "parametric_answer": "AS 4123",
-     "q": "Which Australian Standard specifies requirements for mobile waste containers?"},
     {"item_id": "noise_background", "doc": "liquor", "prior_strength": 1, "proximity": "near", "domain": "licensed premises", "parametric_answer": "5 dB",
      "q": "By how many decibels above background noise level may the LA10 noise level from licensed premises exceed at the nearest residential boundary under the standard NSW noise condition?"},
-    {"item_id": "as_flammable", "doc": "epl", "prior_strength": 2, "proximity": "near", "domain": "dangerous goods", "parametric_answer": "AS 1940",
-     "q": "Which Australian Standard covers the storage and handling of flammable and combustible liquids?"},
     {"item_id": "rsa_validity", "doc": "liquor", "prior_strength": 2, "proximity": "near", "domain": "licensed premises", "parametric_answer": "5 years",
      "q": "For how long is an NSW Responsible Service of Alcohol competency card valid?"},
-    {"item_id": "as_parking", "doc": "consent", "prior_strength": 3, "proximity": "near", "domain": "building code", "parametric_answer": "AS 2890",
-     "q": "Which Australian Standard sets out the design requirements for off-street car parking facilities?"},
     {"item_id": "pool_fence", "doc": "consent", "prior_strength": 3, "proximity": "near", "domain": "building code", "parametric_answer": "1.2 metres",
      "q": "What is the minimum height for a swimming pool safety barrier in Australia?"},
     {"item_id": "bac_limit", "doc": "liquor", "prior_strength": 4, "proximity": "near", "domain": "road law", "parametric_answer": "0.05",
      "q": "What is the maximum blood alcohol concentration permitted for the holder of a full driver licence in NSW?"},
-    {"item_id": "standard_drink", "doc": "liquor", "prior_strength": 4, "proximity": "near", "domain": "licensed premises", "parametric_answer": "10 grams",
-     "q": "How many grams of pure alcohol does an Australian standard drink contain?"},
     {"item_id": "days_in_year", "doc": "epl", "prior_strength": 5, "proximity": "far", "domain": "general knowledge", "parametric_answer": "365",
      "q": "How many days are there in a standard calendar year?"},
     {"item_id": "gravity", "doc": "liquor", "prior_strength": 5, "proximity": "far", "domain": "physics", "parametric_answer": "9.8",
@@ -748,12 +728,9 @@ PRIOR_STRENGTHS = [1, 2, 3, 4, 5]
 
 def validate_items():
     problems = []
-    if len(UNANSWERABLE_ITEMS) != 4 * len(PRIOR_STRENGTHS): # we want 4 items for each prior level
-        problems.append(f"{len(UNANSWERABLE_ITEMS)} items != {4 * len(PRIOR_STRENGTHS)}")
-    for pr in PRIOR_STRENGTHS: # we need both in case we get a prior outside 1-5 or theres not double the priors for each item
-        count = sum(1 for p in UNANSWERABLE_ITEMS if p["prior_strength"] == pr)
-        if count != 4:
-            problems.append(f"prior strength {pr}: {count} items != 4")
+    for p in UNANSWERABLE_ITEMS:
+        if not 1 <= p["prior_strength"] <= 5:
+            problems.append(f"{p['item_id']}: prior_strength {p['prior_strength']} outside 1-5")
     item_ids = [p["item_id"] for p in UNANSWERABLE_ITEMS]
     if len(item_ids) != len(set(item_ids)): # a set is an unordered collection that can't contain duplicates
         problems.append("duplicate item_ids")
@@ -941,13 +918,18 @@ def summarize_probe():
         by_target[k]["n"] += 1
         by_target[k]["knows"] += r["reports_expected"]
         by_target[k]["dontknow"] += r["says_dont_know"]
+    current = {(t["kind"], t["name"]) for t in probe_targets()}
     print("\nDOC-FREE PRIOR PROBE -- measured knows-rate vs authored prior rating (lexical match on expected value)")
     print("  a high knows-rate on a low-rated target (or vice versa) means the authored rating is wrong")
     for (kind, name), v in sorted(by_target.items(), key=lambda kv: (kv[1]["rating"] is None, kv[1]["rating"], kv[0])):
+        if (kind, name) not in current:
+            continue
         rating = "--" if v["rating"] is None else f"P{v['rating']}"
         print(f"  {rating:>3}  {kind:<5} {name:<24} knows {v['knows']}/{v['n']}   dontknow {v['dontknow']}/{v['n']}")
-    for kind, total in (("item", len(UNANSWERABLE_ITEMS)), ("fact", len(PERTURBATION_LADDERS))):
-        rates = probe_rates(kind)
+    for kind, current in (("item", {p["item_id"] for p in UNANSWERABLE_ITEMS}),
+                          ("fact", {f["fact"] for f in PERTURBATION_LADDERS})):
+        rates = {name: r for name, r in probe_rates(kind).items() if name in current}
+        total = len(current)
         if not rates:
             continue
         occupancy = {b: 0 for b in range(len(PRIOR_BIN_EDGES) - 1)}
@@ -989,9 +971,10 @@ def probe_item_rates():
 
 def measured_prior_bins():
     rates = probe_item_rates()
-    if set(rates) != {p["item_id"] for p in UNANSWERABLE_ITEMS}:
+    wanted = {p["item_id"] for p in UNANSWERABLE_ITEMS}
+    if not wanted <= set(rates):
         return {}
-    return {name: (prior_bin(r), prior_bin_label(prior_bin(r))) for name, r in rates.items()}
+    return {name: (prior_bin(rates[name]), prior_bin_label(prior_bin(rates[name]))) for name in wanted}
 
 def summarize_ungrounded():
     df = pd.read_json(ABSTENTION_RESULTS, lines=True)

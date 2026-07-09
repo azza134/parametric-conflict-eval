@@ -283,17 +283,26 @@ class TestMeasuredPriorBins(unittest.TestCase):
         rates = {p["item_id"]: 0.9 for p in UNANSWERABLE_ITEMS}
         with mock.patch("harness.probe_item_rates", return_value=rates):
             bins = measured_prior_bins()
-        self.assertEqual(len(bins), 20)
+        self.assertEqual(len(bins), len(UNANSWERABLE_ITEMS))
         self.assertEqual({b for b, _ in bins.values()}, {3})
 
-    def test_even_spread_lands_five_per_bin(self):
-        rates = {p["item_id"]: i / 19 for i, p in enumerate(UNANSWERABLE_ITEMS)}
+    def test_even_spread_fills_all_bins(self):
+        n = len(UNANSWERABLE_ITEMS)
+        rates = {p["item_id"]: i / (n - 1) for i, p in enumerate(UNANSWERABLE_ITEMS)}
         with mock.patch("harness.probe_item_rates", return_value=rates):
             bins = measured_prior_bins()
         counts = {}
         for b, label in bins.values():
             counts[b] = counts.get(b, 0) + 1
-        self.assertEqual(counts, {0: 5, 1: 5, 2: 5, 3: 5})
+        self.assertEqual(set(counts), {0, 1, 2, 3})
+        self.assertEqual(sum(counts.values()), n)
+
+    def test_retired_items_in_probe_file_are_ignored(self):
+        rates = {p["item_id"]: 0.9 for p in UNANSWERABLE_ITEMS}
+        rates["some_retired_item"] = 0.1
+        with mock.patch("harness.probe_item_rates", return_value=rates):
+            bins = measured_prior_bins()
+        self.assertEqual(set(bins), {p["item_id"] for p in UNANSWERABLE_ITEMS})
 
     def test_rates_pool_reps_and_models(self):
         rows = [{"kind": "item", "name": "x", "reports_expected": True},
@@ -509,9 +518,8 @@ class TestUnanswerableItems(unittest.TestCase):
         for p in UNANSWERABLE_ITEMS:
             self.assertFalse(appears(p["parametric_answer"], doc_text(p["doc"])), p["item_id"])
 
-    def test_four_probes_per_prior_level(self):
-        for lv in PRIOR_STRENGTHS:
-            self.assertEqual(sum(1 for p in UNANSWERABLE_ITEMS if p["prior_strength"] == lv), 4)
+    def test_ten_items_after_top_bin_cut(self):
+        self.assertEqual(len(UNANSWERABLE_ITEMS), 10)
 
     def test_item_ids_unique(self):
         item_ids = [p["item_id"] for p in UNANSWERABLE_ITEMS]
@@ -527,11 +535,11 @@ class TestUnanswerableItems(unittest.TestCase):
         self.assertTrue(appears("19", passage))
         self.assertFalse(appears("BAL 19", passage))
 
-    def test_wrong_item_count_fails_validation(self):
-        extra = UNANSWERABLE_ITEMS + [{"item_id": "extra", "prior_strength": 6, "proximity": "near",
+    def test_out_of_range_prior_fails_validation(self):
+        extra = UNANSWERABLE_ITEMS + [{"item_id": "extra", "doc": "consent", "prior_strength": 6, "proximity": "near",
                                 "domain": "x", "parametric_answer": "zzqx", "q": "?"}]
         with mock.patch("harness.UNANSWERABLE_ITEMS", extra):
-            self.assertTrue(any("items !=" in p for p in validate_items()))
+            self.assertTrue(any("outside 1-5" in p for p in validate_items()))
 
 
 class TestLegacyGoldGuard(unittest.TestCase):
@@ -568,8 +576,8 @@ class TestLoadDone(unittest.TestCase):
 
 
 class TestGoldSchedule(unittest.TestCase):
-    def test_forty_rows_at_reps_2(self):
-        self.assertEqual(len(gold_schedule(UNANSWERABLE_ITEMS, 2)), 40)
+    def test_twenty_rows_at_reps_2(self):
+        self.assertEqual(len(gold_schedule(UNANSWERABLE_ITEMS, 2)), 20)
 
     def test_both_anchor_classes_present(self):
         roles = {role for _, _, role in gold_schedule(UNANSWERABLE_ITEMS, 2)}
