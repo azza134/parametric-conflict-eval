@@ -233,7 +233,7 @@ def build_abstention_gold(reps=2):
     rows = list(existing) if existing else []
     schedule = expand_schedule(rows, UNANSWERABLE_ITEMS, reps)
     for i, (p, iname, role) in enumerate(schedule):
-        answer = with_retry(call, model, prov, instructions[iname], p["q"], doc_text(p["doc"]))
+        answer, _ = with_retry(call, model, prov, instructions[iname], p["q"], doc_text(p["doc"]))
         rows.append({**p, "role": role, "instruction": iname, "candidate": model, "answer": answer, "human": None})
         print(f"  [{i + 1}/{len(schedule)}] {iname} / P{p['prior_strength']} {p['item_id']} / {role}", flush=True)
         with open(ABSTENTION_GOLD_FILE, "w") as f:

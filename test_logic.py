@@ -758,7 +758,7 @@ class TestChunkedJudgeSink(unittest.TestCase):
 
 class TestRunAnthropicWave(unittest.TestCase):
     def _succeeded(self, text):
-        return mock.Mock(type="succeeded", message=mock.Mock(content=[mock.Mock(type="text", text=text)]))
+        return mock.Mock(type="succeeded", message=mock.Mock(content=[mock.Mock(type="text", text=text)], model="snap-1"))
 
     def _patched(self, results):
         return (mock.patch("harness.submit_anthropic_batch", return_value="b1"),
@@ -771,9 +771,9 @@ class TestRunAnthropicWave(unittest.TestCase):
         p1, p2, p3 = self._patched(results)
         with p1, p2, p3:
             _run_anthropic_wave("m", "anthropic", ["a", "b"], "w", lambda m, c: {},
-                                lambda cid: (events.append(("sync", cid)), "B")[1],
-                                lambda cid, ans: events.append(("row", cid, ans)))
-        self.assertEqual(events, [("row", "a", "A"), ("sync", "b"), ("row", "b", "B")])
+                                lambda cid: (events.append(("sync", cid)), ("B", "snap-2"))[1],
+                                lambda cid, ans, snap: events.append(("row", cid, ans, snap)))
+        self.assertEqual(events, [("row", "a", "A", "snap-1"), ("sync", "b"), ("row", "b", "B", "snap-2")])
 
     def test_fallback_crash_preserves_succeeded_rows(self):
         written = []
@@ -783,7 +783,7 @@ class TestRunAnthropicWave(unittest.TestCase):
         with p1, p2, p3:
             with self.assertRaises(RuntimeError):
                 _run_anthropic_wave("m", "anthropic", ["a", "b"], "w", lambda m, c: {},
-                                    boom, lambda cid, ans: written.append(cid))
+                                    boom, lambda cid, ans, snap: written.append(cid))
         self.assertEqual(written, ["a"])
 
 

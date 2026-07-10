@@ -385,10 +385,10 @@ def load_done(path, fields):
         pass
     return done
 
-def _caveat_row(model, prov, iname, fact, s, answer): # creates a row for the caveat results
+def _caveat_row(model, prov, iname, fact, s, answer, snapshot=None): # creates a row for the caveat results
     stance, corroboration, reason = caveat_judge(fact["q"], answer)
     label = classify(answer, stance)
-    return {"model": model, "provider": prov, "instruction": iname, "document": fact["doc"],
+    return {"model": model, "provider": prov, "snapshot": snapshot, "instruction": iname, "document": fact["doc"],
             "fact": fact["fact"], "severity": s["severity"], "true": fact["true"],
             "target_string": s["target_string"], "ratio": s["ratio"], "answer": answer,
             "stance": stance, "corroboration": corroboration, "stance_reason": reason,
@@ -415,7 +415,7 @@ def _run_anthropic_wave(model, prov, custom_ids, wave_label, build_request_fn, s
     for cid, result in anthropic_batch_results(batch_id):
         seen_ids.add(cid)
         if result.type == "succeeded":
-            on_answer(cid, extract_anthropic_text(result.message))
+            on_answer(cid, extract_anthropic_text(result.message), result.message.model)
         else:
             print(f"    {wave_label}: {cid} -> {result.type}; deferring to synchronous retry", flush=True)
             fallbacks.append(cid)
@@ -424,7 +424,8 @@ def _run_anthropic_wave(model, prov, custom_ids, wave_label, build_request_fn, s
             print(f"    {wave_label}: {cid} missing from batch results; deferring to synchronous retry", flush=True)
             fallbacks.append(cid)
     for cid in fallbacks:
-        on_answer(cid, sync_call_fn(cid))
+        answer, snapshot = sync_call_fn(cid)
+        on_answer(cid, answer, snapshot)
 
 def _chunked_judge_sink(judge_one, write_row, chunk=None):
     chunk = chunk if chunk is not None else max(JUDGE_CONCURRENCY * 4, 1)
@@ -433,8 +434,8 @@ def _chunked_judge_sink(judge_one, write_row, chunk=None):
         for res in concurrent_map(judge_one, pending):
             write_row(res)
         pending.clear()
-    def push(cid, answer):
-        pending.append((cid, answer))
+    def push(*item):
+        pending.append(item)
         if len(pending) >= chunk:
             flush()
     return push, flush
@@ -484,11 +485,11 @@ def run_caveat_anthropic_batch(model, prov, n, done, out, seen, total):
         return with_retry(call, model, prov, INSTR_BY_NAME[d["instruction"]], fact["q"], step_doc(fact, step))
 
     def process(custom_ids, wave_label):
-        def judge_one(pair):
-            cid, answer = pair
+        def judge_one(item):
+            cid, answer, snapshot = item
             d = decode_caveat_custom_id(cid)
             fact, step = _caveat_step(d["fact"], d["severity"])
-            return d, _caveat_row(model, prov, d["instruction"], fact, step, answer)
+            return d, _caveat_row(model, prov, d["instruction"], fact, step, answer, snapshot)
         def write_row(res):
             d, row = res
             out.write(json.dumps(row) + "\n")
@@ -537,8 +538,8 @@ def run_caveat(n):
                     already = done.get(key, 0)
                     cell = {}
                     for _ in range(already, n):
-                        answer = with_retry(call, model, prov, instr, fact["q"], pdoc)
-                        row = _caveat_row(model, prov, iname, fact, s, answer)
+                        answer, snapshot = with_retry(call, model, prov, instr, fact["q"], pdoc)
+                        row = _caveat_row(model, prov, iname, fact, s, answer, snapshot)
                         out.write(json.dumps(row) + "\n") # convert rows into json to caveat results
                         out.flush() # pushes to disk in order to save
                         cell[row["label"]] = cell.get(row["label"], 0) + 1
@@ -869,10 +870,10 @@ def print_abstention_plan(n):
     print(f"\n  item validation: all {len(UNANSWERABLE_ITEMS)} parametric answers absent from their documents")
     return True
 
-def _abstention_row(model, prov, iname, p, answer):
+def _abstention_row(model, prov, iname, p, answer, snapshot=None):
     faithful, reason = abstention_judge(p["q"], doc_text(p["doc"]), answer)
     label = FAITHFUL if faithful else UNGROUNDED
-    return {"model": model, "provider": prov, "instruction": iname, "document": p["doc"],
+    return {"model": model, "provider": prov, "snapshot": snapshot, "instruction": iname, "document": p["doc"],
             "item_id": p["item_id"], "prior_strength": p["prior_strength"], "domain": p["domain"],
             "proximity": p["proximity"], "q": p["q"], "parametric_answer": p["parametric_answer"],
             "answer": answer, "faithful": faithful, "judge_reason": reason,
@@ -922,11 +923,11 @@ def run_ungrounded_anthropic_batch(model, prov, n, done, out, seen, total):
         return with_retry(call, model, prov, INSTR_BY_NAME[d["instruction"]], p["q"], doc_text(p["doc"]))
 
     def process(custom_ids, wave_label):
-        def judge_one(pair):
-            cid, answer = pair
+        def judge_one(item):
+            cid, answer, snapshot = item
             d = decode_abstention_custom_id(cid)
             p = ITEM_BY_ID[d["item_id"]]
-            return d, _abstention_row(model, prov, d["instruction"], p, answer)
+            return d, _abstention_row(model, prov, d["instruction"], p, answer, snapshot)
         def write_row(res):
             d, row = res
             out.write(json.dumps(row) + "\n")
@@ -972,8 +973,8 @@ def run_ungrounded(n):
                 already = done.get(key, 0)
                 cell = {}
                 for _ in range(already, n):
-                    answer = with_retry(call, model, prov, instr, p["q"], doc_text(p["doc"]))
-                    row = _abstention_row(model, prov, iname, p, answer)
+                    answer, snapshot = with_retry(call, model, prov, instr, p["q"], doc_text(p["doc"]))
+                    row = _abstention_row(model, prov, iname, p, answer, snapshot)
                     out.write(json.dumps(row) + "\n")
                     out.flush()
                     cell[row["label"]] = cell.get(row["label"], 0) + 1

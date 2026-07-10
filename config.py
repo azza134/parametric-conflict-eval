@@ -57,7 +57,7 @@ def ask_anthropic(system_instruction, question, doc, model):
     )
     if response.stop_reason == "max_tokens":
         print(f"    WARNING: answer truncated at max_tokens ({model})", flush=True)
-    return "".join(b.text for b in response.content if b.type == "text") # Returns only text sections of the model output
+    return "".join(b.text for b in response.content if b.type == "text"), response.model # Returns only text sections of the model output
 
 def openai_reasoning(model):
     return {"reasoning": {"effort": "low"}} if model.startswith("gpt-5.4") else {}
@@ -69,7 +69,7 @@ def ask_openai(system_instruction, question, doc, model):
         max_output_tokens=2000, **reasoning)
     if r.status == "incomplete":
         print(f"    WARNING: answer truncated at max_output_tokens ({model})", flush=True)
-    return r.output_text or ""
+    return r.output_text or "", r.model
 
 def call(model, provider, system, question, doc):
     if provider == "anthropic":
