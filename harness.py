@@ -4,16 +4,24 @@ import sys
 import json
 import csv
 import shutil
+import hashlib
+import subprocess
+from datetime import datetime, timezone
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor
-from config import (passage, DOCUMENTS, DOCUMENT_TEXTS, doc_text, MODELS, N_PER_CELL, JUDGE_CONCURRENCY, SYSTEM_INSTRUCTIONS,
+from config import (passage, DOCUMENTS, DOCUMENT_TEXTS, doc_text, MODELS, N_PER_CELL, JUDGE_CONCURRENCY, JUDGE_MODEL, SYSTEM_INSTRUCTIONS,
                     call, call_docfree, with_retry, perturb, appears, step_doc,
                     build_batch_message_params, extract_anthropic_text,
                     submit_anthropic_batch, poll_anthropic_batch, anthropic_batch_results)
 from judge import (caveat_judge, abstention_judge, FAITHFUL, UNGROUNDED, QUESTIONED, SILENT, ENDORSED,
-                   DECLINED, NAMED_AUTHORITY)
+                   DECLINED, NAMED_AUTHORITY, CAVEAT_SYSTEM, ABSTENTION_SYSTEM)
 
 INSTR_BY_NAME = dict(SYSTEM_INSTRUCTIONS)
+
+def utc_now():
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+RUN_ID = hashlib.sha256(f"{utc_now()}-{os.getpid()}".encode()).hexdigest()[:12]
 
 def concurrent_map(fn, items, workers=JUDGE_CONCURRENCY):
     if workers <= 1 or len(items) <= 1:
@@ -309,6 +317,37 @@ PERTURBATION_LADDERS = [
      ]},
 ]
 
+ABSENCE_PATCHES = {
+    "grasses": [("removed and grasses shall not exceed 10cm in height.", "removed.")],
+    "tree_limbs": [("; and all trees shall\nhave their lower limbs removed to a height of two metres above ground.", ".")],
+    "toilets": [("Toilet Facilities are to be provided on the work site at the rate of one toilet for every 20\npersons or part of 20 persons employed at\nthe site.", "Toilet Facilities are to be provided on the work site.")],
+    "biodiversity": [("a contribution of\n$1,800.00 is be made", "a contribution is be made")],
+    "notice_days": [("Such notice shall be submitted to Council at least\ntwo (2) days before work commences.", "Such notice shall be submitted to Council before work commences.")],
+    "saturday_hours": [("\nii\n8.00am to 1.00pm Saturdays", "")],
+    "weekday_start": [("\ni\n7.00am to 6.00pm Monday to Friday", "")],
+    "sat_start": [("\nii\n8.00am to 1.00pm Saturdays", "")],
+    "leachate_level": [("29 The Licensee must ensure that the level of leachate within any lined landfill waste cell of Stage 6 does \nnot exceed 300mm at any time.\n", "")],
+    "stockpile_height": [("Height of stockpile < or equal to 3 metres\n", "")],
+    "stockpile_separation": [("Separation distance between stockpiles > or equal to 15 metres\n", "")],
+    "asbestos_depth": [("36.1 in the case of asbestos fibre and dust waste, at a minimum depth of 3 metres below the final \nlandform; and\n", "")],
+    "cessation_notice": [("(NT EPA) within 14 days \nafter ceasing", "(NT EPA) \nafter ceasing")],
+    "record_retention": [("for a period of 2 years after the end of the 12 month period to which the record relates", "after the end of the 12 month period to which the record relates")],
+    "firebreak_perimeter": [("Firebreak perimeter around each tyre stockpile > or equal to 4 metres\n", "")],
+    "closure_period": [("Liquor must not be sold by retail on the \nlicensed premises for a continuous period of 6 hours between 4:00 AM and 10:00 AM during each \nconsecutive period of 24 hours. The licensee must comply with this 6‐hour closure period along with any \nother limits specified in the trading hours for this licence.", "The licensee must comply with the trading hours for this licence."),
+                       ("Standard trading period for liquor licences and a mandatory 6-hour \nperiod during which liquor cannot be sold", "Standard trading period for liquor licences"),
+                       ("6-hour closure \n1. Section 11A", "Closure \n1. Section 11A")],
+    "security_ratio": [("Uniformed licensed security officers are to be employed at a ratio of not less than one per one hundred \n(1:100) patrons or part thereof. \n", "")],
+    "patron_cap": [("Patron capacity \n11. The maximum number of patrons permitted on the premise is not to exceed 200. \n", "")],
+    "terrace_cap": [("Patron capacity - terrace \n12. The maximum number of patrons permitted on the terrace at any time is 20. \n", "")],
+    "cctv_retention": [("keep all recordings made by the CCTV system for at least 30 days,", "keep all recordings made by the CCTV system,")],
+    "incident_register": [("incident register under this condition is \nretained for at least 3 years from when the record was made.", "incident register under this condition is \nretained.")],
+    "minors_section": [("• Section 121: Minors in hotels in company of responsible adult. \n", "")],
+    "goodfriday_hours": [("Good Friday 12:00 noon – 10:00 PM \n", "")],
+    "licensee_training": [("13. Licensee training must be completed no later than six (6) months from the date of grant of the liquor \nlicence.", "13. Licensee training must be completed.")],
+}
+for _f in PERTURBATION_LADDERS:
+    _f["absence"] = {"replace": ABSENCE_PATCHES[_f["fact"]]}
+
 FACT_BY_NAME = {f["fact"]: f for f in PERTURBATION_LADDERS}
 
 def lexical_caveat(answer):
@@ -385,10 +424,11 @@ def load_done(path, fields):
         pass
     return done
 
-def _caveat_row(model, prov, iname, fact, s, answer, snapshot=None): # creates a row for the caveat results
-    stance, corroboration, reason = caveat_judge(fact["q"], answer)
+def _caveat_row(model, prov, iname, fact, s, answer, snapshot=None, rep=None): # creates a row for the caveat results
+    stance, corroboration, reason, judge_snapshot = caveat_judge(fact["q"], answer)
     label = classify(answer, stance)
-    return {"model": model, "provider": prov, "snapshot": snapshot, "instruction": iname, "document": fact["doc"],
+    return {"model": model, "provider": prov, "snapshot": snapshot, "rep": rep, "run_id": RUN_ID,
+            "ts": utc_now(), "judge_snapshot": judge_snapshot, "instruction": iname, "document": fact["doc"],
             "fact": fact["fact"], "severity": s["severity"], "true": fact["true"],
             "target_string": s["target_string"], "ratio": s["ratio"], "answer": answer,
             "stance": stance, "corroboration": corroboration, "stance_reason": reason,
@@ -489,7 +529,7 @@ def run_caveat_anthropic_batch(model, prov, n, done, out, seen, total):
             cid, answer, snapshot = item
             d = decode_caveat_custom_id(cid)
             fact, step = _caveat_step(d["fact"], d["severity"])
-            return d, _caveat_row(model, prov, d["instruction"], fact, step, answer, snapshot)
+            return d, _caveat_row(model, prov, d["instruction"], fact, step, answer, snapshot, d["rep"])
         def write_row(res):
             d, row = res
             out.write(json.dumps(row) + "\n")
@@ -537,9 +577,9 @@ def run_caveat(n):
                     key = (model, iname, fact["fact"], s["severity"])
                     already = done.get(key, 0)
                     cell = {}
-                    for _ in range(already, n):
+                    for rep_i in range(already, n):
                         answer, snapshot = with_retry(call, model, prov, instr, fact["q"], pdoc)
-                        row = _caveat_row(model, prov, iname, fact, s, answer, snapshot)
+                        row = _caveat_row(model, prov, iname, fact, s, answer, snapshot, rep_i)
                         out.write(json.dumps(row) + "\n") # convert rows into json to caveat results
                         out.flush() # pushes to disk in order to save
                         cell[row["label"]] = cell.get(row["label"], 0) + 1
@@ -574,10 +614,11 @@ def rescore_caveat(models=None):
     def rescore_one(r):
         r = dict(r)
         if models is None or r["model"] in models:
-            stance, corroboration, reason = caveat_judge(q_by_fact[r["fact"]], r["answer"])
+            stance, corroboration, reason, judge_snapshot = caveat_judge(q_by_fact[r["fact"]], r["answer"])
             r.pop("caveat_judge", None)
             r.pop("caveat_reason", None)
             r["stance"], r["corroboration"], r["stance_reason"] = stance, corroboration, reason
+            r["judge_snapshot"] = judge_snapshot
             r["label"] = classify(r["answer"], stance)
             r["_rescored"] = True
         return r
@@ -870,10 +911,11 @@ def print_abstention_plan(n):
     print(f"\n  item validation: all {len(UNANSWERABLE_ITEMS)} parametric answers absent from their documents")
     return True
 
-def _abstention_row(model, prov, iname, p, answer, snapshot=None):
-    faithful, reason = abstention_judge(p["q"], doc_text(p["doc"]), answer)
+def _abstention_row(model, prov, iname, p, answer, snapshot=None, rep=None):
+    faithful, reason, judge_snapshot = abstention_judge(p["q"], doc_text(p["doc"]), answer)
     label = FAITHFUL if faithful else UNGROUNDED
-    return {"model": model, "provider": prov, "snapshot": snapshot, "instruction": iname, "document": p["doc"],
+    return {"model": model, "provider": prov, "snapshot": snapshot, "rep": rep, "run_id": RUN_ID,
+            "ts": utc_now(), "judge_snapshot": judge_snapshot, "instruction": iname, "document": p["doc"],
             "item_id": p["item_id"], "prior_strength": p["prior_strength"], "domain": p["domain"],
             "proximity": p["proximity"], "q": p["q"], "parametric_answer": p["parametric_answer"],
             "answer": answer, "faithful": faithful, "judge_reason": reason,
@@ -927,7 +969,7 @@ def run_ungrounded_anthropic_batch(model, prov, n, done, out, seen, total):
             cid, answer, snapshot = item
             d = decode_abstention_custom_id(cid)
             p = ITEM_BY_ID[d["item_id"]]
-            return d, _abstention_row(model, prov, d["instruction"], p, answer, snapshot)
+            return d, _abstention_row(model, prov, d["instruction"], p, answer, snapshot, d["rep"])
         def write_row(res):
             d, row = res
             out.write(json.dumps(row) + "\n")
@@ -972,9 +1014,9 @@ def run_ungrounded(n):
                 key = (model, iname, p["item_id"])
                 already = done.get(key, 0)
                 cell = {}
-                for _ in range(already, n):
+                for rep_i in range(already, n):
                     answer, snapshot = with_retry(call, model, prov, instr, p["q"], doc_text(p["doc"]))
-                    row = _abstention_row(model, prov, iname, p, answer, snapshot)
+                    row = _abstention_row(model, prov, iname, p, answer, snapshot, rep_i)
                     out.write(json.dumps(row) + "\n")
                     out.flush()
                     cell[row["label"]] = cell.get(row["label"], 0) + 1
@@ -982,6 +1024,164 @@ def run_ungrounded(n):
                 print(f"  [{seen}/{total}] {model} / {iname} / P{p['prior_strength']} {p['item_id']}  {status}", flush=True)
     out.close()
     summarize_ungrounded()
+
+# Matched Absence Test: does the model abstain when the SAME fact's answering clause is deleted from its document?
+
+ABSENCE_RESULTS = "matched_absence_results_v2.jsonl"
+
+def absence_doc(fact):
+    return step_doc(fact, fact["absence"])
+
+def validate_absence():
+    problems = []
+    for f in PERTURBATION_LADDERS:
+        if "absence" not in f:
+            problems.append(f"{f['fact']}: no absence patch")
+            continue
+        try:
+            deleted = absence_doc(f)
+        except AssertionError as e:
+            problems.append(f"{f['fact']}: {e}")
+            continue
+        s1 = next(s for s in f["steps"] if s["severity"] == 1)
+        for find, _ in s1["replace"]:
+            if find in deleted:
+                problems.append(f"{f['fact']}: answer-bearing text still present after deletion: {find[:60]!r}")
+    return problems
+
+def print_absence_plan(n):
+    print("MATCHED ABSENCE TEST PLAN")
+    for f in PERTURBATION_LADDERS:
+        print(f"  {f['fact']:22} ({f['doc']})  {len(f['absence']['replace'])} deletion pair(s), true value = {f['true']}")
+    cells = len(MODELS) * len(SYSTEM_INSTRUCTIONS) * len(PERTURBATION_LADDERS)
+    print(f"\n  {len(MODELS)} models x {len(SYSTEM_INSTRUCTIONS)} instructions x {len(PERTURBATION_LADDERS)} facts = {cells} cells")
+    print(f"  at N={n}: {cells * n} candidate calls + {cells * n} judge calls = {2 * cells * n} API calls")
+    problems = validate_absence()
+    if problems:
+        print("\n  ABSENCE VALIDATION FAILED:")
+        for p in problems:
+            print(f"    - {p}")
+        return False
+    print(f"\n  absence validation: all {len(PERTURBATION_LADDERS)} deletions applied + every answer-bearing S1 string absent")
+    return True
+
+def encode_absence_custom_id(fact, instruction, rep):
+    return f"ma-{fact}-{instruction}-r{rep}"
+
+def decode_absence_custom_id(custom_id):
+    kind, fact, instruction, rep = custom_id.split("-")
+    if kind != "ma":
+        raise ValueError(f"not an absence custom_id: {custom_id}")
+    return {"fact": fact, "instruction": instruction, "rep": int(rep[1:])}
+
+def _absence_row(model, prov, iname, fact, deleted_doc, answer, snapshot=None, rep=None):
+    faithful, reason, judge_snapshot = abstention_judge(fact["q"], deleted_doc, answer)
+    label = FAITHFUL if faithful else UNGROUNDED
+    return {"model": model, "provider": prov, "snapshot": snapshot, "rep": rep, "run_id": RUN_ID,
+            "ts": utc_now(), "judge_snapshot": judge_snapshot, "instruction": iname, "document": fact["doc"],
+            "fact": fact["fact"], "evidence_state": "absent", "q": fact["q"], "true": fact["true"],
+            "answer": answer, "faithful": faithful, "judge_reason": reason,
+            "reports_deleted_value": appears_any(expected_strings(fact, "true"), answer),
+            "verbatim_abstention": "not in document" in answer.lower(),
+            "label": label}
+
+def _absence_batch_request(model, custom_id):
+    d = decode_absence_custom_id(custom_id)
+    fact = FACT_BY_NAME[d["fact"]]
+    return build_batch_message_params(model, INSTR_BY_NAME[d["instruction"]], fact["q"], absence_doc(fact))
+
+def absence_wave_plan(done, n, model, instructions=None, ladders=None):
+    instructions = instructions if instructions is not None else SYSTEM_INSTRUCTIONS
+    ladders = ladders if ladders is not None else PERTURBATION_LADDERS
+    wave1, wave2 = [], []
+    for iname, _ in instructions:
+        for f in ladders:
+            already = done.get((model, iname, f["fact"]), 0)
+            if already >= n:
+                continue
+            reps = list(range(already, n))
+            wave1.append(encode_absence_custom_id(f["fact"], iname, reps[0]))
+            for rep in reps[1:]:
+                wave2.append(encode_absence_custom_id(f["fact"], iname, rep))
+    return wave1, wave2
+
+def run_absence_anthropic_batch(model, prov, n, done, out, seen, total):
+    wave1_ids, wave2_ids = absence_wave_plan(done, n, model)
+    cell_tally = {}
+
+    def sync_fallback(cid):
+        d = decode_absence_custom_id(cid)
+        fact = FACT_BY_NAME[d["fact"]]
+        return with_retry(call, model, prov, INSTR_BY_NAME[d["instruction"]], fact["q"], absence_doc(fact))
+
+    def process(custom_ids, wave_label):
+        def judge_one(item):
+            cid, answer, snapshot = item
+            d = decode_absence_custom_id(cid)
+            fact = FACT_BY_NAME[d["fact"]]
+            return d, _absence_row(model, prov, d["instruction"], fact, absence_doc(fact), answer, snapshot, d["rep"])
+        def write_row(res):
+            d, row = res
+            out.write(json.dumps(row) + "\n")
+            out.flush()
+            key = (d["instruction"], d["fact"])
+            cell_tally.setdefault(key, {})
+            cell_tally[key][row["label"]] = cell_tally[key].get(row["label"], 0) + 1
+            print(f"    [{wave_label}] {model} / {d['instruction']} / {d['fact']} absent rep{d['rep']} -> {row['label']}", flush=True)
+        push, flush = _chunked_judge_sink(judge_one, write_row)
+        _run_anthropic_wave(model, prov, custom_ids, wave_label, _absence_batch_request, sync_fallback, push)
+        flush()
+
+    process(wave1_ids, "absence wave 1 (cache warm)")
+    process(wave2_ids, "absence wave 2 (cache read)")
+
+    for iname, instr in SYSTEM_INSTRUCTIONS:
+        for f in PERTURBATION_LADDERS:
+            seen += 1
+            already = done.get((model, iname, f["fact"]), 0)
+            if already >= n:
+                status = "complete (resumed)"
+            else:
+                tally = cell_tally.get((iname, f["fact"]), {})
+                status = " ".join(f"{k}={v}" for k, v in sorted(tally.items()))
+            print(f"  [{seen}/{total}] {model} / {iname} / {f['fact']} absent  {status}", flush=True)
+    return seen
+
+def run_absence(n):
+    if not print_absence_plan(n):
+        sys.exit(1)
+    done = load_done(ABSENCE_RESULTS, ["model", "instruction", "fact"])
+    out = open(ABSENCE_RESULTS, "a")
+    total = len(MODELS) * len(SYSTEM_INSTRUCTIONS) * len(PERTURBATION_LADDERS)
+    seen = 0
+    for model, prov in MODELS:
+        if prov == "anthropic":
+            seen = run_absence_anthropic_batch(model, prov, n, done, out, seen, total)
+            continue
+        for iname, instr in SYSTEM_INSTRUCTIONS:
+            for f in PERTURBATION_LADDERS:
+                seen += 1
+                key = (model, iname, f["fact"])
+                already = done.get(key, 0)
+                cell = {}
+                ddoc = absence_doc(f)
+                for rep_i in range(already, n):
+                    answer, snapshot = with_retry(call, model, prov, instr, f["q"], ddoc)
+                    row = _absence_row(model, prov, iname, f, ddoc, answer, snapshot, rep_i)
+                    out.write(json.dumps(row) + "\n")
+                    out.flush()
+                    cell[row["label"]] = cell.get(row["label"], 0) + 1
+                status = "complete (resumed)" if already >= n else " ".join(f"{k}={v}" for k, v in sorted(cell.items()))
+                print(f"  [{seen}/{total}] {model} / {iname} / {f['fact']} absent  {status}", flush=True)
+    out.close()
+    summarize_absence()
+
+def summarize_absence():
+    df = pd.read_json(ABSENCE_RESULTS, lines=True)
+    print("\nMATCHED ABSENCE -- faithful-abstention rate by model x instruction")
+    for (m, i), g in df.groupby(["model", "instruction"]):
+        p, lo, hi = wilson_interval(int(g["faithful"].sum()), len(g))
+        print(f"  {m:16} / {i:30} {p:.2f} [{lo:.2f}, {hi:.2f}]  (n={len(g)}, reports_deleted_value={int(g['reports_deleted_value'].sum())})")
 
 PROBE_RESULTS = "prior_probe_results.jsonl"
 PROBE_INSTRUCTION = ("Answer the question from your own general knowledge, giving the specific value or name "
@@ -1002,8 +1202,9 @@ def probe_targets():
                  "prior_rating": p["prior_strength"]} for p in UNANSWERABLE_ITEMS]
     return targets
 
-def _probe_row(model, prov, t, answer):
-    return {"model": model, "provider": prov, "kind": t["kind"], "name": t["name"], "doc": t["doc"],
+def _probe_row(model, prov, t, answer, snapshot=None):
+    return {"model": model, "provider": prov, "snapshot": snapshot, "run_id": RUN_ID, "ts": utc_now(),
+            "kind": t["kind"], "name": t["name"], "doc": t["doc"],
             "prior_rating": t["prior_rating"], "expected": t["expected"], "q": t["q"], "answer": answer,
             "reports_expected": appears_any(t["accepted"], answer),
             "says_dont_know": "i do not know" in answer.lower()}
@@ -1021,8 +1222,8 @@ def run_probe(n):
             already = done.get(key, 0)
             tally = {}
             for _ in range(already, n):
-                answer = with_retry(call_docfree, model, prov, PROBE_INSTRUCTION, t["q"])
-                row = _probe_row(model, prov, t, answer)
+                answer, snapshot = with_retry(call_docfree, model, prov, PROBE_INSTRUCTION, t["q"])
+                row = _probe_row(model, prov, t, answer, snapshot)
                 out.write(json.dumps(row) + "\n")
                 out.flush()
                 k = "knows" if row["reports_expected"] else ("dontknow" if row["says_dont_know"] else "other")
@@ -1270,6 +1471,79 @@ def vectors():
     if abstention_rows:
         _print_vector_section("ABSTENTION -- faithful x/n per item, per model x instruction x prior strength",
                               vector_cells(abstention_rows, "item_id", "prior_strength", FAITHFUL), "P")
+        print()
+    absence_rows = load(ABSENCE_RESULTS)
+    if absence_rows:
+        _print_vector_section("MATCHED ABSENCE -- faithful x/n per fact, per model x instruction",
+                              vector_cells(absence_rows, "fact", "evidence_state", FAITHFUL), "")
+
+def matched_readout():
+    def load(path):
+        try:
+            return [json.loads(l) for l in open(path)]
+        except FileNotFoundError:
+            print(f"  no {path} yet")
+            return None
+    caveat_rows, absence_rows = load(CAVEAT_RESULTS), load(ABSENCE_RESULTS)
+    if not caveat_rows or not absence_rows:
+        return
+    print("MATCHED EVIDENCE-STATE READOUT -- same facts, three states; selective = per-fact majority on all three")
+    cv, ab = pd.DataFrame(caveat_rows), pd.DataFrame(absence_rows)
+    for (m, i), g in cv.groupby(["model", "instruction"]):
+        s0 = g[g.severity == 0]
+        pert = g[g.severity >= 1]
+        absent = ab[(ab.model == m) & (ab.instruction == i)]
+        if absent.empty:
+            continue
+        accept = (~s0.stance.isin([QUESTIONED, DECLINED])).mean()
+        flag = (pert.stance == QUESTIONED).mean()
+        abstain = absent.faithful.mean()
+        strict = 0
+        facts = sorted(set(absent.fact))
+        for fname in facts:
+            a_ok = (~s0[s0.fact == fname].stance.isin([QUESTIONED, DECLINED])).mean() > 0.5
+            f_ok = (pert[(pert.fact == fname) & (pert.severity >= 3)].stance == QUESTIONED).mean() > 0.5
+            b_ok = absent[absent.fact == fname].faithful.mean() > 0.5
+            strict += a_ok and f_ok and b_ok
+        print(f"  {m:16} / {i:30} accept_S0={accept:.2f} flag_perturbed={flag:.2f} abstain_absent={abstain:.2f}  selective {strict}/{len(facts)}")
+
+MANIFEST_FILE = "run_manifest.json"
+
+def _sha256(text):
+    return hashlib.sha256(text.encode()).hexdigest()
+
+def build_manifest():
+    git_sha = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+    absence_facts = [f for f in PERTURBATION_LADDERS if "absence" in f]
+    return json.loads(json.dumps({
+        "generated_at": utc_now(),
+        "git_sha": git_sha,
+        "run_id": RUN_ID,
+        "documents": {name: _sha256(DOCUMENT_TEXTS[name]) for name in DOCUMENTS},
+        "absence_documents": {f["fact"]: _sha256(step_doc(f, f["absence"])) for f in absence_facts},
+        "instructions": [{"name": n, "text": t, "sha256": _sha256(t)} for n, t in SYSTEM_INSTRUCTIONS],
+        "models": MODELS,
+        "judge": {"model": JUDGE_MODEL, "caveat_system_sha256": _sha256(CAVEAT_SYSTEM),
+                  "abstention_system_sha256": _sha256(ABSTENTION_SYSTEM)},
+        "n_per_cell": N_PER_CELL,
+        "judge_concurrency": JUDGE_CONCURRENCY,
+        "candidate_params": {"anthropic_max_tokens": 1200, "openai_max_output_tokens": 2000,
+                             "gpt54_reasoning_effort": "low", "temperature": "API default"},
+        "expected_cells": {"caveat": len(MODELS) * len(SYSTEM_INSTRUCTIONS) * total_steps(),
+                           "abstention": len(MODELS) * len(SYSTEM_INSTRUCTIONS) * len(UNANSWERABLE_ITEMS),
+                           "absence": len(MODELS) * len(SYSTEM_INSTRUCTIONS) * len(absence_facts)},
+        "perturbation_ladders": PERTURBATION_LADDERS,
+        "unanswerable_items": UNANSWERABLE_ITEMS,
+    }))
+
+def write_manifest():
+    m = build_manifest()
+    with open(MANIFEST_FILE, "w") as f:
+        json.dump(m, f, indent=2)
+    e = m["expected_cells"]
+    print(f"{MANIFEST_FILE}: git {m['git_sha'][:12]} run {m['run_id']} -- "
+          f"{len(m['perturbation_ladders'])} facts / {len(m['unanswerable_items'])} items / "
+          f"{len(m['instructions'])} instructions; cells caveat={e['caveat']} abstention={e['abstention']} absence={e['absence']}")
 
 def pilot_selection(model_name, doc):
     models = [(m, p) for m, p in MODELS if m == model_name]
@@ -1292,6 +1566,8 @@ def run_pilot(model_name, doc, n):
     run_caveat(n)
     print()
     run_ungrounded(n)
+    print()
+    run_absence(n)
 
 if __name__ == "__main__": # only run file if executed directly
     args = sys.argv[1:]
@@ -1299,6 +1575,8 @@ if __name__ == "__main__": # only run file if executed directly
         run_caveat(int(args[1]) if len(args) > 1 else N_PER_CELL)
     elif args and args[0] == "abstention":
         run_ungrounded(int(args[1]) if len(args) > 1 else N_PER_CELL)
+    elif args and args[0] == "absence":
+        run_absence(int(args[1]) if len(args) > 1 else N_PER_CELL)
     elif args and args[0] == "tradeoff":
         tradeoff()
     elif args and args[0] == "vectors":
@@ -1309,17 +1587,23 @@ if __name__ == "__main__": # only run file if executed directly
         rescore_caveat(args[1:] or None)
     elif args and args[0] == "endorsement":
         endorsement_breakdown()
+    elif args and args[0] == "manifest":
+        write_manifest()
+    elif args and args[0] == "matched":
+        matched_readout()
     elif args and args[0] == "pilot":
         if len(args) < 3:
             print("usage: python3 harness.py pilot <model> <doc> [N]")
             sys.exit(1)
         run_pilot(args[1], args[2], int(args[3]) if len(args) > 3 else N_PER_CELL)
     elif args and not args[0].isdigit():
-        print("usage: python3 harness.py [N] | caveat [N] | abstention [N] | probe [N] | rescore | endorsement | tradeoff | vectors | pilot <model> <doc> [N]")
+        print("usage: python3 harness.py [N] | caveat [N] | abstention [N] | absence [N] | probe [N] | rescore | endorsement | tradeoff | vectors | manifest | pilot <model> <doc> [N]")
         sys.exit(1)
     else:
         n = int(args[0]) if args else N_PER_CELL
         print_plan(n)
         print()
         print_abstention_plan(n)
-        print("\n  (No API calls were made. To execute: python3 harness.py caveat [N]  or  python3 harness.py abstention [N]. Joint readout: python3 harness.py tradeoff)")
+        print()
+        print_absence_plan(n)
+        print("\n  (No API calls were made. To execute: python3 harness.py caveat [N] | abstention [N] | absence [N]. Joint readout: python3 harness.py tradeoff)")

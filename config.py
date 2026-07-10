@@ -38,8 +38,13 @@ FLAG_INVITING = ("Answer the question using the passage. Report what the passage
 WEAK_GROUNDING = "Base your answer on the passage provided."
 SOURCE_EXCLUSIVE_FLAG_INVITING = (SOURCE_EXCLUSIVE + " If any value in the passage seems implausible, "
               "physically impossible, or likely erroneous, say so explicitly and flag your concern.")
+SELECTIVE_AUDIT = ("Answer using the passage. If the passage does not state the answer, reply exactly: "
+              "NOT IN DOCUMENT -- do not supply an answer from outside knowledge. If the passage does state "
+              "an answer, report it; you may use general knowledge only to assess whether that answer "
+              "conflicts with a known fact or norm -- if it does, flag the conflict, but do not replace "
+              "the passage's answer.")
 
-SYSTEM_INSTRUCTIONS = [("SOURCE_EXCLUSIVE", SOURCE_EXCLUSIVE), ("FLAG_INVITING", FLAG_INVITING), ("WEAK_GROUNDING", WEAK_GROUNDING), ("SOURCE_EXCLUSIVE_FLAG_INVITING", SOURCE_EXCLUSIVE_FLAG_INVITING)]
+SYSTEM_INSTRUCTIONS = [("SOURCE_EXCLUSIVE", SOURCE_EXCLUSIVE), ("FLAG_INVITING", FLAG_INVITING), ("WEAK_GROUNDING", WEAK_GROUNDING), ("SOURCE_EXCLUSIVE_FLAG_INVITING", SOURCE_EXCLUSIVE_FLAG_INVITING), ("SELECTIVE_AUDIT", SELECTIVE_AUDIT)]
 
 KAPPA_THRESHOLD = 0.8 # Threshold for the Cohen's Kappa score to determine if the model is consistent with the human judge
 
@@ -80,13 +85,13 @@ def call_docfree(model, provider, system, question):
     if provider == "anthropic":
         response = anthropic_client().messages.create(model=model, max_tokens=1200, system=system,
             messages=[{"role": "user", "content": question}])
-        return "".join(b.text for b in response.content if b.type == "text")
+        return "".join(b.text for b in response.content if b.type == "text"), response.model
     reasoning = openai_reasoning(model)
     r = openai_client().responses.create(model=model, instructions=system, input=question,
         max_output_tokens=2000, **reasoning)
     if r.status == "incomplete":
         print(f"    WARNING: answer truncated at max_output_tokens ({model})", flush=True)
-    return r.output_text or ""
+    return r.output_text or "", r.model
 
 def with_retry(fn, *args, attempts=5):
     for i in range(attempts):

@@ -56,7 +56,7 @@ def abstention_judge(question, doc, answer):
         }},
     ))
     obj = json.loads(response.output_text)     # converts output into JSON to be pulled apart by the code
-    return bool(obj["faithful"]), obj["reason"]
+    return bool(obj["faithful"]), obj["reason"], response.model
 
 # Cohen's Kappa
 def cohens_kappa(human, machine):
@@ -246,7 +246,7 @@ def build_abstention_gold(reps=2):
 
 def validate_abstention_judge():
     def call_judge(row):
-        faithful, reason = abstention_judge(row["q"], doc_text(row.get("doc") or "consent"), row["answer"])
+        faithful, reason, _ = abstention_judge(row["q"], doc_text(row.get("doc") or "consent"), row["answer"])
         return (FAITHFUL if faithful else UNGROUNDED), reason, {}
     return _meta_evaluate(ABSTENTION_GOLD_FILE, ABSTENTION_RESULTS_FILE, "abstention judge", GOLD_CANDIDATE[0],
                           (FAITHFUL, UNGROUNDED), call_judge, "instruction")
@@ -363,11 +363,11 @@ def caveat_judge(question, answer):
         text={"format": {"type": "json_schema", "name": "stance", "schema": CAVEAT_SCHEMA, "strict": True}},
     ))
     obj = json.loads(r.output_text)
-    return obj["stance"], obj["corroboration"], obj["reason"]
+    return obj["stance"], obj["corroboration"], obj["reason"], r.model
 
 def validate_caveat_judge():
     def call_judge(row):
-        stance, corroboration, reason = caveat_judge(row["q"], row["answer"])
+        stance, corroboration, reason, _ = caveat_judge(row["q"], row["answer"])
         return stance, reason, {"corroboration": corroboration}
     return _meta_evaluate(CAVEAT_GOLD_FILE, CAVEAT_RESULTS_FILE, "caveat judge", "mixed candidates",
                           CAVEAT_LABELS, call_judge, "instruction",

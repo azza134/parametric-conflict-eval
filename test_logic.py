@@ -10,13 +10,15 @@ from config import (perturb, with_retry, DOCUMENTS, doc_text, openai_reasoning, 
                     SOURCE_EXCLUSIVE_FLAG_INVITING, SYSTEM_INSTRUCTIONS,
                     appears, passage, step_doc, build_batch_message_params)
 from harness import (wilson_interval, PERTURBATION_LADDERS, SEVERITIES, validate_ladders,
+                     ABSENCE_PATCHES, absence_doc, validate_absence, _absence_row,
+                     encode_absence_custom_id, decode_absence_custom_id, absence_wave_plan,
                      total_steps, total_cells, classify, lexical_caveat, UNANSWERABLE_ITEMS, validate_items,
                      load_done, tradeoff_rows, PRIOR_STRENGTHS, cluster_icc, vector_cells,
                      probe_targets, _probe_row, probe_item_rates, measured_prior_bins, prior_bin, prior_bin_label,
                      encode_caveat_custom_id, decode_caveat_custom_id,
                      encode_abstention_custom_id, decode_abstention_custom_id,
                      caveat_wave_plan, abstention_wave_plan, concurrent_map, pilot_selection,
-                     _run_anthropic_wave, _chunked_judge_sink)
+                     _run_anthropic_wave, _chunked_judge_sink, build_manifest)
 from judge import (cohens_kappa, FAITHFUL, UNGROUNDED,
                    judge_gate, anchor_disagreements, GATE_PASS, GATE_FAIL, KAPPA_THRESHOLD,
                    QUESTIONED, SILENT, ENDORSED, DECLINED, CAVEAT_LABELS, CAVEAT_SCHEMA, build_caveat_prompt,
@@ -222,10 +224,26 @@ class TestWithRetry(unittest.TestCase):
 class TestInstructions(unittest.TestCase):
     def test_instruction_names_and_order(self):
         self.assertEqual([name for name, _ in SYSTEM_INSTRUCTIONS],
-                         ["SOURCE_EXCLUSIVE", "FLAG_INVITING", "WEAK_GROUNDING", "SOURCE_EXCLUSIVE_FLAG_INVITING"])
+                         ["SOURCE_EXCLUSIVE", "FLAG_INVITING", "WEAK_GROUNDING", "SOURCE_EXCLUSIVE_FLAG_INVITING",
+                          "SELECTIVE_AUDIT"])
 
-    def test_four_distinct_instructions(self):
-        self.assertEqual(len({t for _, t in SYSTEM_INSTRUCTIONS}), 4)
+    def test_five_distinct_instructions(self):
+        self.assertEqual(len({t for _, t in SYSTEM_INSTRUCTIONS}), 5)
+
+    def test_selective_audit_gates_by_evidence_state(self):
+        text = dict(SYSTEM_INSTRUCTIONS)["SELECTIVE_AUDIT"]
+        self.assertIn("NOT IN DOCUMENT", text)
+        self.assertIn("flag the conflict", text)
+        self.assertIn("do not replace", text)
+
+    def test_max_custom_id_length_within_anthropic_ceiling(self):
+        longest_instr = max((name for name, _ in SYSTEM_INSTRUCTIONS), key=len)
+        longest_fact = max((f["fact"] for f in PERTURBATION_LADDERS), key=len)
+        longest_item = max((p["item_id"] for p in UNANSWERABLE_ITEMS), key=len)
+        worst = max(len(encode_caveat_custom_id(longest_fact, 5, longest_instr, 2)),
+                    len(encode_abstention_custom_id(longest_item, longest_instr, 2)),
+                    len(encode_absence_custom_id(longest_fact, longest_instr, 2)))
+        self.assertLessEqual(worst, 64)
 
     def test_permissive_invites_flagging(self):
         self.assertIn("flag", FLAG_INVITING.lower())
@@ -727,6 +745,84 @@ class TestAbstentionWavePlan(unittest.TestCase):
         wave1, wave2 = abstention_wave_plan({}, 2, "m", instructions=self.INSTR, items=self.ITEMS)
         self.assertEqual(wave1, [encode_abstention_custom_id("a", "SOURCE_EXCLUSIVE", 0)])
         self.assertIn(encode_abstention_custom_id("a", "SOURCE_EXCLUSIVE", 1), wave2)
+
+
+class TestMatchedAbsence(unittest.TestCase):
+    def test_every_fact_has_a_patch(self):
+        self.assertEqual(set(ABSENCE_PATCHES), {f["fact"] for f in PERTURBATION_LADDERS})
+        for f in PERTURBATION_LADDERS:
+            self.assertIn("absence", f)
+
+    def test_validation_clean_on_real_data(self):
+        self.assertEqual(validate_absence(), [])
+
+    def test_deleted_doc_differs_from_base(self):
+        for f in PERTURBATION_LADDERS:
+            self.assertNotEqual(absence_doc(f), doc_text(f["doc"]))
+
+    def test_codec_roundtrip_and_format(self):
+        cid = encode_absence_custom_id("grasses", "SELECTIVE_AUDIT", 2)
+        self.assertEqual(cid, "ma-grasses-SELECTIVE_AUDIT-r2")
+        self.assertEqual(decode_absence_custom_id(cid),
+                         {"fact": "grasses", "instruction": "SELECTIVE_AUDIT", "rep": 2})
+
+    def test_decode_rejects_other_prefixes(self):
+        with self.assertRaises(ValueError):
+            decode_absence_custom_id(encode_abstention_custom_id("water_boil", "SOURCE_EXCLUSIVE", 0))
+
+    def test_wave_plan_rep0_per_cell_and_resume(self):
+        instr = [("SOURCE_EXCLUSIVE", "sys")]
+        ladders = [{"fact": "grasses"}, {"fact": "toilets"}]
+        w1, w2 = absence_wave_plan({}, 2, "m", instructions=instr, ladders=ladders)
+        self.assertEqual(w1, [encode_absence_custom_id("grasses", "SOURCE_EXCLUSIVE", 0),
+                              encode_absence_custom_id("toilets", "SOURCE_EXCLUSIVE", 0)])
+        self.assertEqual(w2, [encode_absence_custom_id("grasses", "SOURCE_EXCLUSIVE", 1),
+                              encode_absence_custom_id("toilets", "SOURCE_EXCLUSIVE", 1)])
+        done = {("m", "SOURCE_EXCLUSIVE", "grasses"): 2, ("m", "SOURCE_EXCLUSIVE", "toilets"): 1}
+        w1, w2 = absence_wave_plan(done, 2, "m", instructions=instr, ladders=ladders)
+        self.assertEqual(w1, [encode_absence_custom_id("toilets", "SOURCE_EXCLUSIVE", 1)])
+        self.assertEqual(w2, [])
+
+    def test_wave_plan_real_data_counts(self):
+        w1, w2 = absence_wave_plan({}, 1, "claude-sonnet-5")
+        self.assertEqual(len(w1), len(PERTURBATION_LADDERS) * len(SYSTEM_INSTRUCTIONS))
+        self.assertEqual(w2, [])
+
+    def test_absence_row_judges_against_deleted_doc(self):
+        fact = next(f for f in PERTURBATION_LADDERS if f["fact"] == "grasses")
+        deleted = absence_doc(fact)
+        with mock.patch("harness.abstention_judge", return_value=(True, "abstained", "judge-snap")) as j:
+            row = _absence_row("m", "anthropic", "SOURCE_EXCLUSIVE", fact, deleted, "NOT IN DOCUMENT", "snap", 1)
+        j.assert_called_once_with(fact["q"], deleted, "NOT IN DOCUMENT")
+        self.assertEqual(row["evidence_state"], "absent")
+        self.assertEqual(row["label"], FAITHFUL)
+        self.assertEqual((row["fact"], row["rep"], row["snapshot"], row["judge_snapshot"]),
+                         ("grasses", 1, "snap", "judge-snap"))
+        self.assertFalse(row["reports_deleted_value"])
+        self.assertTrue(row["verbatim_abstention"])
+
+
+class TestManifest(unittest.TestCase):
+    def test_structure_and_counts(self):
+        m = build_manifest()
+        for key in ("generated_at", "git_sha", "run_id", "documents", "instructions", "models",
+                    "judge", "n_per_cell", "expected_cells", "perturbation_ladders", "unanswerable_items"):
+            self.assertIn(key, m)
+        self.assertTrue(m["git_sha"])
+        self.assertEqual(set(m["documents"]), set(DOCUMENTS))
+        self.assertEqual(len(m["instructions"]), len(SYSTEM_INSTRUCTIONS))
+        self.assertEqual(m["expected_cells"]["caveat"], len(MODELS) * len(SYSTEM_INSTRUCTIONS) * total_steps())
+        self.assertEqual(m["expected_cells"]["abstention"], len(MODELS) * len(SYSTEM_INSTRUCTIONS) * len(UNANSWERABLE_ITEMS))
+
+    def test_json_roundtrip_stable(self):
+        m = build_manifest()
+        m.pop("generated_at"), m.pop("run_id"), m.pop("git_sha")
+        self.assertEqual(m, json.loads(json.dumps(m)))
+
+    def test_doc_hashes_deterministic(self):
+        a, b = build_manifest(), build_manifest()
+        self.assertEqual(a["documents"], b["documents"])
+        self.assertEqual(a["instructions"], b["instructions"])
 
 
 class TestChunkedJudgeSink(unittest.TestCase):
