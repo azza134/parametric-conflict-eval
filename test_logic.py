@@ -15,12 +15,13 @@ from harness import (wilson_interval, PERTURBATION_LADDERS, SEVERITIES, validate
                      probe_targets, _probe_row, probe_item_rates, measured_prior_bins, prior_bin, prior_bin_label,
                      encode_caveat_custom_id, decode_caveat_custom_id,
                      encode_abstention_custom_id, decode_abstention_custom_id,
-                     caveat_wave_plan, abstention_wave_plan, concurrent_map)
+                     caveat_wave_plan, abstention_wave_plan, concurrent_map, pilot_selection,
+                     _run_anthropic_wave, _chunked_judge_sink)
 from judge import (cohens_kappa, FAITHFUL, UNGROUNDED,
                    judge_gate, anchor_disagreements, GATE_PASS, GATE_FAIL, KAPPA_THRESHOLD,
                    QUESTIONED, SILENT, ENDORSED, DECLINED, CAVEAT_LABELS, CAVEAT_SCHEMA, build_caveat_prompt,
                    CORROBORATION_LABELS,
-                   gold_schedule, _meta_evaluate)
+                   gold_schedule, expand_schedule, _meta_evaluate)
 
 
 class TestPerturb(unittest.TestCase):
@@ -599,6 +600,23 @@ class TestGoldSchedule(unittest.TestCase):
             self.assertEqual({i for s, i in borderline if s == item_id}, {"SOURCE_EXCLUSIVE", "WEAK_GROUNDING"})
 
 
+class TestExpandSchedule(unittest.TestCase):
+    ITEMS = [{"item_id": "old", "prior_strength": 5}, {"item_id": "new", "prior_strength": 5}]
+
+    def test_only_uncovered_items_scheduled(self):
+        schedule = expand_schedule([{"item_id": "old", "human": "faithful"}], self.ITEMS, reps=2)
+        self.assertEqual({p["item_id"] for p, _, _ in schedule}, {"new"})
+        self.assertEqual(len(schedule), 2)
+
+    def test_empty_existing_schedules_everything(self):
+        schedule = expand_schedule([], self.ITEMS, reps=2)
+        self.assertEqual({p["item_id"] for p, _, _ in schedule}, {"old", "new"})
+
+    def test_fully_covered_schedules_nothing(self):
+        existing = [{"item_id": "old"}, {"item_id": "new"}]
+        self.assertEqual(expand_schedule(existing, self.ITEMS, reps=2), [])
+
+
 class TestTradeoffRows(unittest.TestCase):
     def _caveat(self, instr, level, label):
         return {"model": MODELS[0][0], "instruction": instr, "severity": level, "label": label}
@@ -709,6 +727,86 @@ class TestAbstentionWavePlan(unittest.TestCase):
         wave1, wave2 = abstention_wave_plan({}, 2, "m", instructions=self.INSTR, items=self.ITEMS)
         self.assertEqual(wave1, [encode_abstention_custom_id("a", "SOURCE_EXCLUSIVE", 0)])
         self.assertIn(encode_abstention_custom_id("a", "SOURCE_EXCLUSIVE", 1), wave2)
+
+
+class TestChunkedJudgeSink(unittest.TestCase):
+    def test_flushes_at_chunk_boundary_in_order(self):
+        written = []
+        push, flush = _chunked_judge_sink(lambda pair: pair, written.append, chunk=2)
+        push("a", 1)
+        self.assertEqual(written, [])
+        push("b", 2)
+        self.assertEqual(written, [("a", 1), ("b", 2)])
+        push("c", 3)
+        self.assertEqual(written, [("a", 1), ("b", 2)])
+        flush()
+        self.assertEqual(written, [("a", 1), ("b", 2), ("c", 3)])
+
+    def test_final_flush_on_empty_buffer_is_noop(self):
+        written = []
+        push, flush = _chunked_judge_sink(lambda pair: pair, written.append, chunk=2)
+        flush()
+        self.assertEqual(written, [])
+
+    def test_judge_applied_to_each_pair(self):
+        written = []
+        push, flush = _chunked_judge_sink(lambda pair: pair[1] * 10, written.append, chunk=3)
+        for i, cid in enumerate(("a", "b", "c")):
+            push(cid, i)
+        self.assertEqual(written, [0, 10, 20])
+
+
+class TestRunAnthropicWave(unittest.TestCase):
+    def _succeeded(self, text):
+        return mock.Mock(type="succeeded", message=mock.Mock(content=[mock.Mock(type="text", text=text)]))
+
+    def _patched(self, results):
+        return (mock.patch("harness.submit_anthropic_batch", return_value="b1"),
+                mock.patch("harness.poll_anthropic_batch"),
+                mock.patch("harness.anthropic_batch_results", return_value=iter(results)))
+
+    def test_succeeded_delivered_before_fallbacks(self):
+        events = []
+        results = [("a", self._succeeded("A")), ("b", mock.Mock(type="errored"))]
+        p1, p2, p3 = self._patched(results)
+        with p1, p2, p3:
+            _run_anthropic_wave("m", "anthropic", ["a", "b"], "w", lambda m, c: {},
+                                lambda cid: (events.append(("sync", cid)), "B")[1],
+                                lambda cid, ans: events.append(("row", cid, ans)))
+        self.assertEqual(events, [("row", "a", "A"), ("sync", "b"), ("row", "b", "B")])
+
+    def test_fallback_crash_preserves_succeeded_rows(self):
+        written = []
+        p1, p2, p3 = self._patched([("a", self._succeeded("A"))])
+        def boom(cid):
+            raise RuntimeError("credit balance too low")
+        with p1, p2, p3:
+            with self.assertRaises(RuntimeError):
+                _run_anthropic_wave("m", "anthropic", ["a", "b"], "w", lambda m, c: {},
+                                    boom, lambda cid, ans: written.append(cid))
+        self.assertEqual(written, ["a"])
+
+
+class TestPilotSelection(unittest.TestCase):
+    def test_filters_to_one_model_and_doc(self):
+        models, ladders, items = pilot_selection("claude-sonnet-5", "liquor")
+        self.assertEqual(models, [("claude-sonnet-5", "anthropic")])
+        self.assertTrue(ladders and all(f["doc"] == "liquor" for f in ladders))
+        self.assertTrue(items and all(p["doc"] == "liquor" for p in items))
+
+    def test_does_not_mutate_globals(self):
+        n_models, n_ladders, n_items = len(MODELS), len(PERTURBATION_LADDERS), len(UNANSWERABLE_ITEMS)
+        pilot_selection("claude-sonnet-5", "liquor")
+        self.assertEqual((len(MODELS), len(PERTURBATION_LADDERS), len(UNANSWERABLE_ITEMS)),
+                         (n_models, n_ladders, n_items))
+
+    def test_unknown_model_exits(self):
+        with self.assertRaises(SystemExit):
+            pilot_selection("gpt-9", "liquor")
+
+    def test_unknown_doc_exits(self):
+        with self.assertRaises(SystemExit):
+            pilot_selection("claude-sonnet-5", "zoning")
 
 
 class TestBuildBatchMessageParams(unittest.TestCase):

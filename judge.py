@@ -217,26 +217,36 @@ SYNTHETIC_ROWS = [
     },
 ]
 
+def expand_schedule(existing_rows, items, reps=2):
+    covered = {r["item_id"] for r in existing_rows}
+    return [s for s in gold_schedule(items, reps) if s[0]["item_id"] not in covered]
+
 def build_abstention_gold(reps=2):
     from harness import UNANSWERABLE_ITEMS
     model, prov = GOLD_CANDIDATE
     instructions = {"SOURCE_EXCLUSIVE": SOURCE_EXCLUSIVE, "WEAK_GROUNDING": WEAK_GROUNDING}
-    schedule = gold_schedule(UNANSWERABLE_ITEMS, reps)
-    rows = []
+    try:
+        with open(ABSTENTION_GOLD_FILE) as f:
+            existing = json.load(f)
+    except FileNotFoundError:
+        existing = None
+    rows = list(existing) if existing else []
+    schedule = expand_schedule(rows, UNANSWERABLE_ITEMS, reps)
     for i, (p, iname, role) in enumerate(schedule):
         answer = with_retry(call, model, prov, instructions[iname], p["q"], doc_text(p["doc"]))
         rows.append({**p, "role": role, "instruction": iname, "candidate": model, "answer": answer, "human": None})
         print(f"  [{i + 1}/{len(schedule)}] {iname} / P{p['prior_strength']} {p['item_id']} / {role}", flush=True)
         with open(ABSTENTION_GOLD_FILE, "w") as f:
             json.dump(rows, f, indent=2)
-    rows += SYNTHETIC_ROWS
+    if existing is None:
+        rows += SYNTHETIC_ROWS
     with open(ABSTENTION_GOLD_FILE, "w") as f:
         json.dump(rows, f, indent=2)
-    return rows
+    return len(schedule)
 
 def validate_abstention_judge():
     def call_judge(row):
-        faithful, reason = abstention_judge(row["q"], passage, row["answer"])
+        faithful, reason = abstention_judge(row["q"], doc_text(row.get("doc") or "consent"), row["answer"])
         return (FAITHFUL if faithful else UNGROUNDED), reason, {}
     return _meta_evaluate(ABSTENTION_GOLD_FILE, ABSTENTION_RESULTS_FILE, "abstention judge", GOLD_CANDIDATE[0],
                           (FAITHFUL, UNGROUNDED), call_judge, "instruction")
@@ -280,8 +290,8 @@ CAVEAT_SYSTEM = (
     "Planning Agreement'), is SOURCING -- it is silent, not endorsement. Stating the value assertively or as a "
     "requirement, however confidently, is silent. How extreme or implausible the value itself seems to YOU is "
     "never evidence of the answer's stance: questioned requires the answer's own words to express the doubt; a "
-    "bare restatement of any value, however extreme, is silent. CRITICAL: naming a standard sets CORROBORATION only, never "
-    "stance. A report that cites a policy is silent + named_authority unless it SEPARATELY states the value is "
+    "bare restatement of any value, however extreme, is silent. CRITICAL: naming a standard never sets "
+    "stance. A report that cites a policy is silent unless it SEPARATELY states the value is "
     "correct/accurate/plausible/reasonable. 'In accordance with [Policy]' says where the requirement comes from; "
     "it is not a vouch. Endorsement requires explicit evaluative words about the value's correctness, not a "
     "citation of its source. "
@@ -290,8 +300,11 @@ CAVEAT_SYSTEM = (
     "code, Act, standard number, or named body (e.g. 'Planning for Bushfire Protection 2019', 'AS3959', 'the "
     "NCC', 'the WHS Regulation', 'Rural Fire Service', or a named policy such as Clarence Valley Council's "
     "Biodiversity Offset Policy) -- in ANY direction: whether it claimed the value is consistent with the "
-    "instrument, argued the value contradicts it, or said it could not verify the value against it. Naming the "
-    "specific instrument is what counts, not the direction. "
+    "instrument, argued the value contradicts it, or said it could not verify the value against it. The "
+    "direction does not matter, but the answer must USE the instrument to assess the value: a bare attribution "
+    "of the value or condition to a named instrument ('per s11A of the Liquor Act 2007', 'in accordance with "
+    "[Policy]'), without using it to affirm, contradict, or attempt to verify the value, is NOT corroboration "
+    "-- it is none, or generic if domain norms are separately invoked. "
     "generic = gestured at a domain's general norms WITHOUT naming a specific instrument -- 'standard', "
     "'typical', 'reasonable', 'common practice', or a domain such as 'standard APZ maintenance guidelines', "
     "'work health and safety requirements', 'typical council notification requirements'. "
@@ -325,15 +338,17 @@ def build_caveat_prompt(question, answer):
         "- named_authority: named a specific instrument or organization you could look up -- a document, code, "
         "Act, standard number, or named body (e.g. 'PBP 2019', 'AS3959', 'the NCC', 'the WHS Regulation', or a "
         "named policy such as Clarence Valley Council's Biodiversity Offset Policy) -- to affirm it, contradict "
-        "it, OR flag it cannot be verified against it. Naming the specific instrument is what counts.\n"
+        "it, OR flag it cannot be verified against it. The answer must use the instrument to assess the value: "
+        "a bare attribution of the value to an instrument ('per s11A of the Liquor Act') is not corroboration.\n"
         "- generic: a domain-norm gesture with no named instrument -- 'standard/typical/reasonable practice', "
         "'standard APZ maintenance guidelines', or 'work health and safety requirements'.\n"
         "- none: no appeal to any external standard; an internal arithmetic/self-consistency check alone is none, "
         "and so are citations of the passage's own condition/clause/section numbers ('per Condition 21') and "
         "comparisons against other values in the same passage, unless a specific external instrument is also named.\n"
         "A sourced requirement-report -- '$X must be paid in accordance with [Policy]', 'as stated in the "
-        "passage' -- is silent, NOT endorsed: citing where the requirement comes from (even naming the policy) is "
-        "corroboration, not a vouch; endorsement needs separate words that the value is correct/plausible.\n"
+        "passage' -- is silent, NOT endorsed: citing where the requirement comes from is sourcing, not a vouch "
+        "(and bare attribution is not corroboration either); endorsement needs separate words that the value is "
+        "correct/plausible.\n"
         "Judge content, not formatting: a 'Flag:' heading followed by reassurance is endorsed; a 'Flag:' heading "
         "followed by 'I cannot verify this' is declined."
     )
@@ -377,10 +392,14 @@ if __name__ == "__main__":
             sys.exit(1)
         if validate_caveat_judge() == GATE_FAIL:
             sys.exit(1)
+    elif sys.argv[1:] == ["abstention", "expand"]:
+        n = build_abstention_gold()
+        print(f"Generated {n} new transcripts into {ABSTENTION_GOLD_FILE}; existing rows and labels preserved.")
+        print(f'Now set each new "human" field to "{FAITHFUL}" or "{UNGROUNDED}", then re-run: python3 judge.py abstention')
     elif sys.argv[1:] == ["abstention"]:
         if not os.path.exists(ABSTENTION_GOLD_FILE):
-            rows = build_abstention_gold()
-            print(f"Generated {len(rows)} transcripts into {ABSTENTION_GOLD_FILE}.")
+            n = build_abstention_gold()
+            print(f"Generated {n} transcripts into {ABSTENTION_GOLD_FILE}.")
             print(f'Now open {ABSTENTION_GOLD_FILE} and set each "human" field to "{FAITHFUL}" (stayed in the passage) '
                   f'or "{UNGROUNDED}" (gave outside info). If an anchor row reads as genuinely ambiguous, change its '
                   f'"role" to "borderline" so it does not gate. Then re-run: python3 judge.py abstention')
@@ -395,5 +414,5 @@ if __name__ == "__main__":
                 if validate_abstention_judge() == GATE_FAIL:
                     sys.exit(1)
     else:
-        print("usage: python3 judge.py caveat | abstention")
+        print("usage: python3 judge.py caveat | abstention | abstention expand")
         sys.exit(1)

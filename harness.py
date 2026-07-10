@@ -396,9 +396,9 @@ def _caveat_row(model, prov, iname, fact, s, answer): # creates a row for the ca
             "reports_target": appears(s["target_string"], answer),
             "label": label}
 
-def _run_anthropic_wave(model, prov, custom_ids, wave_label, build_request_fn, sync_call_fn): # runs a wave of requests for the caveat test
+def _run_anthropic_wave(model, prov, custom_ids, wave_label, build_request_fn, sync_call_fn, on_answer): # runs a wave of requests for the caveat test
     if not custom_ids:
-        return {}
+        return
     print(f"  submitting {wave_label}: {len(custom_ids)} request(s)", flush=True)
     batch_id = submit_anthropic_batch([(cid, build_request_fn(model, cid)) for cid in custom_ids])
     print(f"    batch id: {batch_id}", flush=True)
@@ -411,19 +411,33 @@ def _run_anthropic_wave(model, prov, custom_ids, wave_label, build_request_fn, s
 
     poll_anthropic_batch(batch_id, poll_interval=30, on_poll=on_poll)
 
-    answers, seen_ids = {}, set()
+    fallbacks, seen_ids = [], set()
     for cid, result in anthropic_batch_results(batch_id):
         seen_ids.add(cid)
         if result.type == "succeeded":
-            answers[cid] = extract_anthropic_text(result.message)
+            on_answer(cid, extract_anthropic_text(result.message))
         else:
-            print(f"    {wave_label}: {cid} -> {result.type}; falling back to synchronous retry", flush=True)
-            answers[cid] = sync_call_fn(cid)
+            print(f"    {wave_label}: {cid} -> {result.type}; deferring to synchronous retry", flush=True)
+            fallbacks.append(cid)
     for cid in custom_ids:
         if cid not in seen_ids:
-            print(f"    {wave_label}: {cid} missing from batch results; falling back to synchronous retry", flush=True)
-            answers[cid] = sync_call_fn(cid)
-    return answers
+            print(f"    {wave_label}: {cid} missing from batch results; deferring to synchronous retry", flush=True)
+            fallbacks.append(cid)
+    for cid in fallbacks:
+        on_answer(cid, sync_call_fn(cid))
+
+def _chunked_judge_sink(judge_one, write_row, chunk=None):
+    chunk = chunk if chunk is not None else max(JUDGE_CONCURRENCY * 4, 1)
+    pending = []
+    def flush():
+        for res in concurrent_map(judge_one, pending):
+            write_row(res)
+        pending.clear()
+    def push(cid, answer):
+        pending.append((cid, answer))
+        if len(pending) >= chunk:
+            flush()
+    return push, flush
 
 def encode_caveat_custom_id(fact, severity, instruction, rep): # encodes the custom id for the caveat test
     return f"cv-{fact}-s{severity}-{instruction}-r{rep}"
@@ -470,17 +484,22 @@ def run_caveat_anthropic_batch(model, prov, n, done, out, seen, total):
         return with_retry(call, model, prov, INSTR_BY_NAME[d["instruction"]], fact["q"], step_doc(fact, step))
 
     def process(custom_ids, wave_label):
-        answers = _run_anthropic_wave(model, prov, custom_ids, wave_label, _caveat_batch_request, sync_fallback)
-        for cid in custom_ids:
+        def judge_one(pair):
+            cid, answer = pair
             d = decode_caveat_custom_id(cid)
             fact, step = _caveat_step(d["fact"], d["severity"])
-            row = _caveat_row(model, prov, d["instruction"], fact, step, answers[cid])
+            return d, _caveat_row(model, prov, d["instruction"], fact, step, answer)
+        def write_row(res):
+            d, row = res
             out.write(json.dumps(row) + "\n")
             out.flush()
             key = (d["instruction"], d["fact"], d["severity"])
             cell_tally.setdefault(key, {})
             cell_tally[key][row["label"]] = cell_tally[key].get(row["label"], 0) + 1
             print(f"    [{wave_label}] {model} / {d['instruction']} / {d['fact']} S{d['severity']} rep{d['rep']} -> {row['label']}", flush=True)
+        push, flush = _chunked_judge_sink(judge_one, write_row)
+        _run_anthropic_wave(model, prov, custom_ids, wave_label, _caveat_batch_request, sync_fallback, push)
+        flush()
 
     process(wave1_ids, "caveat wave 1 (cache warm)")
     process(wave2_ids, "caveat wave 2 (cache read)")
@@ -903,17 +922,22 @@ def run_ungrounded_anthropic_batch(model, prov, n, done, out, seen, total):
         return with_retry(call, model, prov, INSTR_BY_NAME[d["instruction"]], p["q"], doc_text(p["doc"]))
 
     def process(custom_ids, wave_label):
-        answers = _run_anthropic_wave(model, prov, custom_ids, wave_label, _abstention_batch_request, sync_fallback)
-        for cid in custom_ids:
+        def judge_one(pair):
+            cid, answer = pair
             d = decode_abstention_custom_id(cid)
             p = ITEM_BY_ID[d["item_id"]]
-            row = _abstention_row(model, prov, d["instruction"], p, answers[cid])
+            return d, _abstention_row(model, prov, d["instruction"], p, answer)
+        def write_row(res):
+            d, row = res
             out.write(json.dumps(row) + "\n")
             out.flush()
             key = (d["instruction"], d["item_id"])
             cell_tally.setdefault(key, {})
             cell_tally[key][row["label"]] = cell_tally[key].get(row["label"], 0) + 1
             print(f"    [{wave_label}] {model} / {d['instruction']} / {d['item_id']} rep{d['rep']} -> {row['label']}", flush=True)
+        push, flush = _chunked_judge_sink(judge_one, write_row)
+        _run_anthropic_wave(model, prov, custom_ids, wave_label, _abstention_batch_request, sync_fallback, push)
+        flush()
 
     process(wave1_ids, "abstention wave 1 (cache warm)")
     process(wave2_ids, "abstention wave 2 (cache read)")
@@ -1246,8 +1270,30 @@ def vectors():
         _print_vector_section("ABSTENTION -- faithful x/n per item, per model x instruction x prior strength",
                               vector_cells(abstention_rows, "item_id", "prior_strength", FAITHFUL), "P")
 
+def pilot_selection(model_name, doc):
+    models = [(m, p) for m, p in MODELS if m == model_name]
+    if not models:
+        raise SystemExit(f"unknown model {model_name!r} -- roster: {[m for m, _ in MODELS]}")
+    if doc not in DOCUMENTS:
+        raise SystemExit(f"unknown document {doc!r} -- registry: {list(DOCUMENTS)}")
+    ladders = [f for f in PERTURBATION_LADDERS if f["doc"] == doc]
+    items = [p for p in UNANSWERABLE_ITEMS if p["doc"] == doc]
+    if not ladders and not items:
+        raise SystemExit(f"document {doc!r} has no facts and no items")
+    return models, ladders, items
+
+def run_pilot(model_name, doc, n):
+    models, ladders, items = pilot_selection(model_name, doc)
+    MODELS[:] = models
+    PERTURBATION_LADDERS[:] = ladders
+    UNANSWERABLE_ITEMS[:] = items
+    print(f"PILOT: {model_name} x {doc} -- {len(ladders)} facts, {len(items)} items, N={n}\n")
+    run_caveat(n)
+    print()
+    run_ungrounded(n)
+
 if __name__ == "__main__": # only run file if executed directly
-    args = sys.argv[1:] 
+    args = sys.argv[1:]
     if args and args[0] == "caveat": # if args and args[0] = if the first argument is caveat
         run_caveat(int(args[1]) if len(args) > 1 else N_PER_CELL)
     elif args and args[0] == "abstention":
@@ -1262,8 +1308,13 @@ if __name__ == "__main__": # only run file if executed directly
         rescore_caveat(args[1:] or None)
     elif args and args[0] == "endorsement":
         endorsement_breakdown()
+    elif args and args[0] == "pilot":
+        if len(args) < 3:
+            print("usage: python3 harness.py pilot <model> <doc> [N]")
+            sys.exit(1)
+        run_pilot(args[1], args[2], int(args[3]) if len(args) > 3 else N_PER_CELL)
     elif args and not args[0].isdigit():
-        print("usage: python3 harness.py [N] | caveat [N] | abstention [N] | probe [N] | rescore | endorsement | tradeoff | vectors")
+        print("usage: python3 harness.py [N] | caveat [N] | abstention [N] | probe [N] | rescore | endorsement | tradeoff | vectors | pilot <model> <doc> [N]")
         sys.exit(1)
     else:
         n = int(args[0]) if args else N_PER_CELL
