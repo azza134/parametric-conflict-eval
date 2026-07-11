@@ -129,7 +129,7 @@ Example leak (gpt-4o-mini, WEAK_GROUNDING, P5): *"Water boils at 100 degrees Cel
 
 The two ideal behaviours side by side: flag the wrong value that is present (error-flagging rate, from the caveat test) and withhold the known value that is absent (**faithful-abstention rate** = 1 - parametric-leakage rate, from the abstention test). Higher is better on both axes. 
 
-![Scatter plot: error-flagging rate (averaged S1-S5) on the x-axis vs faithful-abstention rate (averaged P1-P5) on the y-axis, one point per model x instruction combination, colored by instruction and shaped by model.](../tradeoff_scatter.png)
+![Scatter plot: error-flagging rate (averaged S1-S5) on the x-axis vs faithful-abstention rate (averaged P1-P5) on the y-axis, one point per model x instruction combination, colored by instruction and shaped by model.](tradeoff_scatter.png)
 
 Each point averages error-flagging over S1-S5 (excludes S0, which is a false-positive check, not a real catch) and faithful-abstention over P1-P5, one point per model x instruction. Regenerate with `python3 plot_tradeoff.py`.
 

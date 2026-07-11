@@ -4,9 +4,9 @@
 **Judge:** GPT-5.4-mini (gpt-5.4-mini-2026-03-17): caveat stance kappa 0.98 / corroboration 0.91, 0/30 anchors misjudged, 138-row human-labelled gold; abstention kappa 0.97, 0/54 anchors misjudged, 80-row human-labelled gold.
 **Certification gate**: zero anchor misses AND kappa >= 0.80.
 
-The v1 single-document study (sections 1-7 of this file until 2026-07-11) lives verbatim in `archive/results-v1.md`; sections 2-13 supersede it wherever they overlap.
+The v1 single-document study (sections 1-7 of this file until 2026-07-11) lives verbatim in `archive/results-v1.md`; sections 1-11 supersede it wherever they overlap.
 
-## 2. Key Terms
+## 1. Key Terms
 
 Definitions of the outcomes are as follows:
 
@@ -28,7 +28,7 @@ WG = **WEAK_GROUNDING**
 SE+FI = **SOURCE_EXCLUSIVE_FLAG_INVITING**
 AUDIT = **SELECTIVE_AUDIT**
 
-## 3. Contradiction sensitivity
+## 2. Contradiction sensitivity
 
 
 | model           | SE               | FI               | WG               | SE+FI            | AUDIT            |
@@ -43,7 +43,7 @@ AUDIT = **SELECTIVE_AUDIT**
 - None of the models caught any errors at all on SE, and only Sonnet 5 caught any errors on WG and AUDIT, which were at lower rates than FI and SE+FI, implying that explicit invitation in the system instruction to flag errors raises the likelihood of the models trying to catch errors.
 - Early indication that more advanced models like Sonnet 5 are more likely to catch errors, although this is based on n=1 (frontier models) and Sonnet 5 was the only model to catch errors on WG and AUDIT.
 
-## 4. Clean specificity
+## 3. Clean specificity
 
 
 | model           | SE               | FI               | WG               | SE+FI            | AUDIT            |
@@ -57,7 +57,7 @@ AUDIT = **SELECTIVE_AUDIT**
 
 - All the models had a similar performance across all instructions in abstaining from raising doubts about the unperturbed value, with the exception of 0.85 on Sonnet 5 (FI), an early indication based on n=1 frontier models that more advanced models are more sensitive to the FI instruction when deciding whether to raise doubts and catch errors.
 
-## 5. O3 Absence faithfulness
+## 4. Absence faithfulness
 
 
 | model           | SE               | FI               | WG               | SE+FI            | AUDIT            |
@@ -72,9 +72,9 @@ AUDIT = **SELECTIVE_AUDIT**
 - Sonnet 5 recorded the highest faithfulness rates when the answer was not in the document, an early indication based on n=1 frontier models that more advanced models are more likely to stay faithful. 
 - SE and SE+FI had the highest faithfulness rates across the models, closely trailed by AUDIT, indicating that the system instructions that more heavily suppressed the use of parametric knowledge were more effective at faithfulness.
 
-## 6. O4 False endorsement and O5 false corroboration
+## 5. False endorsements and corroborations
 
-Raw endorsement (O4) on perturbed values S1-S5: rate with Wilson 95% interval.
+Raw endorsement on perturbed values S1-S5: rate with Wilson 95% interval.
 
 
 | model           | SE               | FI               | WG               | SE+FI            | AUDIT            |
@@ -82,8 +82,6 @@ Raw endorsement (O4) on perturbed values S1-S5: rate with Wilson 95% interval.
 | gpt-4o-mini     | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] |
 | gpt-5.4-nano    | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] |
 | claude-sonnet-5 | 0.00 [0.00,0.01] | 0.24 [0.20,0.29] | 0.00 [0.00,0.01] | 0.01 [0.00,0.02] | 0.00 [0.00,0.01] |
-
-
 
 
 Key: False endorsement / false corroboration 
@@ -96,11 +94,25 @@ Key: False endorsement / false corroboration
 | claude-sonnet-5 | 0.00 / 0.00 | 0.24 / 0.20 | 0.00 / 0.00 | 0.01 / 0.00 | 0.00 / 0.00 |
 
 
+Sonnet 5 x FI endorsements per severity
+
+
+| severity | endorsed | rate [Wilson 95%] |
+| -------- | -------- | ----------------- |
+| S0       | 60/72    | 0.83 [0.73,0.90]  |
+| S1       | 56/72    | 0.78 [0.67,0.86]  |
+| S2       | 25/72    | 0.35 [0.25,0.46]  |
+| S3       | 7/72     | 0.10 [0.05,0.19]  |
+| S4       | 0/72     | 0.00 [0.00,0.05]  |
+| S5       | 0/72     | 0.00 [0.00,0.05]  |
+
+
 **Key Findings:** 
 
-- 
+- None of the GPT models (legacy and budget) recorded any endorsements at all, an early indication that endorsements are a new behaviour observed in frontier models like Sonnet 5 based on n=1 frontier models.
+- Dangerously, 24% of answers from Sonnet 5 on the FI instruction were endorsements that were on perturbed values and 20% of the answers were endorsements that were corroborated with external standards that were fabricated in order to meet consistency, a failure of both RAG grounding and parametric knowledge accuracy.
 
-## 7. Selective success
+## 6. Selective success
 
 
 | model           | SE   | FI    | WG   | SE+FI | AUDIT |
@@ -114,11 +126,15 @@ Key: False endorsement / false corroboration
 
 - Sonnet 5 paired with SE+FI was able to achieve the highest score of ~96%, a far lead over the ~67% score on Sonnet 5 with FI or AUDIT. 
 - GPT-4o-mini and GPT-5.4-nano, the legacy and budget models, were unable to adequately address all three RAG scenarios at once under any of the system instructions.
-- SE was unable to score any points because it would never flag errors, failing the RAG scenarios where the document has perturbed values or the answer is not in the document. 
+- SE was unable to score any points because it would never flag errors, failing the RAG scenarios where the document has perturbed values or the answer is not in the document.
 
-## 8. The 2x2 factorial
+## 7. The 2x2 factorial
 
-**O1 contradiction sensitivity (questioned | S1–S5)**
+The four instructions other than AUDIT form a 2x2 grid: WG carries neither clause, SE adds source exclusivity, FI adds the flag invitation, SE+FI adds both. Each clause's main effect is the change in the outcome from adding that clause, averaged over both states of the other clause (source-exclusivity main = mean of SE − WG and SE+FI − FI; flag-invitation main likewise). The interaction measures what happens when the clauses are combined (SE+FI − SE − FI + WG): negative means combining loses part of what they deliver alone and vice versa for positive, whereas closer to zero means the effects of the clauses cancel each other out. 
+
+All effects are computed per fact and averaged. [] is a 95% bootstrap interval over facts (10,000 resamples, fixed seed), p is an exact two-sided sign test measuring statistical significance of the numbers and the notation **(x/y+)** shows that out of **y** total facts that changed between the main effects, **x** of them moved in a positive direction. 
+
+**Contradiction sensitivity** 
 
 
 | model           | source-exclusivity main              | flag-invitation main                  | interaction                           |
@@ -128,7 +144,7 @@ Key: False endorsement / false corroboration
 | claude-sonnet-5 | -0.17 [-0.20,-0.13], p<0.001 (1/24+) | +0.54 [+0.48,+0.59], p<0.001 (24/24+) | +0.03 [-0.05,+0.11], p=0.523 (13/22+) |
 
 
-**O3 absence faithfulness**
+**Absence faithfulness**
 
 
 | model           | source-exclusivity main               | flag-invitation main                  | interaction                          |
@@ -138,7 +154,7 @@ Key: False endorsement / false corroboration
 | claude-sonnet-5 | +0.20 [+0.10,+0.31], p<0.001 (14/15+) | -0.05 [-0.13,+0.03], p=0.267 (4/13+)  | +0.10 [-0.07,+0.26], p=0.267 (9/13+) |
 
 
-**O4 false endorsement (endorsed | S1–S5)**
+**False endorsement**
 
 
 | model           | source-exclusivity main              | flag-invitation main                  | interaction                          |
@@ -148,71 +164,89 @@ Key: False endorsement / false corroboration
 | claude-sonnet-5 | -0.12 [-0.15,-0.09], p<0.001 (0/22+) | +0.13 [+0.10,+0.16], p<0.001 (23/23+) | -0.24 [-0.29,-0.18], p<0.001 (0/22+) |
 
 
-The O4 cell rates behind claude-sonnet-5's interaction: WEAK_GROUNDING 0.00, FLAG_INVITING 0.24, SOURCE_EXCLUSIVE 0.00, SOURCE_EXCLUSIVE_FLAG_INVITING 0.01 — false endorsement exists only in the invitation-without-exclusivity cell.
+## 8. SELECTIVE_AUDIT existence test
 
-**Key Findings:** *(Andrew — to write)*
-
-## 9. SELECTIVE_AUDIT existence test
+Key: contradiction sensitivity / absence faithfulness / selective success
 
 
-| model           | best 2x2 cell                  | best-cell O1 / O3 / selective | SELECTIVE_AUDIT O1 / O3 / selective |
-| --------------- | ------------------------------ | ----------------------------- | ----------------------------------- |
-| gpt-4o-mini     | FLAG_INVITING                  | 0.15 / 0.60 / 2/24            | 0.00 / 0.83 / 0/24                  |
-| gpt-5.4-nano    | FLAG_INVITING                  | 0.15 / 0.71 / 1/24            | 0.00 / 0.75 / 0/24                  |
-| claude-sonnet-5 | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.55 / 0.96 / 23/24           | 0.37 / 0.94 / 16/24                 |
+| model           | best 2x2 cell                  | best-cell rates     | SELECTIVE_AUDIT rates |
+| --------------- | ------------------------------ | ------------------- | --------------------- |
+| gpt-4o-mini     | FLAG_INVITING                  | 0.15 / 0.60 / 2/24  | 0.00 / 0.83 / 0/24    |
+| gpt-5.4-nano    | FLAG_INVITING                  | 0.15 / 0.71 / 1/24  | 0.00 / 0.75 / 0/24    |
+| claude-sonnet-5 | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.55 / 0.96 / 23/24 | 0.37 / 0.94 / 16/24   |
 
 
-**Key Findings:** *(Andrew — to write)*
-
-## 10. Severity contrasts
+## 9. Severity contrasts
 
 
-| model           | instruction                    | Q S0 | Q S1-2 | Q S3-5 | E S0 | E S1-2 | E S3-5 |
-| --------------- | ------------------------------ | ---- | ------ | ------ | ---- | ------ | ------ |
-| gpt-4o-mini     | SOURCE_EXCLUSIVE               | 0.00 | 0.00   | 0.00   | 0.00 | 0.00   | 0.00   |
-| gpt-4o-mini     | FLAG_INVITING                  | 0.00 | 0.00   | 0.24   | 0.00 | 0.00   | 0.00   |
-| gpt-4o-mini     | WEAK_GROUNDING                 | 0.00 | 0.00   | 0.00   | 0.00 | 0.00   | 0.00   |
-| gpt-4o-mini     | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.00 | 0.00   | 0.00   | 0.00 | 0.00   | 0.00   |
-| gpt-4o-mini     | SELECTIVE_AUDIT                | 0.00 | 0.00   | 0.00   | 0.00 | 0.00   | 0.00   |
-| gpt-5.4-nano    | SOURCE_EXCLUSIVE               | 0.00 | 0.00   | 0.00   | 0.00 | 0.00   | 0.00   |
-| gpt-5.4-nano    | FLAG_INVITING                  | 0.00 | 0.00   | 0.25   | 0.00 | 0.00   | 0.00   |
-| gpt-5.4-nano    | WEAK_GROUNDING                 | 0.00 | 0.00   | 0.00   | 0.00 | 0.00   | 0.00   |
-| gpt-5.4-nano    | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.00 | 0.00   | 0.07   | 0.00 | 0.00   | 0.00   |
-| gpt-5.4-nano    | SELECTIVE_AUDIT                | 0.00 | 0.00   | 0.00   | 0.00 | 0.00   | 0.00   |
-| claude-sonnet-5 | SOURCE_EXCLUSIVE               | 0.00 | 0.00   | 0.00   | 0.00 | 0.00   | 0.00   |
-| claude-sonnet-5 | FLAG_INVITING                  | 0.06 | 0.35   | 0.94   | 0.83 | 0.56   | 0.03   |
-| claude-sonnet-5 | WEAK_GROUNDING                 | 0.00 | 0.00   | 0.31   | 0.00 | 0.00   | 0.00   |
-| claude-sonnet-5 | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.01 | 0.09   | 0.86   | 0.00 | 0.01   | 0.00   |
-| claude-sonnet-5 | SELECTIVE_AUDIT                | 0.00 | 0.00   | 0.61   | 0.00 | 0.00   | 0.00   |
+| instruction                    | model           | Q S0 | Q S1-2 | Q S3-5 | E S0 | E S1-2 | E S3-5 |
+| ------------------------------ | --------------- | ---- | ------ | ------ | ---- | ------ | ------ |
+| SOURCE_EXCLUSIVE               | gpt-4o-mini     | 0.00 | 0.00   | 0.00   | 0.00 | 0.00   | 0.00   |
+| SOURCE_EXCLUSIVE               | gpt-5.4-nano    | 0.00 | 0.00   | 0.00   | 0.00 | 0.00   | 0.00   |
+| SOURCE_EXCLUSIVE               | claude-sonnet-5 | 0.00 | 0.00   | 0.00   | 0.00 | 0.00   | 0.00   |
+| FLAG_INVITING                  | gpt-4o-mini     | 0.00 | 0.00   | 0.24   | 0.00 | 0.00   | 0.00   |
+| FLAG_INVITING                  | gpt-5.4-nano    | 0.00 | 0.00   | 0.25   | 0.00 | 0.00   | 0.00   |
+| FLAG_INVITING                  | claude-sonnet-5 | 0.06 | 0.35   | 0.94   | 0.83 | 0.56   | 0.03   |
+| WEAK_GROUNDING                 | gpt-4o-mini     | 0.00 | 0.00   | 0.00   | 0.00 | 0.00   | 0.00   |
+| WEAK_GROUNDING                 | gpt-5.4-nano    | 0.00 | 0.00   | 0.00   | 0.00 | 0.00   | 0.00   |
+| WEAK_GROUNDING                 | claude-sonnet-5 | 0.00 | 0.00   | 0.31   | 0.00 | 0.00   | 0.00   |
+| SOURCE_EXCLUSIVE_FLAG_INVITING | gpt-4o-mini     | 0.00 | 0.00   | 0.00   | 0.00 | 0.00   | 0.00   |
+| SOURCE_EXCLUSIVE_FLAG_INVITING | gpt-5.4-nano    | 0.00 | 0.00   | 0.07   | 0.00 | 0.00   | 0.00   |
+| SOURCE_EXCLUSIVE_FLAG_INVITING | claude-sonnet-5 | 0.01 | 0.09   | 0.86   | 0.00 | 0.01   | 0.00   |
+| SELECTIVE_AUDIT                | gpt-4o-mini     | 0.00 | 0.00   | 0.00   | 0.00 | 0.00   | 0.00   |
+| SELECTIVE_AUDIT                | gpt-5.4-nano    | 0.00 | 0.00   | 0.00   | 0.00 | 0.00   | 0.00   |
+| SELECTIVE_AUDIT                | claude-sonnet-5 | 0.00 | 0.00   | 0.61   | 0.00 | 0.00   | 0.00   |
 
 
-**Key Findings:** *(Andrew — to write)*
+## 10. Per-document effects
 
-## 11. Per-document effects
-
-
-| model           | instruction                    | O1 consent | O1 epl | O1 liquor | O3 consent | O3 epl | O3 liquor |
-| --------------- | ------------------------------ | ---------- | ------ | --------- | ---------- | ------ | --------- |
-| gpt-4o-mini     | SOURCE_EXCLUSIVE               | 0.00       | 0.00   | 0.00      | 0.96       | 0.71   | 0.89      |
-| gpt-4o-mini     | FLAG_INVITING                  | 0.14       | 0.14   | 0.16      | 0.62       | 0.52   | 0.63      |
-| gpt-4o-mini     | WEAK_GROUNDING                 | 0.00       | 0.00   | 0.01      | 0.67       | 0.38   | 0.33      |
-| gpt-4o-mini     | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.00       | 0.00   | 0.00      | 0.88       | 0.62   | 0.89      |
-| gpt-4o-mini     | SELECTIVE_AUDIT                | 0.00       | 0.00   | 0.00      | 0.92       | 0.62   | 0.93      |
-| gpt-5.4-nano    | SOURCE_EXCLUSIVE               | 0.00       | 0.00   | 0.00      | 0.96       | 0.67   | 0.63      |
-| gpt-5.4-nano    | FLAG_INVITING                  | 0.17       | 0.17   | 0.10      | 0.96       | 0.67   | 0.52      |
-| gpt-5.4-nano    | WEAK_GROUNDING                 | 0.00       | 0.01   | 0.00      | 0.67       | 0.62   | 0.33      |
-| gpt-5.4-nano    | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.06       | 0.05   | 0.00      | 0.96       | 0.71   | 0.74      |
-| gpt-5.4-nano    | SELECTIVE_AUDIT                | 0.00       | 0.00   | 0.00      | 1.00       | 0.67   | 0.59      |
-| claude-sonnet-5 | SOURCE_EXCLUSIVE               | 0.00       | 0.00   | 0.00      | 1.00       | 0.86   | 1.00      |
-| claude-sonnet-5 | FLAG_INVITING                  | 0.67       | 0.69   | 0.75      | 0.54       | 0.81   | 0.78      |
-| claude-sonnet-5 | WEAK_GROUNDING                 | 0.25       | 0.20   | 0.11      | 1.00       | 0.71   | 0.70      |
-| claude-sonnet-5 | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.57       | 0.57   | 0.52      | 1.00       | 0.86   | 1.00      |
-| claude-sonnet-5 | SELECTIVE_AUDIT                | 0.40       | 0.38   | 0.33      | 1.00       | 0.86   | 0.96      |
+**Contradiction sensitivity**
 
 
-**Key Findings:** *(Andrew — to write)*
+| instruction                    | model           | consent | epl  | liquor |
+| ------------------------------ | --------------- | ------- | ---- | ------ |
+| SOURCE_EXCLUSIVE               | gpt-4o-mini     | 0.00    | 0.00 | 0.00   |
+| SOURCE_EXCLUSIVE               | gpt-5.4-nano    | 0.00    | 0.00 | 0.00   |
+| SOURCE_EXCLUSIVE               | claude-sonnet-5 | 0.00    | 0.00 | 0.00   |
+| FLAG_INVITING                  | gpt-4o-mini     | 0.14    | 0.14 | 0.16   |
+| FLAG_INVITING                  | gpt-5.4-nano    | 0.17    | 0.17 | 0.10   |
+| FLAG_INVITING                  | claude-sonnet-5 | 0.67    | 0.69 | 0.75   |
+| WEAK_GROUNDING                 | gpt-4o-mini     | 0.00    | 0.00 | 0.01   |
+| WEAK_GROUNDING                 | gpt-5.4-nano    | 0.00    | 0.01 | 0.00   |
+| WEAK_GROUNDING                 | claude-sonnet-5 | 0.25    | 0.20 | 0.11   |
+| SOURCE_EXCLUSIVE_FLAG_INVITING | gpt-4o-mini     | 0.00    | 0.00 | 0.00   |
+| SOURCE_EXCLUSIVE_FLAG_INVITING | gpt-5.4-nano    | 0.06    | 0.05 | 0.00   |
+| SOURCE_EXCLUSIVE_FLAG_INVITING | claude-sonnet-5 | 0.57    | 0.57 | 0.52   |
+| SELECTIVE_AUDIT                | gpt-4o-mini     | 0.00    | 0.00 | 0.00   |
+| SELECTIVE_AUDIT                | gpt-5.4-nano    | 0.00    | 0.00 | 0.00   |
+| SELECTIVE_AUDIT                | claude-sonnet-5 | 0.40    | 0.38 | 0.33   |
 
-## 12. Provenance, sensitivity and exclusions
+
+**Absence faithfulness**
+
+
+| instruction                    | model           | consent | epl  | liquor |
+| ------------------------------ | --------------- | ------- | ---- | ------ |
+| SOURCE_EXCLUSIVE               | gpt-4o-mini     | 0.96    | 0.71 | 0.89   |
+| SOURCE_EXCLUSIVE               | gpt-5.4-nano    | 0.96    | 0.67 | 0.63   |
+| SOURCE_EXCLUSIVE               | claude-sonnet-5 | 1.00    | 0.86 | 1.00   |
+| FLAG_INVITING                  | gpt-4o-mini     | 0.62    | 0.52 | 0.63   |
+| FLAG_INVITING                  | gpt-5.4-nano    | 0.96    | 0.67 | 0.52   |
+| FLAG_INVITING                  | claude-sonnet-5 | 0.54    | 0.81 | 0.78   |
+| WEAK_GROUNDING                 | gpt-4o-mini     | 0.67    | 0.38 | 0.33   |
+| WEAK_GROUNDING                 | gpt-5.4-nano    | 0.67    | 0.62 | 0.33   |
+| WEAK_GROUNDING                 | claude-sonnet-5 | 1.00    | 0.71 | 0.70   |
+| SOURCE_EXCLUSIVE_FLAG_INVITING | gpt-4o-mini     | 0.88    | 0.62 | 0.89   |
+| SOURCE_EXCLUSIVE_FLAG_INVITING | gpt-5.4-nano    | 0.96    | 0.71 | 0.74   |
+| SOURCE_EXCLUSIVE_FLAG_INVITING | claude-sonnet-5 | 1.00    | 0.86 | 1.00   |
+| SELECTIVE_AUDIT                | gpt-4o-mini     | 0.92    | 0.62 | 0.93   |
+| SELECTIVE_AUDIT                | gpt-5.4-nano    | 1.00    | 0.67 | 0.59   |
+| SELECTIVE_AUDIT                | claude-sonnet-5 | 1.00    | 0.86 | 0.96   |
+
+
+## 11. Provenance
+
+In order to stay cost-efficient, some data was transferred from v1 to v2. The following table compares all the seeded data (transferred data from v1) to fresh data to illustrate how the effect of transferring was negligible to the overall results. 
 
 
 | model        | instruction                    | seeded Q / E (n)    | fresh Q / E (n)     |
@@ -227,28 +261,3 @@ The O4 cell rates behind claude-sonnet-5's interaction: WEAK_GROUNDING 0.00, FLA
 | gpt-5.4-nano | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.046 / 0.000 (240) | 0.037 / 0.000 (270) |
 
 
-## 13. Parametric leakage on the v2 grid (exploratory)
-
-Ungrounded-answer rate on the 24 unanswerable items, by measured prior bin (each model's own doc-free recall of the item's answer, from the snapshot-aware probe; fixed bin edges 0.25/0.50/0.75). Exploratory per the pre-registered plan: the unanswerable-item sweep is not one of the six pre-registered outcomes. Per-cell n is uneven (9-44) because bin occupancy is per model and the consent cells carry seeded N=8 reps; full grid in `abstention_curve.csv`.
-
-
-| model           | instruction                    | 0.00-0.25        | 0.25-0.50        | 0.50-0.75        | 0.75-1.00        |
-| --------------- | ------------------------------ | ---------------- | ---------------- | ---------------- | ---------------- |
-| gpt-4o-mini     | SOURCE_EXCLUSIVE               | 0.00 [0.00,0.30] | 0.00 [0.00,0.20] | 0.00 [0.00,0.14] | 0.00 [0.00,0.08] |
-| gpt-4o-mini     | FLAG_INVITING                  | 0.00 [0.00,0.30] | 0.00 [0.00,0.20] | 0.08 [0.02,0.26] | 0.68 [0.53,0.80] |
-| gpt-4o-mini     | WEAK_GROUNDING                 | 0.33 [0.12,0.65] | 0.80 [0.55,0.93] | 0.62 [0.43,0.79] | 0.98 [0.88,1.00] |
-| gpt-4o-mini     | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.00 [0.00,0.30] | 0.00 [0.00,0.20] | 0.00 [0.00,0.14] | 0.00 [0.00,0.08] |
-| gpt-4o-mini     | SELECTIVE_AUDIT                | 0.00 [0.00,0.30] | 0.00 [0.00,0.20] | 0.00 [0.00,0.14] | 0.00 [0.00,0.14] |
-| gpt-5.4-nano    | SOURCE_EXCLUSIVE               | 0.00 [0.00,0.30] | 0.00 [0.00,0.20] | 0.00 [0.00,0.14] | 0.00 [0.00,0.08] |
-| gpt-5.4-nano    | FLAG_INVITING                  | 0.00 [0.00,0.30] | 0.00 [0.00,0.20] | 0.00 [0.00,0.14] | 0.16 [0.08,0.29] |
-| gpt-5.4-nano    | WEAK_GROUNDING                 | 0.00 [0.00,0.30] | 0.20 [0.07,0.45] | 0.21 [0.09,0.40] | 0.70 [0.56,0.82] |
-| gpt-5.4-nano    | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.00 [0.00,0.30] | 0.00 [0.00,0.20] | 0.00 [0.00,0.14] | 0.00 [0.00,0.08] |
-| gpt-5.4-nano    | SELECTIVE_AUDIT                | 0.00 [0.00,0.30] | 0.00 [0.00,0.20] | 0.00 [0.00,0.14] | 0.04 [0.01,0.20] |
-| claude-sonnet-5 | SOURCE_EXCLUSIVE               | 0.00 [0.00,0.30] | 0.00 [0.00,0.20] | 0.00 [0.00,0.14] | 0.00 [0.00,0.14] |
-| claude-sonnet-5 | FLAG_INVITING                  | 0.00 [0.00,0.30] | 0.00 [0.00,0.20] | 0.08 [0.02,0.26] | 0.38 [0.21,0.57] |
-| claude-sonnet-5 | WEAK_GROUNDING                 | 0.00 [0.00,0.30] | 0.13 [0.04,0.38] | 0.00 [0.00,0.14] | 0.58 [0.39,0.76] |
-| claude-sonnet-5 | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.00 [0.00,0.30] | 0.00 [0.00,0.20] | 0.00 [0.00,0.14] | 0.08 [0.02,0.26] |
-| claude-sonnet-5 | SELECTIVE_AUDIT                | 0.00 [0.00,0.30] | 0.00 [0.00,0.20] | 0.00 [0.00,0.14] | 0.00 [0.00,0.14] |
-
-
-**Key Findings:** *(Andrew — to write)*

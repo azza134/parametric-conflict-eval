@@ -1694,8 +1694,8 @@ def _analysis_dataset(tag, cav_rows, ab_rows, models, facts, fact_doc):
         print(f"  {m}: best 2x2 = {best} selective {bk}/{bn} (O1 {cells[best][0]:.2f}, O3 {cells[best][1]:.2f})"
               f"  |  SELECTIVE_AUDIT {ka}/{na} (O1 {cells['SELECTIVE_AUDIT'][0]:.2f}, O3 {cells['SELECTIVE_AUDIT'][1]:.2f})")
     print("\n--- SEVERITY CONTRASTS: questioned / endorsed rate at S0 vs S1-2 vs S3-5 ---")
-    for m in models:
-        for i in arms:
+    for i in arms:
+        for m in models:
             g = [r for r in cav_rows if r["model"] == m and r["instruction"] == i]
             if not g:
                 continue
@@ -1704,10 +1704,10 @@ def _analysis_dataset(tag, cav_rows, ab_rows, models, facts, fact_doc):
                 b = [r for r in g if r["severity"] in band]
                 qs.append(_rate(b, is_q)[2])
                 es.append(_rate(b, is_e)[2])
-            print(f"  {m:16} {i:32} Q: {qs[0]:.2f} / {qs[1]:.2f} / {qs[2]:.2f}   E: {es[0]:.2f} / {es[1]:.2f} / {es[2]:.2f}")
-    print("\n--- PER-DOCUMENT: O1 (S1-5 questioned) and O3 (absence faithful) per doc, model x instruction ---")
-    for m in models:
-        for i in arms:
+            print(f"  {i:32} {m:16} Q: {qs[0]:.2f} / {qs[1]:.2f} / {qs[2]:.2f}   E: {es[0]:.2f} / {es[1]:.2f} / {es[2]:.2f}")
+    print("\n--- PER-DOCUMENT: O1 (S1-5 questioned) and O3 (absence faithful) per doc, instruction x model ---")
+    for i in arms:
+        for m in models:
             parts = []
             for d in DOCUMENTS:
                 p = [r for r in cav_rows if r["model"] == m and r["instruction"] == i and r["severity"] >= 1 and fact_doc[r["fact"]] == d]
@@ -1716,7 +1716,7 @@ def _analysis_dataset(tag, cav_rows, ab_rows, models, facts, fact_doc):
                     o3 = f"{_rate(a, is_f)[2]:.2f}" if a else "--"
                     parts.append(f"{d}: O1 {_rate(p, is_q)[2]:.2f}({len(p)}) O3 {o3}({len(a)})")
             if parts:
-                print(f"  {m:16} {i:32} " + "  ".join(parts))
+                print(f"  {i:32} {m:16} " + "  ".join(parts))
 
 def analysis():
     cav = [json.loads(l) for l in open(CAVEAT_RESULTS)]
