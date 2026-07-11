@@ -18,7 +18,8 @@ from harness import (wilson_interval, PERTURBATION_LADDERS, SEVERITIES, validate
                      encode_caveat_custom_id, decode_caveat_custom_id,
                      encode_abstention_custom_id, decode_abstention_custom_id,
                      caveat_wave_plan, abstention_wave_plan, concurrent_map, pilot_selection,
-                     _run_anthropic_wave, _chunked_judge_sink, build_manifest)
+                     _run_anthropic_wave, _chunked_judge_sink, build_manifest,
+                     sign_test, bootstrap_ci, unit_counts, unit_rate_map, factorial_effects, _selective)
 from judge import (cohens_kappa, FAITHFUL, UNGROUNDED,
                    judge_gate, anchor_disagreements, GATE_PASS, GATE_FAIL, KAPPA_THRESHOLD,
                    QUESTIONED, SILENT, ENDORSED, DECLINED, CAVEAT_LABELS, CAVEAT_SCHEMA, build_caveat_prompt,
@@ -903,6 +904,106 @@ class TestPilotSelection(unittest.TestCase):
     def test_unknown_doc_exits(self):
         with self.assertRaises(SystemExit):
             pilot_selection("claude-sonnet-5", "zoning")
+
+
+class TestSignTest(unittest.TestCase):
+    def test_all_positive(self):
+        p, pos, n = sign_test([0.1, 0.2, 0.3])
+        self.assertEqual((pos, n), (3, 3))
+        self.assertAlmostEqual(p, 0.25)
+
+    def test_split_is_uninformative(self):
+        p, pos, n = sign_test([0.5, -0.5])
+        self.assertEqual((pos, n), (1, 2))
+        self.assertEqual(p, 1.0)
+
+    def test_zeros_excluded(self):
+        p, pos, n = sign_test([0.0, 0.0, 0.4])
+        self.assertEqual((pos, n), (1, 1))
+
+    def test_all_zero(self):
+        self.assertEqual(sign_test([0.0, 0.0]), (1.0, 0, 0))
+
+
+class TestBootstrapCI(unittest.TestCase):
+    def test_constant_values_give_point_interval(self):
+        lo, hi = bootstrap_ci([0.4] * 10, iters=200)
+        self.assertAlmostEqual(lo, 0.4)
+        self.assertAlmostEqual(hi, 0.4)
+
+    def test_deterministic_and_ordered(self):
+        vals = [0.0, 0.2, 0.5, 0.9, 1.0]
+        a = bootstrap_ci(vals, iters=500)
+        b = bootstrap_ci(vals, iters=500)
+        self.assertEqual(a, b)
+        self.assertLessEqual(a[0], a[1])
+
+    def test_interval_within_value_range(self):
+        lo, hi = bootstrap_ci([0.1, 0.9], iters=500)
+        self.assertGreaterEqual(lo, 0.1)
+        self.assertLessEqual(hi, 0.9)
+
+
+class TestFactorialEffects(unittest.TestCase):
+    def rates(self, wg, fi, se, sefi):
+        return {"WEAK_GROUNDING": {"f": wg}, "FLAG_INVITING": {"f": fi},
+                "SOURCE_EXCLUSIVE": {"f": se}, "SOURCE_EXCLUSIVE_FLAG_INVITING": {"f": sefi}}
+
+    def test_pure_invitation_effect(self):
+        effects, usable = factorial_effects(self.rates(0.0, 1.0, 0.0, 1.0), ["f"])
+        self.assertEqual(usable, ["f"])
+        self.assertEqual(effects["SE_main"], [0.0])
+        self.assertEqual(effects["FI_main"], [1.0])
+        self.assertEqual(effects["interaction"], [0.0])
+
+    def test_exclusivity_cancels_invitation(self):
+        effects, _ = factorial_effects(self.rates(0.0, 1.0, 0.0, 0.0), ["f"])
+        self.assertEqual(effects["SE_main"], [-0.5])
+        self.assertEqual(effects["FI_main"], [0.5])
+        self.assertEqual(effects["interaction"], [-1.0])
+
+    def test_missing_arm_drops_unit(self):
+        rates = self.rates(0.0, 1.0, 0.0, 1.0)
+        rates["SOURCE_EXCLUSIVE"]["f"] = None
+        effects, usable = factorial_effects(rates, ["f"])
+        self.assertEqual(usable, [])
+        self.assertEqual(effects["FI_main"], [])
+
+
+class TestUnitCounts(unittest.TestCase):
+    ROWS = [{"fact": "a", "stance": "questioned"}, {"fact": "a", "stance": "silent"},
+            {"fact": "b", "stance": "questioned"}]
+
+    def test_counts_per_unit(self):
+        per = unit_counts(self.ROWS, lambda r: r["stance"] == "questioned")
+        self.assertEqual(per, {"a": (1, 2), "b": (1, 1)})
+
+    def test_rate_map_fills_missing_units_with_none(self):
+        rates = unit_rate_map(self.ROWS, lambda r: r["stance"] == "questioned", ["a", "b", "c"])
+        self.assertEqual(rates, {"a": 0.5, "b": 1.0, "c": None})
+
+
+class TestSelective(unittest.TestCase):
+    def cav(self, fact, sev, stance, n=3):
+        return [{"model": "m", "instruction": "i", "fact": fact, "severity": sev, "stance": stance}] * n
+
+    def ab(self, fact, faithful, n=3):
+        return [{"model": "m", "instruction": "i", "fact": fact, "faithful": faithful}] * n
+
+    def test_all_three_states_required(self):
+        cav_rows = self.cav("a", 0, "silent") + self.cav("a", 3, "questioned") + self.cav("a", 5, "questioned")
+        self.assertEqual(_selective(cav_rows, self.ab("a", True), "m", "i"), (1, 1))
+        self.assertEqual(_selective(cav_rows, self.ab("a", False), "m", "i"), (0, 1))
+
+    def test_s0_flag_fails_accept(self):
+        cav_rows = self.cav("a", 0, "questioned") + self.cav("a", 3, "questioned") + self.cav("a", 5, "questioned")
+        self.assertEqual(_selective(cav_rows, self.ab("a", True), "m", "i"), (0, 1))
+
+    def test_majority_not_unanimity(self):
+        cav_rows = (self.cav("a", 0, "silent") + self.cav("a", 3, "questioned", 2) + self.cav("a", 3, "silent", 1)
+                    + self.cav("a", 4, "questioned", 2) + self.cav("a", 4, "endorsed", 1)
+                    + self.cav("a", 5, "questioned"))
+        self.assertEqual(_selective(cav_rows, self.ab("a", True), "m", "i"), (1, 1))
 
 
 class TestBuildBatchMessageParams(unittest.TestCase):

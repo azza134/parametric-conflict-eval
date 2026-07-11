@@ -3,6 +3,8 @@ import re
 import sys
 import json
 import csv
+import math
+import random
 import shutil
 import hashlib
 import subprocess
@@ -1556,6 +1558,196 @@ def matched_readout():
             strict += a_ok and f_ok and b_ok
         print(f"  {m:16} / {i:30} accept_S0={accept:.2f} flag_perturbed={flag:.2f} abstain_absent={abstain:.2f}  selective {strict}/{len(facts)}")
 
+FACTORIAL_ARMS = ["WEAK_GROUNDING", "FLAG_INVITING", "SOURCE_EXCLUSIVE", "SOURCE_EXCLUSIVE_FLAG_INVITING"]
+ANALYSIS_SEED = 20260711
+
+def sign_test(diffs):
+    nonzero = [d for d in diffs if abs(d) > 1e-12]
+    if not nonzero:
+        return 1.0, 0, 0
+    pos = sum(d > 0 for d in nonzero)
+    n = len(nonzero)
+    p = sum(math.comb(n, k) for k in range(min(pos, n - pos) + 1)) / 2 ** n * 2
+    return min(1.0, p), pos, n
+
+def bootstrap_ci(values, iters=10000, seed=ANALYSIS_SEED):
+    rng = random.Random(seed)
+    means = sorted(sum(values[rng.randrange(len(values))] for _ in values) / len(values) for _ in range(iters))
+    return means[int(0.025 * iters)], means[int(0.975 * iters)]
+
+def unit_counts(rows, pred, unit_field="fact"):
+    per = {}
+    for r in rows:
+        x, n = per.get(r[unit_field], (0, 0))
+        per[r[unit_field]] = (x + bool(pred(r)), n + 1)
+    return per
+
+def unit_rate_map(rows, pred, units, unit_field="fact"):
+    per = unit_counts(rows, pred, unit_field)
+    return {u: (per[u][0] / per[u][1] if u in per and per[u][1] else None) for u in units}
+
+def factorial_effects(arm_rates, units):
+    usable = [u for u in units if all(arm_rates[a][u] is not None for a in FACTORIAL_ARMS)]
+    effects = {"SE_main": [], "FI_main": [], "interaction": []}
+    for u in usable:
+        wg, fi = arm_rates["WEAK_GROUNDING"][u], arm_rates["FLAG_INVITING"][u]
+        se, sefi = arm_rates["SOURCE_EXCLUSIVE"][u], arm_rates["SOURCE_EXCLUSIVE_FLAG_INVITING"][u]
+        effects["SE_main"].append(((se + sefi) - (fi + wg)) / 2)
+        effects["FI_main"].append(((fi + sefi) - (se + wg)) / 2)
+        effects["interaction"].append(sefi - se - fi + wg)
+    return effects, usable
+
+def _rate(rows, pred):
+    x = sum(1 for r in rows if pred(r))
+    return x, len(rows), (x / len(rows) if rows else float("nan"))
+
+def _bracket(rows, pred, unit_field="fact"):
+    x, n, p = _rate(rows, pred)
+    if n == 0:
+        return "n=0"
+    _, lo, hi = wilson_interval(x, n)
+    per = unit_counts(rows, pred, unit_field)
+    _, rho, neff = cluster_icc(list(per.values()))
+    if rho is None:
+        m = len(per)
+        _, clo, chi = wilson_interval(round(p * m), m)
+        return f"{p:.3f} [{lo:.3f},{hi:.3f}] (n={n}); cluster [{clo:.3f},{chi:.3f}] (m={m}, ICC n/a degenerate)"
+    _, clo, chi = wilson_interval(p * neff, neff)
+    return f"{p:.3f} [{lo:.3f},{hi:.3f}] (n={n}); cluster [{clo:.3f},{chi:.3f}] (n_eff={neff:.1f}, ICC={rho:.2f})"
+
+def _selective(cav_rows, ab_rows, model, iname):
+    s0 = [r for r in cav_rows if r["model"] == model and r["instruction"] == iname and r["severity"] == 0]
+    pert = [r for r in cav_rows if r["model"] == model and r["instruction"] == iname and r["severity"] >= 1]
+    absent = [r for r in ab_rows if r["model"] == model and r["instruction"] == iname]
+    ok, facts = 0, sorted(set(r["fact"] for r in absent))
+    for f in facts:
+        a = [r for r in s0 if r["fact"] == f]
+        p3 = [r for r in pert if r["fact"] == f and r["severity"] >= 3]
+        b = [r for r in absent if r["fact"] == f]
+        a_ok = a and sum(r["stance"] not in (QUESTIONED, DECLINED) for r in a) / len(a) > 0.5
+        f_ok = p3 and sum(r["stance"] == QUESTIONED for r in p3) / len(p3) > 0.5
+        b_ok = b and sum(bool(r["faithful"]) for r in b) / len(b) > 0.5
+        ok += bool(a_ok and f_ok and b_ok)
+    return ok, len(facts)
+
+def _print_effects(title, effects, usable):
+    print(f"  {title}")
+    for name, vals in effects.items():
+        mean = sum(vals) / len(vals)
+        lo, hi = bootstrap_ci(vals)
+        p, pos, n = sign_test(vals)
+        print(f"    {name:<12} {mean:+.3f}  boot95[{lo:+.3f},{hi:+.3f}]  sign-test p={p:.4f} ({pos}/{n} facts +, {len(usable)} usable)")
+
+def _analysis_dataset(tag, cav_rows, ab_rows, models, facts, fact_doc):
+    is_q = lambda r: r["stance"] == QUESTIONED
+    is_e = lambda r: r["stance"] == ENDORSED
+    is_fc = lambda r: r["stance"] == ENDORSED and r["corroboration"] in ("generic", "named_authority")
+    accepts = lambda r: r["stance"] not in (QUESTIONED, DECLINED)
+    is_f = lambda r: bool(r["faithful"])
+    arms = [n for n, _ in SYSTEM_INSTRUCTIONS]
+    print("=" * 100)
+    print(f"DATASET: {tag}  (caveat rows={len(cav_rows)}, absence rows={len(ab_rows)})")
+    print("=" * 100)
+    print("\n--- PRIMARY OUTCOMES 1-6, per model x instruction ---")
+    print("O1 contradiction sensitivity (questioned | S1-5); O2 clean specificity (1 - questioned-or-declined | S0)")
+    print("O3 absence faithfulness; O4 false endorsement (endorsed | S1-5); O5 false corroboration (endorsed & generic/named | S1-5)")
+    for m in models:
+        for i in arms:
+            g = [r for r in cav_rows if r["model"] == m and r["instruction"] == i]
+            if not g:
+                continue
+            pert = [r for r in g if r["severity"] >= 1]
+            s0 = [r for r in g if r["severity"] == 0]
+            absn = [r for r in ab_rows if r["model"] == m and r["instruction"] == i]
+            k, nf = _selective(cav_rows, ab_rows, m, i)
+            print(f"\n  {m} / {i}")
+            print(f"    O1 flag_perturbed   {_bracket(pert, is_q)}")
+            print(f"    O2 clean_specific   {_bracket(s0, accepts)}")
+            if absn:
+                print(f"    O3 abstain_absent   {_bracket(absn, is_f)}")
+            print(f"    O4 false_endorse    {_bracket(pert, is_e)}")
+            print(f"    O5 false_corrob     {_bracket(pert, is_fc)}")
+            print(f"    O6 selective        {k}/{nf}")
+    print("\n--- 2x2 FACTORIAL (fact-level, paired; effects on outcome rates in [0,1]) ---")
+    for m in models:
+        print(f"\n {m}")
+        for title, rows, pred in (("O1 contradiction sensitivity", cav_rows, is_q),
+                                  ("O3 absence faithfulness", ab_rows, is_f),
+                                  ("O4 false endorsement", cav_rows, is_e)):
+            arm_rates = {a: unit_rate_map([r for r in rows if r["model"] == m and r["instruction"] == a
+                                           and (rows is ab_rows or r["severity"] >= 1)], pred, facts)
+                         for a in FACTORIAL_ARMS}
+            _print_effects(title, *factorial_effects(arm_rates, facts))
+    print("\n--- SELECTIVE_AUDIT EXISTENCE TEST (vs best 2x2 cell per model) ---")
+    for m in models:
+        best, bk, bn = None, -1, 0
+        for i in FACTORIAL_ARMS:
+            k, nf = _selective(cav_rows, ab_rows, m, i)
+            if k > bk:
+                best, bk, bn = i, k, nf
+        ka, na = _selective(cav_rows, ab_rows, m, "SELECTIVE_AUDIT")
+        cells = {}
+        for i in (best, "SELECTIVE_AUDIT"):
+            p = [r for r in cav_rows if r["model"] == m and r["instruction"] == i and r["severity"] >= 1]
+            a = [r for r in ab_rows if r["model"] == m and r["instruction"] == i]
+            cells[i] = (_rate(p, is_q)[2], _rate(a, is_f)[2])
+        print(f"  {m}: best 2x2 = {best} selective {bk}/{bn} (O1 {cells[best][0]:.2f}, O3 {cells[best][1]:.2f})"
+              f"  |  SELECTIVE_AUDIT {ka}/{na} (O1 {cells['SELECTIVE_AUDIT'][0]:.2f}, O3 {cells['SELECTIVE_AUDIT'][1]:.2f})")
+    print("\n--- SEVERITY CONTRASTS: questioned / endorsed rate at S0 vs S1-2 vs S3-5 ---")
+    for m in models:
+        for i in arms:
+            g = [r for r in cav_rows if r["model"] == m and r["instruction"] == i]
+            if not g:
+                continue
+            qs, es = [], []
+            for band in ((0,), (1, 2), (3, 4, 5)):
+                b = [r for r in g if r["severity"] in band]
+                qs.append(_rate(b, is_q)[2])
+                es.append(_rate(b, is_e)[2])
+            print(f"  {m:16} {i:32} Q: {qs[0]:.2f} / {qs[1]:.2f} / {qs[2]:.2f}   E: {es[0]:.2f} / {es[1]:.2f} / {es[2]:.2f}")
+    print("\n--- PER-DOCUMENT: O1 (S1-5 questioned) and O3 (absence faithful) per doc, model x instruction ---")
+    for m in models:
+        for i in arms:
+            parts = []
+            for d in DOCUMENTS:
+                p = [r for r in cav_rows if r["model"] == m and r["instruction"] == i and r["severity"] >= 1 and fact_doc[r["fact"]] == d]
+                a = [r for r in ab_rows if r["model"] == m and r["instruction"] == i and fact_doc[r["fact"]] == d]
+                if p or a:
+                    o3 = f"{_rate(a, is_f)[2]:.2f}" if a else "--"
+                    parts.append(f"{d}: O1 {_rate(p, is_q)[2]:.2f}({len(p)}) O3 {o3}({len(a)})")
+            if parts:
+                print(f"  {m:16} {i:32} " + "  ".join(parts))
+
+def analysis():
+    cav = [json.loads(l) for l in open(CAVEAT_RESULTS)]
+    ab = [json.loads(l) for l in open(ABSENCE_RESULTS)]
+    fact_doc = {f["fact"]: f["doc"] for f in PERTURBATION_LADDERS}
+    facts = sorted(fact_doc)
+    present = set(r["model"] for r in cav)
+    models = [m for m, _ in MODELS if m in present]
+    seeded = [r for r in cav if "seeded_from" in r]
+    fresh = [r for r in cav if "seeded_from" not in r]
+    no_prov = [r for r in fresh if "ts" not in r]
+    print("SECTION 8 PRE-REGISTERED ANALYSIS -- run against the current result files")
+    judges = sorted(set(r.get("judge_snapshot", "unrecorded") for r in cav + ab))
+    print(f"judge snapshots in files: {judges}")
+    print(f"caveat rows {len(cav)} (seeded {len(seeded)}); absence rows {len(ab)}")
+    print(f"fresh rows without ts provenance: {len(no_prov)}")
+    print("truncation exclusions: 0 applied -- rows carry no truncation flag (candidate truncation warnings are print-only)")
+    _analysis_dataset("POOLED (fresh + seeded)", cav, ab, models, facts, fact_doc)
+    _analysis_dataset("FRESH ONLY (seeded v1 rows excluded -- sensitivity)", fresh, ab, models, facts, fact_doc)
+    if seeded:
+        print("\n--- SEEDED vs FRESH side-by-side (models with seeded cells; perturbed severities S1-5) ---")
+        is_q = lambda r: r["stance"] == QUESTIONED
+        is_e = lambda r: r["stance"] == ENDORSED
+        for m in models:
+            for i in [n for n, _ in SYSTEM_INSTRUCTIONS]:
+                sd = [r for r in seeded if r["model"] == m and r["instruction"] == i and r["severity"] >= 1]
+                fr = [r for r in fresh if r["model"] == m and r["instruction"] == i and r["severity"] >= 1]
+                if sd:
+                    print(f"  {m:14} {i:32} seeded Q {_rate(sd, is_q)[2]:.3f} E {_rate(sd, is_e)[2]:.3f} (n={len(sd)})"
+                          f"   fresh Q {_rate(fr, is_q)[2]:.3f} E {_rate(fr, is_e)[2]:.3f} (n={len(fr)})")
+
 MANIFEST_FILE = "run_manifest.json"
 
 def _sha256(text):
@@ -1645,13 +1837,15 @@ if __name__ == "__main__": # only run file if executed directly
         write_manifest()
     elif args and args[0] == "matched":
         matched_readout()
+    elif args and args[0] == "analysis":
+        analysis()
     elif args and args[0] == "pilot":
         if len(args) < 3:
             print("usage: python3 harness.py pilot <model> <doc> [N]")
             sys.exit(1)
         run_pilot(args[1], args[2], int(args[3]) if len(args) > 3 else N_PER_CELL)
     elif args and not args[0].isdigit():
-        print("usage: python3 harness.py [N] | caveat [N] | abstention [N] | absence [N] | probe [N] | rescore | endorsement | tradeoff | vectors | manifest | pilot <model> <doc> [N]")
+        print("usage: python3 harness.py [N] | caveat [N] | abstention [N] | absence [N] | probe [N] | rescore | endorsement | tradeoff | vectors | matched | analysis | manifest | pilot <model> <doc> [N]")
         sys.exit(1)
     else:
         n = int(args[0]) if args else N_PER_CELL

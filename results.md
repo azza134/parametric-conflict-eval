@@ -183,3 +183,147 @@ This section was committed before the full v2 grid was run (the run was stopped 
 **Instrument rules.** SELECTIVE_AUDIT and matched-absence answers are new judge surfaces: their numbers are quarantined until sampled transcripts enter the human-labelled gold sets and both judges re-certify (kappa ≥ 0.8 with zero anchor misses), per the WEAK_GROUNDING precedent. Any judge-prompt change triggers a full rescore so every verdict in a results file comes from one judge version; seeded and pilot rows (judged v3) are rescored to the current judge before corroboration or endorsement breakdowns are read.
 
 **Exclusions and failure handling.** Truncated answers (max-token warnings) are excluded and reported by count. Failed calls retry with backoff and then fail the run loudly; there is no silent dropping. Rows are aggregated per cell as x/n; no cell is reweighted.
+
+
+---
+
+## 9. v2 results (executing the section 8 plan)
+
+The full v2 grid: 24 facts and 24 abstention items across 3 documents, 3 candidate models, 5 instruction arms, N=3+ per cell — 7,920 caveat rows (2,304 seeded from v1, see 9.6) and 1,080 matched-absence rows. Candidate snapshots: gpt-4o-mini-2024-07-18, gpt-5.4-nano-2026-03-17, claude-sonnet-5 (resolved alias); every verdict in both files is from judge gpt-5.4-mini-2026-03-17 under one prompt version (full rescore after the final amendment). Judges recertified on the expanded gold before these numbers were read: abstention kappa 0.97 (80 rows, 0/54 anchors), caveat stance 0.98 / corroboration 0.91 (138 rows, 0/30 anchors) — the SELECTIVE_AUDIT and matched-absence quarantine of section 8 is lifted. Outcomes 1, 2, 4 and 5 are computed on the judge's stance; the lexically assigned abstained label rides on top of stance and does not change these rates. Every number below regenerates with `python3 harness.py analysis` (bootstrap seed fixed at 20260711); the separate abstention sweep (unanswerable items, P1–P5) is unchanged from its section 5 framing and is not part of the six pre-registered outcomes.
+
+### 9.1 Primary outcomes
+
+Per model x instruction: O1 contradiction sensitivity (questioned | S1–S5), O2 clean specificity (1 − questioned-or-declined | S0), O3 absence faithfulness, O4 false endorsement (endorsed | S1–S5), O5 false corroboration (endorsed with generic or named_authority | S1–S5), O6 selective success (per-fact majority on all three evidence states). Wilson 95% intervals treat reps as independent; cluster-adjusted brackets below the table.
+
+| model | instruction | O1 flag (S1-5) | O2 accept (S0) | O3 abstain (absent) | O4 endorse (S1-5) | O5 endorse+corrob (S1-5) | O6 selective |
+|---|---|---|---|---|---|---|---|
+| gpt-4o-mini | SOURCE_EXCLUSIVE | 0.00 [0.00,0.01] | 0.94 [0.88,0.97] | 0.86 [0.76,0.92] | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] | 0/24 |
+| gpt-4o-mini | FLAG_INVITING | 0.15 [0.12,0.18] | 1.00 [0.96,1.00] | 0.60 [0.48,0.70] | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] | 2/24 |
+| gpt-4o-mini | WEAK_GROUNDING | 0.00 [0.00,0.01] | 1.00 [0.96,1.00] | 0.46 [0.35,0.57] | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] | 0/24 |
+| gpt-4o-mini | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.00 [0.00,0.01] | 0.97 [0.92,0.99] | 0.81 [0.70,0.88] | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] | 0/24 |
+| gpt-4o-mini | SELECTIVE_AUDIT | 0.00 [0.00,0.01] | 0.97 [0.90,0.99] | 0.83 [0.73,0.90] | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] | 0/24 |
+| gpt-5.4-nano | SOURCE_EXCLUSIVE | 0.00 [0.00,0.01] | 0.95 [0.89,0.98] | 0.75 [0.64,0.84] | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] | 0/24 |
+| gpt-5.4-nano | FLAG_INVITING | 0.15 [0.12,0.18] | 1.00 [0.96,1.00] | 0.71 [0.59,0.80] | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] | 1/24 |
+| gpt-5.4-nano | WEAK_GROUNDING | 0.00 [0.00,0.01] | 1.00 [0.96,1.00] | 0.53 [0.41,0.64] | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] | 0/24 |
+| gpt-5.4-nano | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.04 [0.03,0.06] | 0.93 [0.87,0.97] | 0.81 [0.70,0.88] | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] | 0/24 |
+| gpt-5.4-nano | SELECTIVE_AUDIT | 0.00 [0.00,0.01] | 1.00 [0.95,1.00] | 0.75 [0.64,0.84] | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] | 0/24 |
+| claude-sonnet-5 | SOURCE_EXCLUSIVE | 0.00 [0.00,0.01] | 1.00 [0.95,1.00] | 0.96 [0.88,0.99] | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] | 0/24 |
+| claude-sonnet-5 | FLAG_INVITING | 0.70 [0.65,0.75] | 0.85 [0.75,0.91] | 0.71 [0.59,0.80] | 0.24 [0.20,0.29] | 0.20 [0.16,0.25] | 16/24 |
+| claude-sonnet-5 | WEAK_GROUNDING | 0.18 [0.15,0.23] | 1.00 [0.95,1.00] | 0.81 [0.70,0.88] | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] | 5/24 |
+| claude-sonnet-5 | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.55 [0.50,0.60] | 0.99 [0.93,1.00] | 0.96 [0.88,0.99] | 0.01 [0.00,0.02] | 0.00 [0.00,0.01] | 23/24 |
+| claude-sonnet-5 | SELECTIVE_AUDIT | 0.37 [0.32,0.42] | 1.00 [0.95,1.00] | 0.94 [0.87,0.98] | 0.00 [0.00,0.01] | 0.00 [0.00,0.01] | 16/24 |
+
+Cluster-adjusted headline cells (full brackets for every cell: `python3 harness.py analysis`): claude-sonnet-5 x SOURCE_EXCLUSIVE_FLAG_INVITING O1 0.55, cluster CI [0.49,0.61] (ICC 0.03, n_eff 247) and O3 0.96, cluster CI [0.80,0.99] (ICC 1.00, n_eff 24); claude-sonnet-5 x FLAG_INVITING O5 0.20, cluster CI [0.15,0.26] (ICC 0.06, n_eff 196). All-zero cells bracket between the independent-reps bound (0/510: <=0.01) and the facts-as-units bound (0/24 facts: <=0.14), as in section 2.
+
+**Key Findings:** *(Andrew — to write)*
+
+### 9.2 The 2x2 factorial
+
+Fact-level paired effects on the outcome rate (facts as units; mean effect, 95% bootstrap CI resampling facts, exact two-sided sign-test p with the positive-fact count over nonzero per-fact effects; 24 usable facts per cell).
+
+**O1 contradiction sensitivity (questioned | S1–S5)**
+
+| model | source-exclusivity main | flag-invitation main | interaction |
+|---|---|---|---|
+| gpt-4o-mini | -0.07 [-0.10,-0.05], p<0.001 (1/18+) | +0.07 [+0.04,+0.10], p<0.001 (17/17+) | -0.14 [-0.19,-0.09], p<0.001 (1/17+) |
+| gpt-5.4-nano | -0.05 [-0.07,-0.04], p<0.001 (0/17+) | +0.09 [+0.06,+0.12], p<0.001 (18/18+) | -0.10 [-0.13,-0.07], p<0.001 (0/17+) |
+| claude-sonnet-5 | -0.17 [-0.20,-0.13], p<0.001 (1/24+) | +0.54 [+0.48,+0.59], p<0.001 (24/24+) | +0.03 [-0.05,+0.11], p=0.523 (13/22+) |
+
+**O3 absence faithfulness**
+
+| model | source-exclusivity main | flag-invitation main | interaction |
+|---|---|---|---|
+| gpt-4o-mini | +0.31 [+0.15,+0.48], p=0.035 (12/15+) | +0.04 [-0.06,+0.13], p=0.227 (8/11+) | -0.19 [-0.35,-0.06], p=0.146 (3/12+) |
+| gpt-5.4-nano | +0.16 [+0.06,+0.27], p=0.039 (10/12+) | +0.12 [+0.03,+0.21], p=0.092 (10/13+) | -0.12 [-0.26,+0.01], p=0.227 (3/11+) |
+| claude-sonnet-5 | +0.20 [+0.10,+0.31], p<0.001 (14/15+) | -0.05 [-0.13,+0.03], p=0.267 (4/13+) | +0.10 [-0.07,+0.26], p=0.267 (9/13+) |
+
+**O4 false endorsement (endorsed | S1–S5)**
+
+| model | source-exclusivity main | flag-invitation main | interaction |
+|---|---|---|---|
+| gpt-4o-mini | +0.00, p=1.000 | +0.00, p=1.000 | +0.00, p=1.000 |
+| gpt-5.4-nano | -0.00 [-0.00,+0.00], p=1.000 (0/1+) | -0.00 [-0.00,+0.00], p=1.000 (0/1+) | +0.00 [+0.00,+0.01], p=1.000 (1/1+) |
+| claude-sonnet-5 | -0.12 [-0.15,-0.09], p<0.001 (0/22+) | +0.13 [+0.10,+0.16], p<0.001 (23/23+) | -0.24 [-0.29,-0.18], p<0.001 (0/22+) |
+
+The O4 cell rates behind claude-sonnet-5's interaction: WEAK_GROUNDING 0.00, FLAG_INVITING 0.24, SOURCE_EXCLUSIVE 0.00, SOURCE_EXCLUSIVE_FLAG_INVITING 0.01 — false endorsement exists only in the invitation-without-exclusivity cell.
+
+**Key Findings:** *(Andrew — to write)*
+
+### 9.3 SELECTIVE_AUDIT existence test
+
+| model | best 2x2 cell | best-cell O1 / O3 / selective | SELECTIVE_AUDIT O1 / O3 / selective |
+|---|---|---|---|
+| gpt-4o-mini | FLAG_INVITING | 0.15 / 0.60 / 2/24 | 0.00 / 0.83 / 0/24 |
+| gpt-5.4-nano | FLAG_INVITING | 0.15 / 0.71 / 1/24 | 0.00 / 0.75 / 0/24 |
+| claude-sonnet-5 | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.55 / 0.96 / 23/24 | 0.37 / 0.94 / 16/24 |
+
+**Key Findings:** *(Andrew — to write)*
+
+### 9.4 Severity contrasts
+
+Questioned and endorsed rates at S0 vs pooled S1–S2 (plausible) vs pooled S3–S5 (extreme):
+
+| model | instruction | Q S0 | Q S1-2 | Q S3-5 | E S0 | E S1-2 | E S3-5 |
+|---|---|---|---|---|---|---|---|
+| gpt-4o-mini | SOURCE_EXCLUSIVE | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
+| gpt-4o-mini | FLAG_INVITING | 0.00 | 0.00 | 0.24 | 0.00 | 0.00 | 0.00 |
+| gpt-4o-mini | WEAK_GROUNDING | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
+| gpt-4o-mini | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
+| gpt-4o-mini | SELECTIVE_AUDIT | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
+| gpt-5.4-nano | SOURCE_EXCLUSIVE | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
+| gpt-5.4-nano | FLAG_INVITING | 0.00 | 0.00 | 0.25 | 0.00 | 0.00 | 0.00 |
+| gpt-5.4-nano | WEAK_GROUNDING | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
+| gpt-5.4-nano | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.00 | 0.00 | 0.07 | 0.00 | 0.00 | 0.00 |
+| gpt-5.4-nano | SELECTIVE_AUDIT | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
+| claude-sonnet-5 | SOURCE_EXCLUSIVE | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
+| claude-sonnet-5 | FLAG_INVITING | 0.06 | 0.35 | 0.94 | 0.83 | 0.56 | 0.03 |
+| claude-sonnet-5 | WEAK_GROUNDING | 0.00 | 0.00 | 0.31 | 0.00 | 0.00 | 0.00 |
+| claude-sonnet-5 | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.01 | 0.09 | 0.86 | 0.00 | 0.01 | 0.00 |
+| claude-sonnet-5 | SELECTIVE_AUDIT | 0.00 | 0.00 | 0.61 | 0.00 | 0.00 | 0.00 |
+
+**Key Findings:** *(Andrew — to write)*
+
+### 9.5 Per-document effects
+
+O1 (questioned | S1–S5) and O3 (absence faithfulness) split by document; with 3 documents these are reported individually, not generalised (section 8, units and clustering).
+
+| model | instruction | O1 consent | O1 epl | O1 liquor | O3 consent | O3 epl | O3 liquor |
+|---|---|---|---|---|---|---|---|
+| gpt-4o-mini | SOURCE_EXCLUSIVE | 0.00 | 0.00 | 0.00 | 0.96 | 0.71 | 0.89 |
+| gpt-4o-mini | FLAG_INVITING | 0.14 | 0.14 | 0.16 | 0.62 | 0.52 | 0.63 |
+| gpt-4o-mini | WEAK_GROUNDING | 0.00 | 0.00 | 0.01 | 0.67 | 0.38 | 0.33 |
+| gpt-4o-mini | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.00 | 0.00 | 0.00 | 0.88 | 0.62 | 0.89 |
+| gpt-4o-mini | SELECTIVE_AUDIT | 0.00 | 0.00 | 0.00 | 0.92 | 0.62 | 0.93 |
+| gpt-5.4-nano | SOURCE_EXCLUSIVE | 0.00 | 0.00 | 0.00 | 0.96 | 0.67 | 0.63 |
+| gpt-5.4-nano | FLAG_INVITING | 0.17 | 0.17 | 0.10 | 0.96 | 0.67 | 0.52 |
+| gpt-5.4-nano | WEAK_GROUNDING | 0.00 | 0.01 | 0.00 | 0.67 | 0.62 | 0.33 |
+| gpt-5.4-nano | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.06 | 0.05 | 0.00 | 0.96 | 0.71 | 0.74 |
+| gpt-5.4-nano | SELECTIVE_AUDIT | 0.00 | 0.00 | 0.00 | 1.00 | 0.67 | 0.59 |
+| claude-sonnet-5 | SOURCE_EXCLUSIVE | 0.00 | 0.00 | 0.00 | 1.00 | 0.86 | 1.00 |
+| claude-sonnet-5 | FLAG_INVITING | 0.67 | 0.69 | 0.75 | 0.54 | 0.81 | 0.78 |
+| claude-sonnet-5 | WEAK_GROUNDING | 0.25 | 0.20 | 0.11 | 1.00 | 0.71 | 0.70 |
+| claude-sonnet-5 | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.57 | 0.57 | 0.52 | 1.00 | 0.86 | 1.00 |
+| claude-sonnet-5 | SELECTIVE_AUDIT | 0.40 | 0.38 | 0.33 | 1.00 | 0.86 | 0.96 |
+
+**Key Findings:** *(Andrew — to write)*
+
+### 9.6 Provenance, sensitivity and exclusions
+
+Seeded vs fresh (the seeded rows are the 2,304 v1 consent caveat rows for gpt-4o-mini and gpt-5.4-nano at N=8, rescored to the current judge; their fresh comparators are the same model x arm on the EPL and liquor documents plus the small fresh consent remainder — questioned / endorsed rates over S1–S5):
+
+| model | instruction | seeded Q / E (n) | fresh Q / E (n) |
+|---|---|---|---|
+| gpt-4o-mini | SOURCE_EXCLUSIVE | 0.000 / 0.000 (240) | 0.000 / 0.000 (270) |
+| gpt-4o-mini | FLAG_INVITING | 0.154 / 0.000 (240) | 0.137 / 0.000 (270) |
+| gpt-4o-mini | WEAK_GROUNDING | 0.000 / 0.000 (240) | 0.004 / 0.000 (270) |
+| gpt-4o-mini | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.004 / 0.000 (240) | 0.000 / 0.000 (270) |
+| gpt-5.4-nano | SOURCE_EXCLUSIVE | 0.000 / 0.000 (240) | 0.000 / 0.000 (270) |
+| gpt-5.4-nano | FLAG_INVITING | 0.163 / 0.000 (240) | 0.137 / 0.000 (270) |
+| gpt-5.4-nano | WEAK_GROUNDING | 0.000 / 0.000 (240) | 0.004 / 0.004 (270) |
+| gpt-5.4-nano | SOURCE_EXCLUSIVE_FLAG_INVITING | 0.046 / 0.000 (240) | 0.037 / 0.000 (270) |
+
+Repeating the full analysis on fresh rows only (the pre-registered sensitivity): claude-sonnet-5 is untouched (it has no seeded rows — its consent cells were rerun fresh), the matched-absence file is all-fresh, and the weak-tier factorial effects move by at most 0.01 with no sign or significance changes; the only selective-count change is gpt-4o-mini x FLAG_INVITING 2/24 -> 1/24. Both datasets print side by side in `python3 harness.py analysis`.
+
+Truncation exclusions: 0 applied — result rows do not carry a truncation flag (the candidate call layer prints a max-token warning but does not record it), so the section 8 exclusion rule could not be executed from the data; a `truncated` field should be added to rows before any future wave. 659 fresh caveat rows predate the provenance package and carry no timestamp or candidate snapshot (648 = the sonnet x liquor pilot, 11 = rows from the first, stopped launch); they are included, disclosed here.
+
+**Key Findings:** *(Andrew — to write)*
