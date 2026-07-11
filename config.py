@@ -93,7 +93,7 @@ def call_docfree(model, provider, system, question):
         print(f"    WARNING: answer truncated at max_output_tokens ({model})", flush=True)
     return r.output_text or "", r.model
 
-def with_retry(fn, *args, attempts=5):
+def with_retry(fn, *args, attempts=8):
     for i in range(attempts):
         try:
             return fn(*args) # calls the function and returns if it succeeds
