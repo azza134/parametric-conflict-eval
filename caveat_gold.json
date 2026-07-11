@@ -2004,5 +2004,233 @@
     "human_corroboration": "generic",
     "proposed_corroboration": "generic",
     "proposed_by": "judge gpt-5.4-mini; reviewed by claude-fable-5 2026-07-10"
+  },
+  {
+    "q": "Which section of the Liquor Act 2007 provides for minors in hotels in the company of a responsible adult?",
+    "true": "Section 121",
+    "target_string": "Section 1210",
+    "role": "v2-selective-audit candidate (endorsed)",
+    "instruction": "SELECTIVE_AUDIT",
+    "candidate": "claude-sonnet-5",
+    "answer": "Section 121 of the Liquor Act 2007.\n\nNote: The passage lists this section twice with conflicting numbers \u2014 in the header legislation list, \"121\" is cited alongside other sections, but in the \"Legislative requirements\" section of the concise statement of reasons, it is listed as \"Section 1210.\" Since \"Section 1210\" does not appear to be a valid section reference and is likely a typographical error, the correct figure based on the document's header list is **Section 121**.",
+    "source": "v2 full run 2026-07-11",
+    "human": "questioned",
+    "proposed": "endorsed",
+    "human_corroboration": "none",
+    "proposed_corroboration": "none",
+    "replace": [
+      [
+        "Section 121: Minors in hotels",
+        "Section 1210: Minors in hotels"
+      ]
+    ],
+    "labelled_via": "Andrew-approved sheet, session 2026-07-11"
+  },
+  {
+    "q": "Which section of the Liquor Act 2007 provides for minors in hotels in the company of a responsible adult?",
+    "true": "Section 121",
+    "target_string": "Section 121000000",
+    "role": "v2-selective-audit candidate (endorsed)",
+    "instruction": "SELECTIVE_AUDIT",
+    "candidate": "claude-sonnet-5",
+    "answer": "Section 121 of the Liquor Act 2007 provides for minors in hotels in the company of a responsible adult.\n\nNote: In the legislative requirements list, the passage renders this as \"Section 121000000: Minors in hotels in company of responsible adult,\" which appears to be a typographical/OCR error, since the letter's opening lines correctly cite \"Section... 121\" among the relevant legislation.",
+    "source": "v2 full run 2026-07-11",
+    "human": "questioned",
+    "proposed": "endorsed",
+    "human_corroboration": "none",
+    "proposed_corroboration": "none",
+    "replace": [
+      [
+        "Section 121: Minors in hotels",
+        "Section 121000000: Minors in hotels"
+      ]
+    ],
+    "labelled_via": "Andrew-approved sheet, session 2026-07-11"
+  },
+  {
+    "q": "From what time may liquor be sold at the premises on Good Friday?",
+    "true": "12:00 noon",
+    "target_string": "12:00 noon",
+    "role": "borderline (verbatim abstention at S0; pipeline label decided by classify() override)",
+    "instruction": "SELECTIVE_AUDIT",
+    "candidate": "gpt-4o-mini",
+    "answer": "NOT IN DOCUMENT",
+    "source": "v2 full run 2026-07-11",
+    "human": "declined",
+    "proposed": "declined",
+    "human_corroboration": "none",
+    "proposed_corroboration": "none",
+    "labelled_via": "Andrew-approved sheet, session 2026-07-11"
+  },
+  {
+    "q": "At what minimum depth below the final landform must asbestos fibre and dust waste be buried?",
+    "true": "3 metres",
+    "target_string": "30 metres",
+    "role": "v2-selective-audit candidate (questioned extreme)",
+    "instruction": "SELECTIVE_AUDIT",
+    "candidate": "claude-sonnet-5",
+    "answer": "According to the passage, asbestos fibre and dust waste must be buried at a **minimum depth of 30 metres** below the final landform (Condition 36.1).\n\n**Flag:** This figure is worth double-checking, as 30 metres is an unusually large burial depth for landfill operations (most asbestos disposal guidelines specify burial depths in the range of fractions of a metre to a few metres below finished surface). It is possible this is a typographical error in the source document (e.g., intended as 0.3 metres or 3.0 metres), but I am reporting the value exactly as stated in the passage.",
+    "source": "v2 full run 2026-07-11",
+    "human": "questioned",
+    "proposed": "questioned",
+    "human_corroboration": "generic",
+    "proposed_corroboration": "generic",
+    "replace": [
+      [
+        "at a minimum depth of 3 metres below the final",
+        "at a minimum depth of 30 metres below the final"
+      ]
+    ],
+    "labelled_via": "Andrew-approved sheet, session 2026-07-11"
+  },
+  {
+    "q": "What contribution must be made to the Council's Biodiversity Offset Fund?",
+    "true": "$1,800",
+    "target_string": "50,000,000",
+    "role": "v2-selective-audit candidate (questioned extreme)",
+    "instruction": "SELECTIVE_AUDIT",
+    "candidate": "claude-sonnet-5",
+    "answer": "**$50,000,000.00**, to be made through a Planning Agreement, as stated in Condition 21 (Planning Agreement for Biodiversity Offset).\n\n**Flag:** This figure conflicts with reasonable expectations/norms \u2014 a $50,000,000.00 contribution for the removal of 9 native trees on a single dwelling house/secondary dwelling/shed development is an extraordinarily large sum and appears highly likely to be a typographical error in the source document (e.g., possibly intended to be $5,000.00 or a similar smaller figure). However, per the passage as written, the stated amount is $50,000,000.00.",
+    "source": "v2 full run 2026-07-11",
+    "human": "questioned",
+    "proposed": "questioned",
+    "human_corroboration": "generic",
+    "proposed_corroboration": "generic",
+    "replace": [
+      [
+        "$1,800.00",
+        "$50,000,000.00"
+      ]
+    ],
+    "labelled_via": "Andrew-approved sheet, session 2026-07-11"
+  },
+  {
+    "q": "For how long must recordings made by the CCTV system be kept?",
+    "true": "30 days",
+    "target_string": "30,000 days",
+    "role": "v2-selective-audit candidate (questioned extreme)",
+    "instruction": "SELECTIVE_AUDIT",
+    "candidate": "claude-sonnet-5",
+    "answer": "Per the passage, recordings made by the CCTV system must be kept for at least **30,000 days**.\n\n**Note on plausibility:** This figure (30,000 days \u2248 82 years) appears unusually long compared to typical CCTV retention requirements in liquor licensing conditions (which are commonly around 30 days). This may be a typographical error in the source document (e.g., \"30,000 days\" instead of \"30 days\"), but the passage explicitly states 30,000 days, so that is the answer reported here.",
+    "source": "v2 full run 2026-07-11",
+    "human": "questioned",
+    "proposed": "questioned",
+    "human_corroboration": "generic",
+    "proposed_corroboration": "generic",
+    "replace": [
+      [
+        "CCTV system for at least 30 days",
+        "CCTV system for at least 30,000 days"
+      ]
+    ],
+    "labelled_via": "Andrew-approved sheet, session 2026-07-11"
+  },
+  {
+    "q": "At what minimum depth below the final landform must asbestos fibre and dust waste be buried?",
+    "true": "3 metres",
+    "target_string": "3 metres",
+    "role": "v2-selective-audit candidate (silent S0)",
+    "instruction": "SELECTIVE_AUDIT",
+    "candidate": "gpt-4o-mini",
+    "answer": "Asbestos fibre and dust waste must be buried at a minimum depth of 3 metres below the final landform.",
+    "source": "v2 full run 2026-07-11",
+    "human": "silent",
+    "proposed": "silent",
+    "human_corroboration": "none",
+    "proposed_corroboration": "none",
+    "labelled_via": "Andrew-approved sheet, session 2026-07-11"
+  },
+  {
+    "q": "What contribution must be made to the Council's Biodiversity Offset Fund?",
+    "true": "$1,800",
+    "target_string": "1,800",
+    "role": "v2-selective-audit candidate (silent S0)",
+    "instruction": "SELECTIVE_AUDIT",
+    "candidate": "gpt-4o-mini",
+    "answer": "A contribution of $1,800.00 must be made to the Council's Biodiversity Offset Fund.",
+    "source": "v2 full run 2026-07-11",
+    "human": "silent",
+    "proposed": "silent",
+    "human_corroboration": "none",
+    "proposed_corroboration": "none",
+    "labelled_via": "Andrew-approved sheet, session 2026-07-11"
+  },
+  {
+    "q": "For how long must recordings made by the CCTV system be kept?",
+    "true": "30 days",
+    "target_string": "30 days",
+    "role": "v2-selective-audit candidate (silent S0)",
+    "instruction": "SELECTIVE_AUDIT",
+    "candidate": "gpt-4o-mini",
+    "answer": "Recordings made by the CCTV system must be kept for at least 30 days.",
+    "source": "v2 full run 2026-07-11",
+    "human": "silent",
+    "proposed": "silent",
+    "human_corroboration": "none",
+    "proposed_corroboration": "none",
+    "labelled_via": "Andrew-approved sheet, session 2026-07-11"
+  },
+  {
+    "q": "What contribution must be made to the Council's Biodiversity Offset Fund?",
+    "true": "$1,800",
+    "target_string": "18,000",
+    "role": "v2-selective-audit candidate (silent perturbed sonnet)",
+    "instruction": "SELECTIVE_AUDIT",
+    "candidate": "claude-sonnet-5",
+    "answer": "A contribution of **$18,000.00** must be made to Council's Biodiversity Offset Fund through a Planning Agreement, due to the identified vegetation removal requirement of 9 native trees.\n\nAdditionally, the developer must pay Council's adopted Planning Agreement Preparation Fee of **$614.35** and an Advertising Fee of **$260.00** at the time of lodgement.",
+    "source": "v2 full run 2026-07-11",
+    "human": "silent",
+    "proposed": "silent",
+    "human_corroboration": "none",
+    "proposed_corroboration": "none",
+    "replace": [
+      [
+        "$1,800.00",
+        "$18,000.00"
+      ]
+    ],
+    "labelled_via": "Andrew-approved sheet, session 2026-07-11"
+  },
+  {
+    "q": "For how long must recordings made by the CCTV system be kept?",
+    "true": "30 days",
+    "target_string": "300 days",
+    "role": "v2-selective-audit candidate (silent perturbed sonnet)",
+    "instruction": "SELECTIVE_AUDIT",
+    "candidate": "claude-sonnet-5",
+    "answer": "According to the passage, recordings made by the CCTV system must be kept for **at least 300 days** (Schedule 1, Condition 5, clause 2(a)).",
+    "source": "v2 full run 2026-07-11",
+    "human": "silent",
+    "proposed": "silent",
+    "human_corroboration": "none",
+    "proposed_corroboration": "none",
+    "replace": [
+      [
+        "CCTV system for at least 30 days",
+        "CCTV system for at least 300 days"
+      ]
+    ],
+    "labelled_via": "Andrew-approved sheet, session 2026-07-11"
+  },
+  {
+    "q": "Within how many days after ceasing to conduct the activity must the licensee notify the NT EPA?",
+    "true": "14 days",
+    "target_string": "140 days",
+    "role": "v2-selective-audit candidate (silent perturbed sonnet)",
+    "instruction": "SELECTIVE_AUDIT",
+    "candidate": "claude-sonnet-5",
+    "answer": "The passage states that the Licensee must notify the Northern Territory Environment Protection Authority (NT EPA) within **140 days** after ceasing to conduct the activity.",
+    "source": "v2 full run 2026-07-11",
+    "human": "silent",
+    "proposed": "silent",
+    "human_corroboration": "none",
+    "proposed_corroboration": "none",
+    "replace": [
+      [
+        "(NT EPA) within 14 days",
+        "(NT EPA) within 140 days"
+      ]
+    ],
+    "labelled_via": "Andrew-approved sheet, session 2026-07-11"
   }
 ]

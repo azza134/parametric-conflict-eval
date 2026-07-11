@@ -639,6 +639,55 @@ def rescore_caveat(models=None):
     print(f"  done: {CAVEAT_RESULTS} rescored ({scope}); pre-rescore snapshot at {CAVEAT_PRE_RESCORE_BACKUP}")
     summarize_caveat()
 
+def _rescore_faithfulness_file(results_file, backup_file, partial_file, doc_for_row, describe, summarize):
+    already = 0
+    try:
+        with open(partial_file) as f:
+            already = sum(1 for _ in f)
+    except FileNotFoundError:
+        pass
+    if already == 0:
+        if os.path.exists(backup_file):
+            raise SystemExit(f"{backup_file} already exists -- move it aside before a fresh rescore")
+        shutil.copy(results_file, backup_file)
+        print(f"snapshotted current results -> {backup_file}", flush=True)
+    src = [json.loads(l) for l in open(results_file)]
+    print(f"rescoring {len(src)} transcripts under the certified abstention judge "
+          f"({already} already done, {JUDGE_CONCURRENCY}-way)")
+
+    def rescore_one(r):
+        r = dict(r)
+        faithful, reason, judge_snapshot = abstention_judge(r["q"], doc_for_row(r), r["answer"])
+        r["faithful"], r["judge_reason"], r["judge_snapshot"] = faithful, reason, judge_snapshot
+        r["label"] = FAITHFUL if faithful else UNGROUNDED
+        return r
+
+    out = open(partial_file, "a")
+    chunk = max(JUDGE_CONCURRENCY * 4, 1)
+    done = already
+    for start in range(already, len(src), chunk):
+        for r in concurrent_map(rescore_one, src[start:start + chunk]):
+            done += 1
+            print(f"  [{done}/{len(src)}] {r['model']} / {r['instruction']} / {describe(r)} -> {r['label']}", flush=True)
+            out.write(json.dumps(r) + "\n")
+        out.flush()
+    out.close()
+    os.replace(partial_file, results_file)
+    print(f"  done: {results_file} rescored; pre-rescore snapshot at {backup_file}")
+    summarize()
+
+def rescore_abstention():
+    _rescore_faithfulness_file(ABSTENTION_RESULTS, "abstention_results.pre_rescore.jsonl",
+                               "abstention_results.rescored.jsonl",
+                               lambda r: doc_text(r["document"]),
+                               lambda r: r["item_id"], summarize_ungrounded)
+
+def rescore_absence():
+    _rescore_faithfulness_file(ABSENCE_RESULTS, "matched_absence_results.pre_rescore.jsonl",
+                               "matched_absence_results.rescored.jsonl",
+                               lambda r: absence_doc(FACT_BY_NAME[r["fact"]]),
+                               lambda r: f"{r['fact']} absent", summarize_absence)
+
 def summarize_caveat():
     df = pd.read_json(CAVEAT_RESULTS, lines=True) # loads the full results
     stats = df.groupby(["model", "instruction", "severity"]).agg(
@@ -1584,7 +1633,12 @@ if __name__ == "__main__": # only run file if executed directly
     elif args and args[0] == "probe":
         run_probe(int(args[1]) if len(args) > 1 else N_PER_CELL)
     elif args and args[0] == "rescore":
-        rescore_caveat(args[1:] or None)
+        if args[1:2] == ["abstention"]:
+            rescore_abstention()
+        elif args[1:2] == ["absence"]:
+            rescore_absence()
+        else:
+            rescore_caveat(args[1:] or None)
     elif args and args[0] == "endorsement":
         endorsement_breakdown()
     elif args and args[0] == "manifest":

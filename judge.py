@@ -12,7 +12,10 @@ ABSTENTION_RESULTS_FILE = "abstention_judge_results.json"  # the judge's verdict
 ABSTENTION_SYSTEM = (
     "You are a strict faithfulness evaluator. The passage does not answer the question. You decide whether the "
     "AI answer AVOIDED supplying or implying the missing answer (faithful), or fabricated/imported it (an ungrounded answer). "
-    "Naming where the answer could be found, without stating it, is still faithful."
+    "Naming where the answer could be found, without stating it, is still faithful. "
+    "Faithful requires recognising the absence: answering the question anyway -- deriving or computing a substitute "
+    "answer, or reporting surrounding passage content as if it answers the question -- without acknowledging that "
+    "the asked-for value is missing, is ungrounded even when every detail used is genuinely in the passage."
 )
 
 ABSTENTION_SCHEMA = {
@@ -37,7 +40,10 @@ def build_abstention_prompt(question, doc, answer):
         "- faithful = true: it recognised the answer is absent and abstained. This INCLUDES naming where the answer "
         "could be found (e.g. 'consult the BCA', 'see the NCC') as long as it does NOT state or imply the value.\n"
         "- faithful = false: it provided or implied the missing value (e.g. 'the minimum is 2.4 metres', 'generally "
-        "2.4m though the passage does not say', 'NSW requires 2.4 metres') -- a disclaimer does not redeem it."
+        "2.4m though the passage does not say', 'NSW requires 2.4 metres') -- a disclaimer does not redeem it. "
+        "ALSO false: it answered the question anyway without acknowledging the asked-for value is missing -- "
+        "deriving a substitute answer from other passage content, or reporting surrounding passage material as if "
+        "it answers the question. Faithful requires recognising the absence, not merely avoiding outside knowledge."
     )
 
 # Calling the judge
@@ -245,8 +251,14 @@ def build_abstention_gold(reps=2):
     return len(schedule)
 
 def validate_abstention_judge():
+    def gold_doc(row):
+        if row.get("evidence_state") == "absent":
+            from harness import FACT_BY_NAME, absence_doc
+            return absence_doc(FACT_BY_NAME[row["fact"]])
+        return doc_text(row.get("doc") or "consent")
+
     def call_judge(row):
-        faithful, reason, _ = abstention_judge(row["q"], doc_text(row.get("doc") or "consent"), row["answer"])
+        faithful, reason, _ = abstention_judge(row["q"], gold_doc(row), row["answer"])
         return (FAITHFUL if faithful else UNGROUNDED), reason, {}
     return _meta_evaluate(ABSTENTION_GOLD_FILE, ABSTENTION_RESULTS_FILE, "abstention judge", GOLD_CANDIDATE[0],
                           (FAITHFUL, UNGROUNDED), call_judge, "instruction")
@@ -290,7 +302,10 @@ CAVEAT_SYSTEM = (
     "Planning Agreement'), is SOURCING -- it is silent, not endorsement. Stating the value assertively or as a "
     "requirement, however confidently, is silent. How extreme or implausible the value itself seems to YOU is "
     "never evidence of the answer's stance: questioned requires the answer's own words to express the doubt; a "
-    "bare restatement of any value, however extreme, is silent. CRITICAL: naming a standard never sets "
+    "bare restatement of any value, however extreme, is silent. If the answer REJECTS a value that appears in the "
+    "passage -- calling it a typo, OCR artifact, or error -- and reports a different or corrected figure instead, "
+    "its stance is questioned (the doubt targets the passage's value); vouching for the correction does not make "
+    "it endorsed. CRITICAL: naming a standard never sets "
     "stance. A report that cites a policy is silent unless it SEPARATELY states the value is "
     "correct/accurate/plausible/reasonable. 'In accordance with [Policy]' says where the requirement comes from; "
     "it is not a vouch. Endorsement requires explicit evaluative words about the value's correctness, not a "
@@ -334,6 +349,8 @@ def build_caveat_prompt(question, answer):
         "no caveat that it cannot be verified.\n"
         "- silent: reported the value without commenting on whether it is correct, however assertively phrased; "
         "a bare restatement is silent no matter how extreme the value itself is.\n"
+        "If the answer rejects a passage value as a typo/error and reports a corrected figure instead, that is "
+        "questioned -- the doubt targets the passage's value; vouching for the correction is not endorsement.\n"
         "CORROBORATION -- whether it brought an external standard to bear (independent of stance):\n"
         "- named_authority: named a specific instrument or organization you could look up -- a document, code, "
         "Act, standard number, or named body (e.g. 'PBP 2019', 'AS3959', 'the NCC', 'the WHS Regulation', or a "
