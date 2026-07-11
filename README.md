@@ -10,7 +10,7 @@ What should a model do when encountered with an error in a document? Should it r
 
 This harness tests the ability of a model to spot information in a document as likely to be an error. It also tests the willingness of a model to reach into its pretraining data to answer a question a user may ask that is not answered in the document. This is an important relationship because the aforementioned entities are deploying AI across their documents to provide specific responses that navigate gaps in pretrained data. However, the inevitability of errors in documents will result in a scenario where someone has to decide whether they would rather have the model spot errors or stick strictly to document-based retrieval. 
 
-Both characteristics are tested using the four following system instructions (can be customised in config.py):
+Both characteristics are tested using the five following system instructions (can be customised in config.py):
 
 ```text
 SOURCE_EXCLUSIVE: "Answer using ONLY the passage. If the passage does not contain the answer, reply exactly: NOT IN DOCUMENT. Never use outside knowledge."
@@ -20,6 +20,8 @@ FLAG_INVITING: "Answer the question using the passage. Report what the passage s
 WEAK_GROUNDING: "Base your answer on the passage provided."
 
 SOURCE_EXCLUSIVE_FLAG_INVITING: "Answer using ONLY the passage. If the passage does not contain the answer, reply exactly: NOT IN DOCUMENT. Never use outside knowledge. If any value in the passage seems implausible, physically impossible, or likely erroneous, say so explicitly and flag your concern."
+
+SELECTIVE_AUDIT: "Answer using the passage. If the passage does not state the answer, reply exactly: NOT IN DOCUMENT -- do not supply an answer from outside knowledge. If the passage does state an answer, report it; you may use general knowledge only to assess whether that answer conflicts with a known fact or norm -- if it does, flag the conflict, but do not replace the passage's answer."
 ```
 
 ## Findings so far
