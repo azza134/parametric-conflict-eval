@@ -8,6 +8,7 @@ import random
 import shutil
 import hashlib
 import subprocess
+from collections import namedtuple
 from datetime import datetime, timezone
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor
@@ -15,7 +16,7 @@ from config import (passage, DOCUMENTS, DOCUMENT_TEXTS, doc_text, MODELS, N_PER_
                     call, call_docfree, with_retry, perturb, appears, step_doc,
                     build_batch_message_params, extract_anthropic_text,
                     submit_anthropic_batch, poll_anthropic_batch, anthropic_batch_results)
-from judge import (caveat_judge, abstention_judge, FAITHFUL, UNGROUNDED, QUESTIONED, SILENT, ENDORSED,
+from judge import (caveat_judge, abstention_judge, FAITHFUL, UNGROUNDED, QUESTIONED, ENDORSED,
                    DECLINED, NAMED_AUTHORITY, CAVEAT_SYSTEM, ABSTENTION_SYSTEM)
 
 INSTR_BY_NAME = dict(SYSTEM_INSTRUCTIONS)
@@ -496,99 +497,11 @@ def _caveat_step(fact_name, severity): # gets the step for the caveat test
     step = next(s for s in fact["steps"] if s["severity"] == severity)
     return fact, step
 
-def _caveat_batch_request(model, custom_id): # builds the batch request for the caveat test
-    d = decode_caveat_custom_id(custom_id)
-    fact, step = _caveat_step(d["fact"], d["severity"])
-    return build_batch_message_params(model, INSTR_BY_NAME[d["instruction"]], fact["q"], step_doc(fact, step))
-
 def caveat_wave_plan(done, n, model, instructions=None, ladders=None): # creates the wave plan for the caveat test
-    instructions = instructions if instructions is not None else SYSTEM_INSTRUCTIONS
-    ladders = ladders if ladders is not None else PERTURBATION_LADDERS
-    wave1, wave2 = [], [] # wave1 caches system instruction and passage for the first time, wave2 reuses the cache
-    for iname, _ in instructions:
-        for fact in ladders:
-            for s in fact["steps"]:
-                already = done.get((model, iname, fact["fact"], s["severity"]), 0)
-                if already >= n:
-                    continue
-                reps = list(range(already, n))
-                wave1.append(encode_caveat_custom_id(fact["fact"], s["severity"], iname, reps[0]))
-                for rep in reps[1:]:
-                    wave2.append(encode_caveat_custom_id(fact["fact"], s["severity"], iname, rep))
-    return wave1, wave2
-
-def run_caveat_anthropic_batch(model, prov, n, done, out, seen, total):
-    wave1_ids, wave2_ids = caveat_wave_plan(done, n, model)
-    cell_tally = {}
-
-    def sync_fallback(cid):
-        d = decode_caveat_custom_id(cid)
-        fact, step = _caveat_step(d["fact"], d["severity"])
-        return with_retry(call, model, prov, INSTR_BY_NAME[d["instruction"]], fact["q"], step_doc(fact, step))
-
-    def process(custom_ids, wave_label):
-        def judge_one(item):
-            cid, answer, snapshot = item
-            d = decode_caveat_custom_id(cid)
-            fact, step = _caveat_step(d["fact"], d["severity"])
-            return d, _caveat_row(model, prov, d["instruction"], fact, step, answer, snapshot, d["rep"])
-        def write_row(res):
-            d, row = res
-            out.write(json.dumps(row) + "\n")
-            out.flush()
-            key = (d["instruction"], d["fact"], d["severity"])
-            cell_tally.setdefault(key, {})
-            cell_tally[key][row["label"]] = cell_tally[key].get(row["label"], 0) + 1
-            print(f"    [{wave_label}] {model} / {d['instruction']} / {d['fact']} S{d['severity']} rep{d['rep']} -> {row['label']}", flush=True)
-        push, flush = _chunked_judge_sink(judge_one, write_row)
-        _run_anthropic_wave(model, prov, custom_ids, wave_label, _caveat_batch_request, sync_fallback, push)
-        flush()
-
-    process(wave1_ids, "caveat wave 1 (cache warm)")
-    process(wave2_ids, "caveat wave 2 (cache read)")
-
-    for iname, instr in SYSTEM_INSTRUCTIONS:
-        for fact in PERTURBATION_LADDERS:
-            for s in fact["steps"]:
-                seen += 1
-                already = done.get((model, iname, fact["fact"], s["severity"]), 0)
-                if already >= n:
-                    status = "complete (resumed)"
-                else:
-                    tally = cell_tally.get((iname, fact["fact"], s["severity"]), {})
-                    status = " ".join(f"{k}={v}" for k, v in sorted(tally.items()))
-                print(f"  [{seen}/{total}] {model} / {iname} / {fact['fact']} S{s['severity']}  {status}", flush=True)
-    return seen
+    return _sweep_wave_plan(CAVEAT_SWEEP, done, n, model, instructions, ladders)
 
 def run_caveat(n):
-    if not print_plan(n): # ensures preview has been completed
-        sys.exit(1)
-    done = load_done(CAVEAT_RESULTS, ["model", "instruction", "fact", "severity"])
-    out = open(CAVEAT_RESULTS, "a")
-    total = total_cells()
-    seen = 0
-    for model, prov in MODELS:
-        if prov == "anthropic":
-            seen = run_caveat_anthropic_batch(model, prov, n, done, out, seen, total)
-            continue
-        for iname, instr in SYSTEM_INSTRUCTIONS:
-            for fact in PERTURBATION_LADDERS:
-                for s in fact["steps"]:
-                    seen += 1
-                    pdoc = step_doc(fact, s)
-                    key = (model, iname, fact["fact"], s["severity"])
-                    already = done.get(key, 0)
-                    cell = {}
-                    for rep_i in range(already, n):
-                        answer, snapshot = with_retry(call, model, prov, instr, fact["q"], pdoc)
-                        row = _caveat_row(model, prov, iname, fact, s, answer, snapshot, rep_i)
-                        out.write(json.dumps(row) + "\n") # convert rows into json to caveat results
-                        out.flush() # pushes to disk in order to save
-                        cell[row["label"]] = cell.get(row["label"], 0) + 1
-                    status = "complete (resumed)" if already >= n else " ".join(f"{k}={v}" for k, v in sorted(cell.items()))
-                    print(f"  [{seen}/{total}] {model} / {iname} / {fact['fact']} S{s['severity']}  {status}", flush=True)
-    out.close()
-    summarize_caveat()
+    _run_sweep(CAVEAT_SWEEP, n)
 
 CAVEAT_PRE_RESCORE_BACKUP = "caveat_results.pre_rescore.jsonl"
 CAVEAT_RESCORE_PARTIAL = "caveat_results.rescored.jsonl"
@@ -983,98 +896,11 @@ def decode_abstention_custom_id(custom_id):
         raise ValueError(f"not an abstention custom_id: {custom_id}")
     return {"item_id": item_id, "instruction": instruction, "rep": int(rep[1:])}
 
-def _abstention_batch_request(model, custom_id):
-    d = decode_abstention_custom_id(custom_id)
-    p = ITEM_BY_ID[d["item_id"]]
-    return build_batch_message_params(model, INSTR_BY_NAME[d["instruction"]], p["q"], doc_text(p["doc"]))
-
 def abstention_wave_plan(done, n, model, instructions=None, items=None):
-    instructions = instructions if instructions is not None else SYSTEM_INSTRUCTIONS
-    items = items if items is not None else UNANSWERABLE_ITEMS
-    wave1, wave2 = [], []
-    for iname, _ in instructions:
-        pending = []
-        for p in items:
-            already = done.get((model, iname, p["item_id"]), 0)
-            for rep in range(already, n):
-                pending.append((p["item_id"], rep))
-        if not pending:
-            continue
-        warm_item_id, warm_rep = pending[0]
-        wave1.append(encode_abstention_custom_id(warm_item_id, iname, warm_rep))
-        for item_id, rep in pending[1:]:
-            wave2.append(encode_abstention_custom_id(item_id, iname, rep))
-    return wave1, wave2
-
-def run_ungrounded_anthropic_batch(model, prov, n, done, out, seen, total):
-    wave1_ids, wave2_ids = abstention_wave_plan(done, n, model)
-    cell_tally = {}
-
-    def sync_fallback(cid):
-        d = decode_abstention_custom_id(cid)
-        p = ITEM_BY_ID[d["item_id"]]
-        return with_retry(call, model, prov, INSTR_BY_NAME[d["instruction"]], p["q"], doc_text(p["doc"]))
-
-    def process(custom_ids, wave_label):
-        def judge_one(item):
-            cid, answer, snapshot = item
-            d = decode_abstention_custom_id(cid)
-            p = ITEM_BY_ID[d["item_id"]]
-            return d, _abstention_row(model, prov, d["instruction"], p, answer, snapshot, d["rep"])
-        def write_row(res):
-            d, row = res
-            out.write(json.dumps(row) + "\n")
-            out.flush()
-            key = (d["instruction"], d["item_id"])
-            cell_tally.setdefault(key, {})
-            cell_tally[key][row["label"]] = cell_tally[key].get(row["label"], 0) + 1
-            print(f"    [{wave_label}] {model} / {d['instruction']} / {d['item_id']} rep{d['rep']} -> {row['label']}", flush=True)
-        push, flush = _chunked_judge_sink(judge_one, write_row)
-        _run_anthropic_wave(model, prov, custom_ids, wave_label, _abstention_batch_request, sync_fallback, push)
-        flush()
-
-    process(wave1_ids, "abstention wave 1 (cache warm)")
-    process(wave2_ids, "abstention wave 2 (cache read)")
-
-    for iname, instr in SYSTEM_INSTRUCTIONS:
-        for p in UNANSWERABLE_ITEMS:
-            seen += 1
-            already = done.get((model, iname, p["item_id"]), 0)
-            if already >= n:
-                status = "complete (resumed)"
-            else:
-                tally = cell_tally.get((iname, p["item_id"]), {})
-                status = " ".join(f"{k}={v}" for k, v in sorted(tally.items()))
-            print(f"  [{seen}/{total}] {model} / {iname} / P{p['prior_strength']} {p['item_id']}  {status}", flush=True)
-    return seen
+    return _sweep_wave_plan(ABSTENTION_SWEEP, done, n, model, instructions, items)
 
 def run_ungrounded(n):
-    if not print_abstention_plan(n):
-        sys.exit(1)
-    done = load_done(ABSTENTION_RESULTS, ["model", "instruction", "item_id"])
-    out = open(ABSTENTION_RESULTS, "a")
-    total = len(MODELS) * len(SYSTEM_INSTRUCTIONS) * len(UNANSWERABLE_ITEMS)
-    seen = 0
-    for model, prov in MODELS:
-        if prov == "anthropic":
-            seen = run_ungrounded_anthropic_batch(model, prov, n, done, out, seen, total)
-            continue
-        for iname, instr in SYSTEM_INSTRUCTIONS:
-            for p in UNANSWERABLE_ITEMS:
-                seen += 1
-                key = (model, iname, p["item_id"])
-                already = done.get(key, 0)
-                cell = {}
-                for rep_i in range(already, n):
-                    answer, snapshot = with_retry(call, model, prov, instr, p["q"], doc_text(p["doc"]))
-                    row = _abstention_row(model, prov, iname, p, answer, snapshot, rep_i)
-                    out.write(json.dumps(row) + "\n")
-                    out.flush()
-                    cell[row["label"]] = cell.get(row["label"], 0) + 1
-                status = "complete (resumed)" if already >= n else " ".join(f"{k}={v}" for k, v in sorted(cell.items()))
-                print(f"  [{seen}/{total}] {model} / {iname} / P{p['prior_strength']} {p['item_id']}  {status}", flush=True)
-    out.close()
-    summarize_ungrounded()
+    _run_sweep(ABSTENTION_SWEEP, n)
 
 # Matched Absence Test: does the model abstain when the SAME fact's answering clause is deleted from its document?
 
@@ -1136,96 +962,11 @@ def _absence_row(model, prov, iname, fact, deleted_doc, answer, snapshot=None, r
             "verbatim_abstention": "not in document" in answer.lower(),
             "label": label}
 
-def _absence_batch_request(model, custom_id):
-    d = decode_absence_custom_id(custom_id)
-    fact = FACT_BY_NAME[d["fact"]]
-    return build_batch_message_params(model, INSTR_BY_NAME[d["instruction"]], fact["q"], absence_doc(fact))
-
 def absence_wave_plan(done, n, model, instructions=None, ladders=None):
-    instructions = instructions if instructions is not None else SYSTEM_INSTRUCTIONS
-    ladders = ladders if ladders is not None else PERTURBATION_LADDERS
-    wave1, wave2 = [], []
-    for iname, _ in instructions:
-        for f in ladders:
-            already = done.get((model, iname, f["fact"]), 0)
-            if already >= n:
-                continue
-            reps = list(range(already, n))
-            wave1.append(encode_absence_custom_id(f["fact"], iname, reps[0]))
-            for rep in reps[1:]:
-                wave2.append(encode_absence_custom_id(f["fact"], iname, rep))
-    return wave1, wave2
-
-def run_absence_anthropic_batch(model, prov, n, done, out, seen, total):
-    wave1_ids, wave2_ids = absence_wave_plan(done, n, model)
-    cell_tally = {}
-
-    def sync_fallback(cid):
-        d = decode_absence_custom_id(cid)
-        fact = FACT_BY_NAME[d["fact"]]
-        return with_retry(call, model, prov, INSTR_BY_NAME[d["instruction"]], fact["q"], absence_doc(fact))
-
-    def process(custom_ids, wave_label):
-        def judge_one(item):
-            cid, answer, snapshot = item
-            d = decode_absence_custom_id(cid)
-            fact = FACT_BY_NAME[d["fact"]]
-            return d, _absence_row(model, prov, d["instruction"], fact, absence_doc(fact), answer, snapshot, d["rep"])
-        def write_row(res):
-            d, row = res
-            out.write(json.dumps(row) + "\n")
-            out.flush()
-            key = (d["instruction"], d["fact"])
-            cell_tally.setdefault(key, {})
-            cell_tally[key][row["label"]] = cell_tally[key].get(row["label"], 0) + 1
-            print(f"    [{wave_label}] {model} / {d['instruction']} / {d['fact']} absent rep{d['rep']} -> {row['label']}", flush=True)
-        push, flush = _chunked_judge_sink(judge_one, write_row)
-        _run_anthropic_wave(model, prov, custom_ids, wave_label, _absence_batch_request, sync_fallback, push)
-        flush()
-
-    process(wave1_ids, "absence wave 1 (cache warm)")
-    process(wave2_ids, "absence wave 2 (cache read)")
-
-    for iname, instr in SYSTEM_INSTRUCTIONS:
-        for f in PERTURBATION_LADDERS:
-            seen += 1
-            already = done.get((model, iname, f["fact"]), 0)
-            if already >= n:
-                status = "complete (resumed)"
-            else:
-                tally = cell_tally.get((iname, f["fact"]), {})
-                status = " ".join(f"{k}={v}" for k, v in sorted(tally.items()))
-            print(f"  [{seen}/{total}] {model} / {iname} / {f['fact']} absent  {status}", flush=True)
-    return seen
+    return _sweep_wave_plan(ABSENCE_SWEEP, done, n, model, instructions, ladders)
 
 def run_absence(n):
-    if not print_absence_plan(n):
-        sys.exit(1)
-    done = load_done(ABSENCE_RESULTS, ["model", "instruction", "fact"])
-    out = open(ABSENCE_RESULTS, "a")
-    total = len(MODELS) * len(SYSTEM_INSTRUCTIONS) * len(PERTURBATION_LADDERS)
-    seen = 0
-    for model, prov in MODELS:
-        if prov == "anthropic":
-            seen = run_absence_anthropic_batch(model, prov, n, done, out, seen, total)
-            continue
-        for iname, instr in SYSTEM_INSTRUCTIONS:
-            for f in PERTURBATION_LADDERS:
-                seen += 1
-                key = (model, iname, f["fact"])
-                already = done.get(key, 0)
-                cell = {}
-                ddoc = absence_doc(f)
-                for rep_i in range(already, n):
-                    answer, snapshot = with_retry(call, model, prov, instr, f["q"], ddoc)
-                    row = _absence_row(model, prov, iname, f, ddoc, answer, snapshot, rep_i)
-                    out.write(json.dumps(row) + "\n")
-                    out.flush()
-                    cell[row["label"]] = cell.get(row["label"], 0) + 1
-                status = "complete (resumed)" if already >= n else " ".join(f"{k}={v}" for k, v in sorted(cell.items()))
-                print(f"  [{seen}/{total}] {model} / {iname} / {f['fact']} absent  {status}", flush=True)
-    out.close()
-    summarize_absence()
+    _run_sweep(ABSENCE_SWEEP, n)
 
 def summarize_absence():
     df = pd.read_json(ABSENCE_RESULTS, lines=True)
@@ -1427,6 +1168,171 @@ def summarize_ungrounded():
                                 f"{hi:.4f}", f"{lex.get(k,0)/tot[k]:.4f}", f"{vabst.get(k,0)/tot[k]:.4f}"])
     print(f"\n  wrote curve to {ABSTENTION_CURVE}")
 
+SweepSpec = namedtuple("SweepSpec", ["name", "results", "done_fields", "plan", "dataset", "units", "warm",
+                                     "encode", "decode", "prompt", "row", "wave_label", "cell_label", "summarize"])
+
+def _caveat_unit_decode(cid):
+    d = decode_caveat_custom_id(cid)
+    return (d["fact"], d["severity"]), d["instruction"], d["rep"]
+
+def _caveat_prompt(unit):
+    fact, step = _caveat_step(*unit)
+    return fact["q"], step_doc(fact, step)
+
+def _caveat_spec_row(model, prov, iname, unit, doc, answer, snapshot, rep):
+    fact, step = _caveat_step(*unit)
+    return _caveat_row(model, prov, iname, fact, step, answer, snapshot, rep)
+
+def _abstention_unit_decode(cid):
+    d = decode_abstention_custom_id(cid)
+    return (d["item_id"],), d["instruction"], d["rep"]
+
+def _abstention_prompt(unit):
+    p = ITEM_BY_ID[unit[0]]
+    return p["q"], doc_text(p["doc"])
+
+def _abstention_spec_row(model, prov, iname, unit, doc, answer, snapshot, rep):
+    return _abstention_row(model, prov, iname, ITEM_BY_ID[unit[0]], answer, snapshot, rep)
+
+def _absence_unit_decode(cid):
+    d = decode_absence_custom_id(cid)
+    return (d["fact"],), d["instruction"], d["rep"]
+
+def _absence_prompt(unit):
+    fact = FACT_BY_NAME[unit[0]]
+    return fact["q"], absence_doc(fact)
+
+def _absence_spec_row(model, prov, iname, unit, doc, answer, snapshot, rep):
+    return _absence_row(model, prov, iname, FACT_BY_NAME[unit[0]], doc, answer, snapshot, rep)
+
+CAVEAT_SWEEP = SweepSpec("caveat", CAVEAT_RESULTS, ["model", "instruction", "fact", "severity"], print_plan,
+                         lambda: PERTURBATION_LADDERS,
+                         lambda ds: [(f["fact"], s["severity"]) for f in ds for s in f["steps"]], "cell",
+                         lambda u, i, r: encode_caveat_custom_id(u[0], u[1], i, r), _caveat_unit_decode,
+                         _caveat_prompt, _caveat_spec_row,
+                         lambda u: f"{u[0]} S{u[1]}", lambda u: f"{u[0]} S{u[1]}", summarize_caveat)
+
+ABSTENTION_SWEEP = SweepSpec("abstention", ABSTENTION_RESULTS, ["model", "instruction", "item_id"],
+                             print_abstention_plan, lambda: UNANSWERABLE_ITEMS,
+                             lambda ds: [(p["item_id"],) for p in ds], "instruction",
+                             lambda u, i, r: encode_abstention_custom_id(u[0], i, r), _abstention_unit_decode,
+                             _abstention_prompt, _abstention_spec_row,
+                             lambda u: u[0], lambda u: f"P{ITEM_BY_ID[u[0]]['prior_strength']} {u[0]}",
+                             summarize_ungrounded)
+
+ABSENCE_SWEEP = SweepSpec("absence", ABSENCE_RESULTS, ["model", "instruction", "fact"], print_absence_plan,
+                          lambda: PERTURBATION_LADDERS,
+                          lambda ds: [(f["fact"],) for f in ds], "cell",
+                          lambda u, i, r: encode_absence_custom_id(u[0], i, r), _absence_unit_decode,
+                          _absence_prompt, _absence_spec_row,
+                          lambda u: f"{u[0]} absent", lambda u: f"{u[0]} absent", summarize_absence)
+
+def _sweep_wave_plan(spec, done, n, model, instructions=None, dataset=None):
+    instructions = instructions if instructions is not None else SYSTEM_INSTRUCTIONS
+    dataset = dataset if dataset is not None else spec.dataset()
+    units = spec.units(dataset)
+    wave1, wave2 = [], []
+    for iname, _ in instructions:
+        if spec.warm == "instruction":
+            pending = []
+            for u in units:
+                already = done.get((model, iname) + u, 0)
+                for rep in range(already, n):
+                    pending.append((u, rep))
+            if not pending:
+                continue
+            warm_unit, warm_rep = pending[0]
+            wave1.append(spec.encode(warm_unit, iname, warm_rep))
+            for u, rep in pending[1:]:
+                wave2.append(spec.encode(u, iname, rep))
+        else:
+            for u in units:
+                already = done.get((model, iname) + u, 0)
+                if already >= n:
+                    continue
+                reps = list(range(already, n))
+                wave1.append(spec.encode(u, iname, reps[0]))
+                for rep in reps[1:]:
+                    wave2.append(spec.encode(u, iname, rep))
+    return wave1, wave2
+
+def _run_sweep_anthropic_batch(spec, model, prov, n, done, out, seen, total):
+    wave1_ids, wave2_ids = _sweep_wave_plan(spec, done, n, model)
+    cell_tally = {}
+
+    def sync_fallback(cid):
+        unit, iname, rep = spec.decode(cid)
+        q, doc = spec.prompt(unit)
+        return with_retry(call, model, prov, INSTR_BY_NAME[iname], q, doc)
+
+    def batch_request(req_model, cid):
+        unit, iname, rep = spec.decode(cid)
+        q, doc = spec.prompt(unit)
+        return build_batch_message_params(req_model, INSTR_BY_NAME[iname], q, doc)
+
+    def process(custom_ids, wave_label):
+        def judge_one(item):
+            cid, answer, snapshot = item
+            unit, iname, rep = spec.decode(cid)
+            q, doc = spec.prompt(unit)
+            return (unit, iname, rep), spec.row(model, prov, iname, unit, doc, answer, snapshot, rep)
+        def write_row(res):
+            (unit, iname, rep), row = res
+            out.write(json.dumps(row) + "\n")
+            out.flush()
+            key = (iname,) + unit
+            cell_tally.setdefault(key, {})
+            cell_tally[key][row["label"]] = cell_tally[key].get(row["label"], 0) + 1
+            print(f"    [{wave_label}] {model} / {iname} / {spec.wave_label(unit)} rep{rep} -> {row['label']}", flush=True)
+        push, flush = _chunked_judge_sink(judge_one, write_row)
+        _run_anthropic_wave(model, prov, custom_ids, wave_label, batch_request, sync_fallback, push)
+        flush()
+
+    process(wave1_ids, f"{spec.name} wave 1 (cache warm)")
+    process(wave2_ids, f"{spec.name} wave 2 (cache read)")
+
+    for iname, instr in SYSTEM_INSTRUCTIONS:
+        for u in spec.units(spec.dataset()):
+            seen += 1
+            already = done.get((model, iname) + u, 0)
+            if already >= n:
+                status = "complete (resumed)"
+            else:
+                tally = cell_tally.get((iname,) + u, {})
+                status = " ".join(f"{k}={v}" for k, v in sorted(tally.items()))
+            print(f"  [{seen}/{total}] {model} / {iname} / {spec.cell_label(u)}  {status}", flush=True)
+    return seen
+
+def _run_sweep(spec, n):
+    if not spec.plan(n):
+        sys.exit(1)
+    done = load_done(spec.results, spec.done_fields)
+    out = open(spec.results, "a")
+    units = spec.units(spec.dataset())
+    total = len(MODELS) * len(SYSTEM_INSTRUCTIONS) * len(units)
+    seen = 0
+    for model, prov in MODELS:
+        if prov == "anthropic":
+            seen = _run_sweep_anthropic_batch(spec, model, prov, n, done, out, seen, total)
+            continue
+        for iname, instr in SYSTEM_INSTRUCTIONS:
+            for u in units:
+                seen += 1
+                key = (model, iname) + u
+                already = done.get(key, 0)
+                cell = {}
+                q, doc = spec.prompt(u)
+                for rep_i in range(already, n):
+                    answer, snapshot = with_retry(call, model, prov, instr, q, doc)
+                    row = spec.row(model, prov, iname, u, doc, answer, snapshot, rep_i)
+                    out.write(json.dumps(row) + "\n")
+                    out.flush()
+                    cell[row["label"]] = cell.get(row["label"], 0) + 1
+                status = "complete (resumed)" if already >= n else " ".join(f"{k}={v}" for k, v in sorted(cell.items()))
+                print(f"  [{seen}/{total}] {model} / {iname} / {spec.cell_label(u)}  {status}", flush=True)
+    out.close()
+    spec.summarize()
+
 def tradeoff_rows(caveat_rows, ungrounded_rows):
     cdf = pd.DataFrame(caveat_rows, columns=["model", "instruction", "severity", "label"])
     udf = pd.DataFrame(ungrounded_rows, columns=["model", "instruction", "prior_strength", "label"])
@@ -1443,14 +1349,17 @@ def tradeoff_rows(caveat_rows, ungrounded_rows):
                                 "abstention_n": len(l), "faithful_rate": float((l["label"] == FAITHFUL).mean()) if not l.empty else None})
     return entries
 
+def _load_jsonl(path, quiet=False):
+    try:
+        return [json.loads(l) for l in open(path)]
+    except FileNotFoundError:
+        if not quiet:
+            print(f"  no {path} yet")
+        return None
+
 def tradeoff():
-    def load(path):
-        try:
-            return [json.loads(l) for l in open(path)]
-        except FileNotFoundError:
-            return None
-    caveat_rows = load(CAVEAT_RESULTS)
-    ungrounded_rows = load(ABSTENTION_RESULTS)
+    caveat_rows = _load_jsonl(CAVEAT_RESULTS, quiet=True)
+    ungrounded_rows = _load_jsonl(ABSTENTION_RESULTS, quiet=True)
     if caveat_rows is None:
         print(f"  no {CAVEAT_RESULTS} yet -- run: python3 harness.py caveat [N]")
     if ungrounded_rows is None:
@@ -1503,39 +1412,27 @@ def _print_vector_section(title, cells, level_prefix):
         print(f"  {model:<24} {iname:<30} {level_prefix}{lv}  rate {p:.2f}   {vec}{tail}")
 
 def vectors():
-    def load(path):
-        try:
-            return [json.loads(l) for l in open(path)]
-        except FileNotFoundError:
-            print(f"  no {path} yet")
-            return None
     print("PER-UNIT VECTORS -- the fact/item, not the rep, is the experimental unit: reps within a unit are correlated")
     print("  ICC = within-unit correlation (ANOVA method-of-moments); n_eff = design-effect-adjusted sample size")
     print("  ICC is unidentifiable in all-zero/all-one cells; no ICC shown there")
     print()
-    caveat_rows = load(CAVEAT_RESULTS)
+    caveat_rows = _load_jsonl(CAVEAT_RESULTS)
     if caveat_rows:
         _print_vector_section("CAVEAT -- questioned x/n per fact, per model x instruction x severity",
                               vector_cells(caveat_rows, "fact", "severity", QUESTIONED), "S")
         print()
-    abstention_rows = load(ABSTENTION_RESULTS)
+    abstention_rows = _load_jsonl(ABSTENTION_RESULTS)
     if abstention_rows:
         _print_vector_section("ABSTENTION -- faithful x/n per item, per model x instruction x prior strength",
                               vector_cells(abstention_rows, "item_id", "prior_strength", FAITHFUL), "P")
         print()
-    absence_rows = load(ABSENCE_RESULTS)
+    absence_rows = _load_jsonl(ABSENCE_RESULTS)
     if absence_rows:
         _print_vector_section("MATCHED ABSENCE -- faithful x/n per fact, per model x instruction",
                               vector_cells(absence_rows, "fact", "evidence_state", FAITHFUL), "")
 
 def matched_readout():
-    def load(path):
-        try:
-            return [json.loads(l) for l in open(path)]
-        except FileNotFoundError:
-            print(f"  no {path} yet")
-            return None
-    caveat_rows, absence_rows = load(CAVEAT_RESULTS), load(ABSENCE_RESULTS)
+    caveat_rows, absence_rows = _load_jsonl(CAVEAT_RESULTS), _load_jsonl(ABSENCE_RESULTS)
     if not caveat_rows or not absence_rows:
         return
     print("MATCHED EVIDENCE-STATE READOUT -- same facts, three states; selective = per-fact majority on all three")
@@ -1693,18 +1590,18 @@ def _analysis_dataset(tag, cav_rows, ab_rows, models, facts, fact_doc):
             cells[i] = (_rate(p, is_q)[2], _rate(a, is_f)[2])
         print(f"  {m}: best 2x2 = {best} selective {bk}/{bn} (O1 {cells[best][0]:.2f}, O3 {cells[best][1]:.2f})"
               f"  |  SELECTIVE_AUDIT {ka}/{na} (O1 {cells['SELECTIVE_AUDIT'][0]:.2f}, O3 {cells['SELECTIVE_AUDIT'][1]:.2f})")
-    print("\n--- SEVERITY CONTRASTS: questioned / endorsed rate at S0 vs S1-2 vs S3-5 ---")
-    for i in arms:
-        for m in models:
-            g = [r for r in cav_rows if r["model"] == m and r["instruction"] == i]
-            if not g:
-                continue
-            qs, es = [], []
-            for band in ((0,), (1, 2), (3, 4, 5)):
-                b = [r for r in g if r["severity"] in band]
-                qs.append(_rate(b, is_q)[2])
-                es.append(_rate(b, is_e)[2])
-            print(f"  {i:32} {m:16} Q: {qs[0]:.2f} / {qs[1]:.2f} / {qs[2]:.2f}   E: {es[0]:.2f} / {es[1]:.2f} / {es[2]:.2f}")
+    for metric, pred in (("QUESTIONED", is_q), ("ENDORSED", is_e)):
+        print(f"\n--- SEVERITY CONTRASTS ({metric}): rate at S0 / S1 / S2 / S3 / S4 / S5 ---")
+        for i in arms:
+            for m in models:
+                g = [r for r in cav_rows if r["model"] == m and r["instruction"] == i]
+                if not g:
+                    continue
+                cells = []
+                for s in SEVERITIES:
+                    b = [r for r in g if r["severity"] == s]
+                    cells.append(f"{_rate(b, pred)[2]:.2f}")
+                print(f"  {i:32} {m:16} " + " / ".join(cells))
     print("\n--- PER-DOCUMENT: O1 (S1-5 questioned) and O3 (absence faithful) per doc, instruction x model ---")
     for i in arms:
         for m in models:

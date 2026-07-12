@@ -13,12 +13,13 @@ from harness import (wilson_interval, PERTURBATION_LADDERS, SEVERITIES, validate
                      ABSENCE_PATCHES, absence_doc, validate_absence, _absence_row,
                      encode_absence_custom_id, decode_absence_custom_id, absence_wave_plan,
                      total_steps, total_cells, classify, lexical_caveat, UNANSWERABLE_ITEMS, validate_items,
-                     load_done, tradeoff_rows, PRIOR_STRENGTHS, cluster_icc, vector_cells,
+                     load_done, tradeoff_rows, cluster_icc, vector_cells,
                      probe_targets, _probe_row, probe_item_rates, measured_prior_bins, prior_bin, prior_bin_label,
                      encode_caveat_custom_id, decode_caveat_custom_id,
                      encode_abstention_custom_id, decode_abstention_custom_id,
                      caveat_wave_plan, abstention_wave_plan, concurrent_map, pilot_selection,
                      _run_anthropic_wave, _chunked_judge_sink, build_manifest,
+                     SweepSpec, CAVEAT_SWEEP, ABSTENTION_SWEEP, ABSENCE_SWEEP, _sweep_wave_plan, _run_sweep,
                      sign_test, bootstrap_ci, unit_counts, unit_rate_map, factorial_effects, _selective)
 from judge import (cohens_kappa, FAITHFUL, UNGROUNDED,
                    judge_gate, anchor_disagreements, GATE_PASS, GATE_FAIL, KAPPA_THRESHOLD,
@@ -1017,6 +1018,69 @@ class TestBuildBatchMessageParams(unittest.TestCase):
         params = build_batch_message_params("claude-sonnet-5", "sys", "q?", "DOC")
         content = params["messages"][0]["content"]
         self.assertEqual(content[0]["text"] + content[1]["text"], "Passage:\nDOC\n\nQuestion: q?")
+
+
+class TestSweepSpecs(unittest.TestCase):
+    def test_codec_roundtrip_and_done_key_arity(self):
+        for spec, unit in ((CAVEAT_SWEEP, ("factx", 3)), (ABSTENTION_SWEEP, ("itemx",)), (ABSENCE_SWEEP, ("factx",))):
+            cid = spec.encode(unit, "FLAG_INVITING", 2)
+            self.assertEqual(spec.decode(cid), (unit, "FLAG_INVITING", 2))
+            self.assertEqual(len(spec.done_fields), 2 + len(unit))
+
+    def test_units_match_datasets(self):
+        self.assertEqual(len(CAVEAT_SWEEP.units(CAVEAT_SWEEP.dataset())), total_steps())
+        self.assertEqual(len(ABSTENTION_SWEEP.units(ABSTENTION_SWEEP.dataset())), len(UNANSWERABLE_ITEMS))
+        self.assertEqual(len(ABSENCE_SWEEP.units(ABSENCE_SWEEP.dataset())), len(PERTURBATION_LADDERS))
+
+    def test_prompt_doc_matches_judged_doc(self):
+        for spec, unit in ((ABSENCE_SWEEP, (PERTURBATION_LADDERS[0]["fact"],)),
+                           (ABSTENTION_SWEEP, (UNANSWERABLE_ITEMS[0]["item_id"],))):
+            with mock.patch("harness.abstention_judge", return_value=(True, "r", "s")) as j:
+                q, doc = spec.prompt(unit)
+                spec.row("m", "openai", "FLAG_INVITING", unit, doc, "answer", "snap", 0)
+                self.assertEqual(j.call_args[0][0], q)
+                self.assertEqual(j.call_args[0][1], doc)
+
+
+class TestRunSweep(unittest.TestCase):
+    def _fake_spec(self, path):
+        units = [("u1",), ("u2",)]
+        return SweepSpec(
+            "fake", path, ["model", "instruction", "u"],
+            lambda n: True, lambda: units, lambda ds: ds, "cell",
+            lambda u, i, r: f"fk-{u[0]}-{i}-r{r}",
+            lambda cid: ((cid.split("-")[1],), cid.split("-")[2], int(cid.split("-")[3][1:])),
+            lambda u: ("q?", "DOC"),
+            lambda model, prov, iname, u, doc, answer, snapshot, rep:
+                {"model": model, "instruction": iname, "u": u[0], "rep": rep, "answer": answer, "label": "ok"},
+            lambda u: u[0], lambda u: u[0], lambda: None)
+
+    def test_generic_wave_plan_both_strategies(self):
+        spec = self._fake_spec("unused")
+        done = {("m", "I", "u1"): 1}
+        w1, w2 = _sweep_wave_plan(spec, done, 2, "m", [("I", "sys")], [("u1",), ("u2",)])
+        self.assertEqual(w1, ["fk-u1-I-r1", "fk-u2-I-r0"])
+        self.assertEqual(w2, ["fk-u2-I-r1"])
+        w1, w2 = _sweep_wave_plan(spec._replace(warm="instruction"), done, 2, "m", [("I", "sys")], [("u1",), ("u2",)])
+        self.assertEqual(w1, ["fk-u1-I-r1"])
+        self.assertEqual(w2, ["fk-u2-I-r0", "fk-u2-I-r1"])
+
+    def test_run_sweep_writes_then_resumes(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = os.path.join(td, "r.jsonl")
+            spec = self._fake_spec(path)
+            with mock.patch("harness.MODELS", [("m", "openai")]), \
+                 mock.patch("harness.SYSTEM_INSTRUCTIONS", [("I", "sys")]), \
+                 mock.patch("harness.with_retry", return_value=("ans", "snap")) as wr:
+                _run_sweep(spec, 1)
+                self.assertEqual(wr.call_count, 2)
+                with open(path) as f:
+                    rows = [json.loads(l) for l in f]
+                self.assertEqual([r["u"] for r in rows], ["u1", "u2"])
+                _run_sweep(spec, 1)
+                self.assertEqual(wr.call_count, 2)
+                with open(path) as f:
+                    self.assertEqual(len(f.readlines()), 2)
 
 
 if __name__ == "__main__":

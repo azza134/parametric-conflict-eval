@@ -32,7 +32,7 @@ SELECTIVE_AUDIT: "Answer using the passage. If the passage does not state the an
 - Under SOURCE_EXCLUSIVE (a standard strict-grounding RAG system instruction), parametric leakage is zero across all tested models and absence faithfulness is the highest of any instruction, but the error-flagging rate is zero at every severity, a clear trade-off. All models repeat physically impossible values (500-metre grass, one toilet per 1,000,000 workers) without comment under this system instruction. 
 - The WEAK_GROUNDING instruction is very ineffective, recording the worst absence faithfulness for every model and error-flagging rates no higher than 0.18.
 - The FLAG_INVITING instruction had the highest observed error-flagging but is extremely prone to false endorsements on Sonnet 5 specifically, most dangerously endorsing perturbed values with reference to external authorities. On the other hand, the older GPT models tested on the FLAG_INVITING instruction did not generate any false endorsements at all at the cost of significantly lower error-flagging rates. This provides an early indication that false endorsements are a new behaviour in frontier models, although only one frontier model was tested. 
-- The SOURCE_EXCLUSIVE_FLAG_INVITING instruction matched SOURCE_EXCLUSIVE's zero parametric leakage and near-identical absence faithfulness while generally avoiding endorsements, but all models recorded lower error-flagging rates under the SOURCE_EXCLUSIVE_FLAG_INVITING instruction than its FLAG_INVITING counterpart. 
+- The SOURCE_EXCLUSIVE_FLAG_INVITING instruction matched SOURCE_EXCLUSIVE's zero parametric leakage and near-identical absence faithfulness while generally avoiding endorsements, but all models recorded lower error-flagging rates under the SOURCE_EXCLUSIVE_FLAG_INVITING instruction than its FLAG_INVITING counterpart.
 
 Full tables, confidence intervals and provenance: [results.md](results.md). Complete per-cell grids: `caveat_curve.csv` / `abstention_curve.csv`. The v1 single-document write-up (raw examples and limitations included) lives in [archive/results-v1.md](archive/results-v1.md).
 
@@ -68,22 +68,23 @@ The benchmark can be customised in `config.py`, including models tested, samples
 
 Every answer is scored by an LLM judge, and no judge scores anything before being certified against a human-labelled gold set with a zero-tolerance anchor check (obvious cases must all be judged correctly) plus a Cohen's kappa threshold >= 0.80 against the human labels. Current certifications for GPT-5.4-mini: stance/corroboration kappa 0.98/0.91 (0/30 anchors incorrect, 138-row gold), abstention judge kappa 0.97 (0/54 anchors incorrect, 80-row gold). 
 
-
 ## Repo map
 
-| File | Role |
-|---|---|
-| `config.py` | every customisable setting and shared functions |
-| `harness.py` | the three sweeps, the prior-strength probe and the pre-registered analysis |
-| `judge.py` | both judges and their certification pipeline |
-| `test_logic.py` | 156 offline tests verifying the functions |
+
+| File                                                                   | Role                                                                                                                                          |
+| ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `config.py`                                                            | every customisable setting and shared functions                                                                                               |
+| `harness.py`                                                           | the three sweeps, the prior-strength probe and the pre-registered analysis                                                                    |
+| `judge.py`                                                             | both judges and their certification pipeline                                                                                                  |
+| `test_logic.py`                                                        | 156 offline tests verifying the functions                                                                                                     |
 | `document1_consent.txt` / `document2_epl.txt` / `document3_liquor.txt` | the three source documents: a NSW development consent, an environment protection licence, a liquor licence (`*_source.pdf` are the originals) |
-| `caveat_gold.json` / `abstention_gold.json` | human-labelled gold sets the judges are certified against |
-| `*_results_v2.jsonl` / `matched_absence_results_v2.jsonl` | every graded answer in the v2 grid, with model-snapshot and run provenance |
-| `prior_probe_results.jsonl` | doc-free prior-strength probe (measures what each model recalls without the document) |
-| `run_manifest.json` | the pre-registered run manifest |
-| `results.md` + `*_curve.csv` | published findings and their full grids |
-| `archive/results-v1.md` | the v1 single-document study, preserved verbatim, with its trade-off scatter plot and generator |
+| `caveat_gold.json` / `abstention_gold.json`                            | human-labelled gold sets the judges are certified against                                                                                     |
+| `*_results_v2.jsonl` / `matched_absence_results_v2.jsonl`              | every graded answer in the v2 grid, with model-snapshot and run provenance                                                                    |
+| `prior_probe_results.jsonl`                                            | doc-free prior-strength probe (measures what each model recalls without the document)                                                         |
+| `run_manifest.json`                                                    | the pre-registered run manifest                                                                                                               |
+| `results.md` + `*_curve.csv`                                           | published findings and their full grids                                                                                                       |
+| `archive/results-v1.md`                                                | the v1 single-document study, preserved verbatim, with its trade-off scatter plot and generator                                               |
+
 
 ## Status / limitations
 
