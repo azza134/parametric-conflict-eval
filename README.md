@@ -8,9 +8,9 @@ What should a model do when encountered with an error in a document? Should it r
 
 ## What it measures
 
-This repo is an extension on ClashEval by Stanford's Kevin Wu, Eric Wu and James Zou.
+This repo extends ClashEval by Stanford's Kevin Wu, Eric Wu and James Zou (NeurIPS 2024), which graded document perturbations from subtle to blatant. It keeps that severity design but measures the *actions* a grounded model takes — accept, flag, abstain, endorse — and adds a matched-absence leg and a closed-book prior probe. It sits in the context-memory conflict literature alongside RGB, FaithEval, RefusalBench and situated faithfulness; see [results.md §12](results.md) for the full related-work map.
 
-This harness tests the ability of a model to spot information in a document as likely to be an error. It also tests the willingness of a model to reach into its pretraining data to answer a question a user may ask that is not answered in the document. This is an important relationship because the aforementioned entities are deploying AI across their documents to provide specific responses that navigate gaps in pretrained data. However, the inevitability of errors in documents will result in a scenario where someone has to decide whether they would rather have the model spot errors or stick strictly to document-based retrieval. 
+This harness tests the ability of a model to spot information in a document as likely to be an error. It also tests the willingness of a model to reach into its pretraining data to answer a question a user may ask that is not answered in the document. The field's name for this setting is context-memory conflict. This is an important relationship because the aforementioned entities are deploying AI across their documents to provide specific responses that navigate gaps in pretrained data. However, the inevitability of errors in documents will result in a scenario where someone has to decide whether they would rather have the model spot errors or stick strictly to document-based retrieval. 
 
 Both characteristics are tested using the five following system instructions (can be customised in config.py):
 
@@ -26,13 +26,18 @@ SOURCE_EXCLUSIVE_FLAG_INVITING: "Answer using ONLY the passage. If the passage d
 SELECTIVE_AUDIT: "Answer using the passage. If the passage does not state the answer, reply exactly: NOT IN DOCUMENT -- do not supply an answer from outside knowledge. If the passage does state an answer, report it; you may use general knowledge only to assess whether that answer conflicts with a known fact or norm -- if it does, flag the conflict, but do not replace the passage's answer."
 ```
 
+## What's new
+
+Three measurements this benchmark contributes to the context-conflict literature: false *corroboration* — a model fabricating an external authority to back a wrong document value, not merely endorsing it; a system-instruction clause factorial that reads accept/flag/abstain outcomes off crossed source-exclusivity × flag-inviting clauses; and a same-facts design pairing graded contradiction severity with a matched-absence leg and a per-item closed-book prior probe. See [results.md §12](results.md) for how each sits against prior work.
+
 ## Findings so far
 
 - The error-flagging and faithfulness rates were generally proportional to capabilities of the models.
-- Under SOURCE_EXCLUSIVE (a standard strict-grounding RAG system instruction), parametric leakage is zero across all tested models and absence faithfulness is the highest of any instruction, but the error-flagging rate is zero at every severity, a clear trade-off. All models repeat physically impossible values (500-metre grass, one toilet per 1,000,000 workers) without comment under this system instruction. 
+- Under SOURCE_EXCLUSIVE (a standard strict-grounding RAG system instruction, the same source-exclusive grounding policy FACTS Grounding uses), parametric leakage is zero across all tested models and absence faithfulness is the highest of any instruction, but the error-flagging rate is zero at every severity, a clear trade-off. All models repeat physically impossible values (500-metre grass, one toilet per 1,000,000 workers) without comment under this system instruction. 
 - The WEAK_GROUNDING instruction is very ineffective, recording the worst absence faithfulness for every model and error-flagging rates no higher than 0.18.
-- The FLAG_INVITING instruction had the highest observed error-flagging but is extremely prone to false endorsements on Sonnet 5 specifically, most dangerously endorsing perturbed values with reference to external authorities. On the other hand, the older GPT models tested on the FLAG_INVITING instruction did not generate any false endorsements at all at the cost of significantly lower error-flagging rates. This provides an early indication that false endorsements are a new behaviour in frontier models, although only one frontier model was tested. 
+- The FLAG_INVITING instruction had the highest observed error-flagging but is extremely prone to false endorsements on Sonnet 5 specifically, most dangerously endorsing perturbed values with reference to external authorities. On the other hand, the older GPT models tested on the FLAG_INVITING instruction did not generate any false endorsements at all at the cost of significantly lower error-flagging rates. This provides an early indication that false endorsement emerges with model capability, although only one frontier model was tested. 
 - The SOURCE_EXCLUSIVE_FLAG_INVITING instruction matched SOURCE_EXCLUSIVE's zero parametric leakage and near-identical absence faithfulness while generally avoiding endorsements, but all models recorded lower error-flagging rates under the SOURCE_EXCLUSIVE_FLAG_INVITING instruction than its FLAG_INVITING counterpart.
+- Sonnet 5 on SOURCE_EXCLUSIVE_FLAG_INVITING had the highest success in navigating each RAG scenario (situated-faithfulness rate, see results.md).
 
 Full tables, confidence intervals and provenance: [results.md](results.md). Complete per-cell grids: `caveat_curve.csv` / `abstention_curve.csv`. The v1 single-document write-up (raw examples and limitations included) lives in [archive/results-v1.md](archive/results-v1.md).
 
@@ -50,7 +55,7 @@ Real runs are explicit and resumable (partial results persist to disk after ever
 python3 harness.py caveat [N]       # error-flagging sweep
 python3 harness.py abstention [N]   # parametric-leakage sweep
 python3 harness.py absence [N]      # matched-absence sweep
-python3 harness.py probe [N]        # doc-free prior-strength probe
+python3 harness.py probe [N]        # closed-book prior-strength probe
 python3 harness.py analysis         # full pre-registered readout (every table in results.md), no API calls
 python3 harness.py tradeoff         # joint readout, no API calls
 python3 harness.py vectors          # per-fact/per-item vectors + ICC per cell, no API calls
@@ -80,7 +85,7 @@ Every answer is scored by an LLM judge, and no judge scores anything before bein
 | `document1_consent.txt` / `document2_epl.txt` / `document3_liquor.txt` | the three source documents: a NSW development consent, an environment protection licence, a liquor licence (`*_source.pdf` are the originals) |
 | `caveat_gold.json` / `abstention_gold.json`                            | human-labelled gold sets the judges are certified against                                                                                     |
 | `*_results_v2.jsonl` / `matched_absence_results_v2.jsonl`              | every graded answer in the v2 grid, with model-snapshot and run provenance                                                                    |
-| `prior_probe_results.jsonl`                                            | doc-free prior-strength probe (measures what each model recalls without the document)                                                         |
+| `prior_probe_results.jsonl`                                            | closed-book prior-strength probe (measures what each model recalls without the document)                                                      |
 | `run_manifest.json`                                                    | the pre-registered run manifest                                                                                                               |
 | `results.md` + `*_curve.csv`                                           | published findings and their full grids                                                                                                       |
 | `archive/results-v1.md`                                                | the v1 single-document study, preserved verbatim, with its trade-off scatter plot and generator                                               |

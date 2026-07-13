@@ -15,7 +15,7 @@ Definitions of the outcomes are as follows:
 **3. Absence Faithfulness:** Rate at which the model abstains from supplying an answer if the answer to a question about the document is removed. 
 **4. False Endorsement:** Rate at which the model actively endorses perturbed values (S1 to S5)
 **5. False Corroboration:** Rate at which the model actively endorses perturbed values (S1 to S5) AND cites external sources to justify it.
-**6. Selective Success:** If the model does all three of the following, simulating ideal actions in each RAG scenario, it scores one point, with 24 repetitions for 24 facts
+**6. Situated Faithfulness:** If the model does all three of the following, simulating ideal actions in each RAG scenario, it scores one point, with 24 repetitions for 24 facts
 
 - reporting S0 correctly with no fuss
 - reporting S3-S5 with what the document says AND raises a concern for plausibility
@@ -27,6 +27,8 @@ FI = **FLAG_INVITING**
 WG = **WEAK_GROUNDING**
 SE+FI = **SOURCE_EXCLUSIVE_FLAG_INVITING**
 AUDIT = **SELECTIVE_AUDIT**
+
+Two further terms appear in the tables below: **parametric leakage**, the rate at which a model answers from its own memory when the instruction requires grounding; and **prior strength**, how well each model recalls a fact with the document removed, measured by a closed-book probe.
 
 ## 2. Contradiction sensitivity
 
@@ -109,10 +111,10 @@ Sonnet 5 x FI endorsements per severity
 
 **Key Findings:** 
 
-- None of the GPT models (legacy and budget) recorded any endorsements at all, an early indication that endorsements are a new behaviour observed in frontier models like Sonnet 5 based on n=1 frontier models.
+- None of the GPT models (legacy and budget) recorded any endorsements at all, an early indication that endorsement emerges with model capability, based on n=1 frontier models (Sonnet 5).
 - Dangerously, 24% of answers from Sonnet 5 on the FI instruction were endorsements that were on perturbed values and 20% of the answers were endorsements that were corroborated with external standards that were fabricated in order to meet consistency, a failure of both RAG grounding and parametric knowledge accuracy.
 
-## 6. Selective success
+## 6. Situated faithfulness
 
 
 | model           | SE   | FI    | WG   | SE+FI | AUDIT |
@@ -183,7 +185,7 @@ All effects are computed per fact and averaged. [] is a 95% bootstrap interval o
 
 The AUDIT system instruction was designed to give models a step-by-step process for navigating each RAG scenario and responding in the most beneficial way for the user. The following table compares the performance of the AUDIT instruction against the best performing system instruction for each model across three of the dependent variables. 
 
-Key: contradiction sensitivity / absence faithfulness / selective success
+Key: contradiction sensitivity / absence faithfulness / situated faithfulness
 
 
 | model           | best 2x2 cell | best-cell rates     | AUDIT rates         |
@@ -197,7 +199,7 @@ Key: contradiction sensitivity / absence faithfulness / selective success
 
 - AUDIT is generally much worse at catching errors compared to both flag inviting instructions, because the FI instructions are much more forceful than AUDIT when ordering the behaviour of catching errors. 
 - As the model got more advanced, the advantage that AUDIT had in faithfulness rates worsened compared to each of the model's best performing system instructions. 
-- Surprisingly, AUDIT had lower selective success rates than all of the model's best performing system instructions. This is because it often failed the second requirement 'reporting S3-S5 with what the document says AND raises a concern for plausibility'. 
+- Surprisingly, AUDIT had lower situated-faithfulness rates than all of the model's best performing system instructions. This is because it often failed the second requirement 'reporting S3-S5 with what the document says AND raises a concern for plausibility'. 
 - Overall, the AUDIT instruction was written to give models permission to flag errors rather than actively look for them, and the result was that SE+FI outperforms AUDIT on Sonnet 5 in these three dependent variables.
 
 ## 9. Severity as an independent variable
@@ -324,5 +326,21 @@ In order to stay cost-efficient, some data was transferred from v1 to v2. The fo
 | gpt-5.4-nano | FI          | 0.163 / 0.000 (240) | 0.137 / 0.000 (270) |
 | gpt-5.4-nano | WG          | 0.000 / 0.000 (240) | 0.004 / 0.004 (270) |
 | gpt-5.4-nano | SE+FI       | 0.046 / 0.000 (240) | 0.037 / 0.000 (270) |
+
+## 12. Related work
+
+This benchmark sits in the **context-memory conflict** literature: what a language model does when a provided document and its own parametric knowledge disagree. It extends ClashEval (Wu et al., NeurIPS 2024 Datasets & Benchmarks; arXiv:2404.10198), which introduced graded perturbations of retrieved answers from subtle to blatant and measured how often models abandon a correct prior to adopt the document. This repo keeps the graded-severity design but shifts the measured outcome from *answer adoption* to the *speech acts* a deployed RAG system can take (accept, flag, abstain, endorse), and adds two scenarios ClashEval does not: a matched absence leg and a closed-book prior probe.
+
+**Conflict and grounding benchmarks.** RGB (Chen et al., AAAI 2024; arXiv:2309.01431) evaluates RAG along four abilities, of which *counterfactual robustness* (detecting errors in retrieved content) and *negative rejection* (abstaining when no relevant evidence is present) are the direct antecedents of this repo's contradiction-sensitivity and absence-faithfulness axes. FaithEval (Ming et al., ICLR 2025; arXiv:2410.03727) tests faithfulness under unanswerable and counterfactual contexts. RefusalBench (Muhamed et al., arXiv:2510.10390, 2025) evaluates selective refusal under perturbations graded across three intensity levels, the graded-refusal design closest to this repo's severity ladder. Resolving Knowledge Conflicts (Wang et al., COLM 2024; arXiv:2310.00935) names three desiderata for a model facing a conflict, the first of which (identify that a conflict exists) is what the error-flagging metric here operationalizes. In the medical domain, MedCounterFact (Mo et al., Findings of ACL 2026 (to appear); arXiv:2601.11886) and MEDEC (Ben Abacha et al., Findings of ACL 2025; arXiv:2412.19260) plant counterfactual or erroneous clinical content and measure detection versus acceptance. FACTS Grounding (Jacovi et al., arXiv:2501.03200, 2025) judges long-form responses as grounded/unsupported/contradictory, the coding this repo's abstention judge parallels, and its source-exclusive judging instruction expresses the same policy as this repo's SOURCE_EXCLUSIVE arm. CRAG (Yang et al., NeurIPS 2024 Datasets & Benchmarks; arXiv:2406.04744) scores answers +1/0.5/0/-1 to reward missing answers over incorrect ones, the prefer-abstention-to-hallucination principle also encoded here.
+
+**Parametric vs. contextual knowledge.** DisentQA (Neeman et al., ACL 2023; arXiv:2211.05655) separates a model's parametric answer from its contextual answer, the distinction underlying this repo's *parametric leakage* measure. Mallen et al. (ACL 2023; arXiv:2212.10511), via PopQA, characterise when a model should rely on memory versus retrieve. Two mitigation methods target the same conflict from the generation side: Context-Aware Decoding (Shi et al., NAACL 2024; arXiv:2305.14739) biases decoding toward the context when it contradicts priors, and Context-faithful Prompting (Zhou et al., Findings of EMNLP 2023; arXiv:2303.11315) does so via prompt design. Huang et al. (ICLR 2025; arXiv:2410.14675) coin **situated faithfulness** (dynamically calibrating trust in the context against confidence in internal knowledge), the named ideal this repo's situated-faithfulness composite (§6) operationalises as accept/flag/abstain rather than answer-correctly.
+
+**Endorsement and sycophancy.** The false-endorsement and false-corroboration outcomes are closest to work on models adopting or defending planted falsehoods. Omar et al. (Communications Medicine 2025) plant one fabricated detail in clinical vignettes and find models elaborate on rather than flag it 50-82% of the time; FARM (Xu et al., ACL 2024; arXiv:2312.09085) flips correct beliefs via persuasive conversation; SycEval (Fanous et al., AIES 2025; arXiv:2502.08177) finds citation-based rebuttals produce the highest rate of a model abandoning a correct answer.
+
+**What prior work does not cover.** Three elements of this study appear to be un-named in the literature above, each in a narrow form:
+
+- *False corroboration as a conjunction.* Endorsement of planted falsehoods (Omar et al.; FARM; MedCounterFact) and citation-driven sycophancy (SycEval) are each documented separately. The behaviour measured here (a model spontaneously fabricating an *external authority* to justify endorsing a perturbed document value) is the conjunction of the two, which we have not found named together in prior work.
+- *A speech-act clause factorial.* We are not aware of prior work that crosses a source-exclusivity clause with a flag-inviting clause in the system instruction and reads accept/flag/abstain outcomes off the resulting cells. The factorial design itself is standard; what is crossed and measured is the contribution. That composing the two clauses (SE+FI) outperforms a purpose-written audit instruction is reported here as an empirical result, not a claim of priority.
+- *A same-facts triplet with a behavioural prior probe.* Graded contradiction severity, a matched-absence abstention leg, and a per-item closed-book prior probe are combined over one fixed fact set. Severity grading (ClashEval), closed-book-answerable filtering (RGB), and preferring abstention to error (CRAG) each exist individually; the narrow addition here is conditioning per-item leakage rates on a behavioural (not log-probability) measure of what each model already knows.
 
 

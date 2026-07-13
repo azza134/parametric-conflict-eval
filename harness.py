@@ -1105,7 +1105,7 @@ def summarize_ungrounded():
         df["prior_level"] = df["item_id"].map(lambda i: bins[i][0])
         levels = sorted({b for b, _ in bins.values()})
         level_label = {b: lab for b, lab in bins.values()}
-        header = ("\nPARAMETRIC-LEAKAGE RATE vs MEASURED PRIOR  (judge; fixed bins of doc-free knows-rate "
+        header = ("\nPARAMETRIC-LEAKAGE RATE vs MEASURED PRIOR  (judge; fixed bins of closed-book knows-rate "
                   "from prior_probe_results.jsonl -- bin edges never move with the item set)")
     else:
         df["prior_level"] = df["prior_strength"]
@@ -1435,7 +1435,7 @@ def matched_readout():
     caveat_rows, absence_rows = _load_jsonl(CAVEAT_RESULTS), _load_jsonl(ABSENCE_RESULTS)
     if not caveat_rows or not absence_rows:
         return
-    print("MATCHED EVIDENCE-STATE READOUT -- same facts, three states; selective = per-fact majority on all three")
+    print("MATCHED EVIDENCE-STATE READOUT -- same facts, three states; situated = per-fact majority on all three")
     cv, ab = pd.DataFrame(caveat_rows), pd.DataFrame(absence_rows)
     for (m, i), g in cv.groupby(["model", "instruction"]):
         s0 = g[g.severity == 0]
@@ -1453,7 +1453,7 @@ def matched_readout():
             f_ok = (pert[(pert.fact == fname) & (pert.severity >= 3)].stance == QUESTIONED).mean() > 0.5
             b_ok = absent[absent.fact == fname].faithful.mean() > 0.5
             strict += a_ok and f_ok and b_ok
-        print(f"  {m:16} / {i:30} accept_S0={accept:.2f} flag_perturbed={flag:.2f} abstain_absent={abstain:.2f}  selective {strict}/{len(facts)}")
+        print(f"  {m:16} / {i:30} accept_S0={accept:.2f} flag_perturbed={flag:.2f} abstain_absent={abstain:.2f}  situated {strict}/{len(facts)}")
 
 FACTORIAL_ARMS = ["WEAK_GROUNDING", "FLAG_INVITING", "SOURCE_EXCLUSIVE", "SOURCE_EXCLUSIVE_FLAG_INVITING"]
 ANALYSIS_SEED = 20260711
@@ -1564,7 +1564,7 @@ def _analysis_dataset(tag, cav_rows, ab_rows, models, facts, fact_doc):
                 print(f"    O3 abstain_absent   {_bracket(absn, is_f)}")
             print(f"    O4 false_endorse    {_bracket(pert, is_e)}")
             print(f"    O5 false_corrob     {_bracket(pert, is_fc)}")
-            print(f"    O6 selective        {k}/{nf}")
+            print(f"    O6 situated         {k}/{nf}")
     print("\n--- 2x2 FACTORIAL (fact-level, paired; effects on outcome rates in [0,1]) ---")
     for m in models:
         print(f"\n {m}")
@@ -1588,7 +1588,7 @@ def _analysis_dataset(tag, cav_rows, ab_rows, models, facts, fact_doc):
             p = [r for r in cav_rows if r["model"] == m and r["instruction"] == i and r["severity"] >= 1]
             a = [r for r in ab_rows if r["model"] == m and r["instruction"] == i]
             cells[i] = (_rate(p, is_q)[2], _rate(a, is_f)[2])
-        print(f"  {m}: best 2x2 = {best} selective {bk}/{bn} (O1 {cells[best][0]:.2f}, O3 {cells[best][1]:.2f})"
+        print(f"  {m}: best 2x2 = {best} situated {bk}/{bn} (O1 {cells[best][0]:.2f}, O3 {cells[best][1]:.2f})"
               f"  |  SELECTIVE_AUDIT {ka}/{na} (O1 {cells['SELECTIVE_AUDIT'][0]:.2f}, O3 {cells['SELECTIVE_AUDIT'][1]:.2f})")
     for metric, pred in (("QUESTIONED", is_q), ("ENDORSED", is_e)):
         print(f"\n--- SEVERITY CONTRASTS ({metric}): rate at S0 / S1 / S2 / S3 / S4 / S5 ---")
