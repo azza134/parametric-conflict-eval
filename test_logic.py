@@ -28,19 +28,6 @@ from judge import (cohens_kappa, FAITHFUL, UNGROUNDED,
                    gold_schedule, expand_schedule, _meta_evaluate)
 
 
-class TestPerturb(unittest.TestCase):
-    def test_replaces(self):
-        self.assertEqual(perturb("every 20 persons", [("every 20", "every 13")]), "every 13 persons") # when 20 is replaced with 13 does it equal argument 3
-
-    def test_raises_on_noop(self):
-        with self.assertRaises(AssertionError):
-            perturb("nothing to change here", [("absent token", "x")]) # argument 1 is a phrase that doesn't exist in passage, thus nothing to replace, raising the assertion error for the perturb function
-
-    def test_raises_when_one_of_several_replacements_misses(self):
-        with self.assertRaises(AssertionError):
-            perturb("every 20 persons", [("every 20", "every 25"), ("part of 20 persons", "part of 25 persons")])
-
-
 class TestWilsonInterval(unittest.TestCase):
     def test_point_estimate(self):
         p, low, high = wilson_interval(3, 5)
@@ -78,7 +65,6 @@ class TestCohensKappa(unittest.TestCase):
     def test_empty_raises(self):
         with self.assertRaises(ValueError):
             cohens_kappa([], [])
-
 
 
 class TestJudgeGate(unittest.TestCase):
@@ -172,55 +158,6 @@ class TestCaveatGate(unittest.TestCase):
         bad = anchor_disagreements(rows)
         self.assertEqual(len(bad), 1)
         self.assertEqual(bad[0]["role"], "extreme-perturbation anchor")
-
-
-class TestCaveatPrompt(unittest.TestCase):
-    def test_prompt_contains_its_two_args(self):
-        prompt = build_caveat_prompt("How tall is X?", "It is 500 metres.")
-        self.assertIn("How tall is X?", prompt)
-        self.assertIn("It is 500 metres.", prompt)
-
-    def test_prompt_takes_no_document(self):
-        with self.assertRaises(TypeError):
-            build_caveat_prompt("q", "a", "the correct value is 10cm")
-
-
-class TestCaveatSchema(unittest.TestCase):
-    def test_schema_shape(self):
-        self.assertEqual(CAVEAT_SCHEMA["required"], ["stance", "corroboration", "reason"])
-        self.assertIs(CAVEAT_SCHEMA["additionalProperties"], False)
-        self.assertEqual(CAVEAT_SCHEMA["properties"]["stance"]["enum"], list(CAVEAT_LABELS))
-        self.assertEqual(CAVEAT_SCHEMA["properties"]["corroboration"]["enum"], list(CORROBORATION_LABELS))
-
-    def test_labels_are_the_four_stances(self):
-        self.assertEqual(CAVEAT_LABELS, (QUESTIONED, SILENT, ENDORSED, DECLINED))
-
-
-class TestWithRetry(unittest.TestCase):
-    def test_returns_on_first_success(self):
-        calls = []
-        def fn(x):
-            calls.append(x)
-            return x * 2
-        self.assertEqual(with_retry(fn, 5), 10)
-        self.assertEqual(len(calls), 1)
-
-    def test_raises_after_exhausting_attempts(self):
-        def fn():
-            raise ValueError("boom")
-        with self.assertRaises(ValueError):
-            with_retry(fn, attempts=1)
-
-    def test_retries_then_succeeds(self):
-        state = {"n": 0}
-        def fn():
-            state["n"] += 1
-            if state["n"] < 3:
-                raise RuntimeError("transient")
-            return "ok"
-        with mock.patch("config.time.sleep"):
-            self.assertEqual(with_retry(fn, attempts=5), "ok")
-        self.assertEqual(state["n"], 3)
 
 
 class TestInstructions(unittest.TestCase):
@@ -336,16 +273,6 @@ class TestMeasuredPriorBins(unittest.TestCase):
             self.assertEqual(probe_item_rates(), {"x": 0.5})
 
 
-class TestEffortConvention(unittest.TestCase):
-    def test_v1_gpt54_candidates_stay_pinned_low(self):
-        self.assertEqual(openai_reasoning("gpt-5.4-nano"), {"reasoning": {"effort": "low"}})
-        self.assertEqual(openai_reasoning("gpt-5.4-mini"), {"reasoning": {"effort": "low"}})
-
-    def test_new_models_run_at_vendor_default(self):
-        self.assertEqual(openai_reasoning("gpt-5.6-terra"), {})
-        self.assertEqual(openai_reasoning("gpt-4o-mini"), {})
-
-
 class TestPriorProbe(unittest.TestCase):
     def test_forty_targets_covering_all_facts_and_items(self):
         targets = probe_targets()
@@ -367,40 +294,6 @@ class TestPriorProbe(unittest.TestCase):
         row = _probe_row("m", "openai", t, "I do not know.")
         self.assertFalse(row["reports_expected"])
         self.assertTrue(row["says_dont_know"])
-
-
-class TestVectorCells(unittest.TestCase):
-    def test_groups_by_cell_and_unit(self):
-        rows = [
-            {"model": "m", "instruction": "i", "severity": 1, "fact": "a", "label": "questioned"},
-            {"model": "m", "instruction": "i", "severity": 1, "fact": "a", "label": "silent"},
-            {"model": "m", "instruction": "i", "severity": 1, "fact": "b", "label": "questioned"},
-            {"model": "m", "instruction": "i", "severity": 2, "fact": "a", "label": "questioned"},
-        ]
-        cells = vector_cells(rows, "fact", "severity", "questioned")
-        self.assertEqual(cells[("m", "i", 1)], {"a": (1, 2), "b": (1, 1)})
-        self.assertEqual(cells[("m", "i", 2)], {"a": (1, 1)})
-
-
-class TestConcurrentMap(unittest.TestCase):
-    def test_preserves_order(self):
-        items = list(range(50))
-        self.assertEqual(concurrent_map(lambda x: x * x, items, workers=8), [x * x for x in items])
-
-    def test_serial_fallback_matches(self):
-        self.assertEqual(concurrent_map(str, [1, 2, 3], workers=1), ["1", "2", "3"])
-
-    def test_empty_and_singleton(self):
-        self.assertEqual(concurrent_map(lambda x: x, [], workers=8), [])
-        self.assertEqual(concurrent_map(lambda x: x + 1, [41], workers=8), [42])
-
-    def test_propagates_exception(self):
-        def boom(x):
-            if x == 3:
-                raise ValueError("boom")
-            return x
-        with self.assertRaises(ValueError):
-            concurrent_map(boom, [1, 2, 3, 4], workers=4)
 
 
 class TestLadders(unittest.TestCase):
@@ -519,18 +412,6 @@ class TestSeverityClassify(unittest.TestCase):
         self.assertFalse(lexical_caveat("The maximum height is 30cm."))
 
 
-class TestAppears(unittest.TestCase):
-    def test_no_substring_match(self):
-        self.assertFalse(appears("230", "approved in 2023"))
-
-    def test_phrase_token(self):
-        self.assertTrue(appears("BAL 19", "rated BAL 19 under AS 3959"))
-        self.assertFalse(appears("BAL 19", "see condition 19. Approval to Operate"))
-
-    def test_case_insensitive(self):
-        self.assertTrue(appears("not in document", "NOT IN DOCUMENT"))
-
-
 class TestUnanswerableItems(unittest.TestCase):
     def test_validate_items_clean(self):
         self.assertEqual(validate_items(), [])
@@ -563,39 +444,6 @@ class TestUnanswerableItems(unittest.TestCase):
             self.assertTrue(any("outside 1-5" in p for p in validate_items()))
 
 
-class TestLegacyGoldGuard(unittest.TestCase):
-    def test_legacy_schema_raises_before_judging(self):
-        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
-            json.dump([{"question": "x", "firmness": "FIRM", "role": "clean-ungrounded anchor",
-                        "answer": "y", "human": FAITHFUL}], f)
-            path = f.name
-        try:
-            with self.assertRaises(SystemExit):
-                _meta_evaluate(path, "unused.json", "judge", "m", (FAITHFUL, UNGROUNDED),
-                         lambda row: self.fail("judge must not be called"), "instruction")
-        finally:
-            os.unlink(path)
-
-
-class TestLoadDone(unittest.TestCase):
-    def test_counts_by_fields(self):
-        with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as f:
-            for row in [{"model": "m", "instruction": "S", "item_id": "a"},
-                        {"model": "m", "instruction": "S", "item_id": "a"},
-                        {"model": "m", "instruction": "P", "item_id": "b"}]:
-                f.write(json.dumps(row) + "\n")
-            path = f.name
-        try:
-            done = load_done(path, ["model", "instruction", "item_id"])
-            self.assertEqual(done[("m", "S", "a")], 2)
-            self.assertEqual(done[("m", "P", "b")], 1)
-        finally:
-            os.unlink(path)
-
-    def test_missing_file_is_empty(self):
-        self.assertEqual(load_done("no_such_results_file.jsonl", ["model"]), {})
-
-
 class TestGoldSchedule(unittest.TestCase):
     def test_forty_eight_rows_at_reps_2(self):
         self.assertEqual(len(gold_schedule(UNANSWERABLE_ITEMS, 2)), 48)
@@ -618,23 +466,6 @@ class TestGoldSchedule(unittest.TestCase):
         self.assertTrue(borderline)
         for item_id in {s for s, _ in borderline}:
             self.assertEqual({i for s, i in borderline if s == item_id}, {"SOURCE_EXCLUSIVE", "WEAK_GROUNDING"})
-
-
-class TestExpandSchedule(unittest.TestCase):
-    ITEMS = [{"item_id": "old", "prior_strength": 5}, {"item_id": "new", "prior_strength": 5}]
-
-    def test_only_uncovered_items_scheduled(self):
-        schedule = expand_schedule([{"item_id": "old", "human": "faithful"}], self.ITEMS, reps=2)
-        self.assertEqual({p["item_id"] for p, _, _ in schedule}, {"new"})
-        self.assertEqual(len(schedule), 2)
-
-    def test_empty_existing_schedules_everything(self):
-        schedule = expand_schedule([], self.ITEMS, reps=2)
-        self.assertEqual({p["item_id"] for p, _, _ in schedule}, {"old", "new"})
-
-    def test_fully_covered_schedules_nothing(self):
-        existing = [{"item_id": "old"}, {"item_id": "new"}]
-        self.assertEqual(expand_schedule(existing, self.ITEMS, reps=2), [])
 
 
 class TestTradeoffRows(unittest.TestCase):
@@ -670,6 +501,316 @@ class TestTradeoffRows(unittest.TestCase):
 
     def test_both_empty(self):
         self.assertEqual(tradeoff_rows([], []), [])
+
+
+class TestMatchedAbsence(unittest.TestCase):
+    def test_every_fact_has_a_patch(self):
+        self.assertEqual(set(ABSENCE_PATCHES), {f["fact"] for f in PERTURBATION_LADDERS})
+        for f in PERTURBATION_LADDERS:
+            self.assertIn("absence", f)
+
+    def test_validation_clean_on_real_data(self):
+        self.assertEqual(validate_absence(), [])
+
+    def test_deleted_doc_differs_from_base(self):
+        for f in PERTURBATION_LADDERS:
+            self.assertNotEqual(absence_doc(f), doc_text(f["doc"]))
+
+    def test_codec_roundtrip_and_format(self):
+        cid = encode_absence_custom_id("grasses", "SELECTIVE_AUDIT", 2)
+        self.assertEqual(cid, "ma-grasses-SELECTIVE_AUDIT-r2")
+        self.assertEqual(decode_absence_custom_id(cid),
+                         {"fact": "grasses", "instruction": "SELECTIVE_AUDIT", "rep": 2})
+
+    def test_decode_rejects_other_prefixes(self):
+        with self.assertRaises(ValueError):
+            decode_absence_custom_id(encode_abstention_custom_id("water_boil", "SOURCE_EXCLUSIVE", 0))
+
+    def test_wave_plan_rep0_per_cell_and_resume(self):
+        instr = [("SOURCE_EXCLUSIVE", "sys")]
+        ladders = [{"fact": "grasses"}, {"fact": "toilets"}]
+        w1, w2 = absence_wave_plan({}, 2, "m", instructions=instr, ladders=ladders)
+        self.assertEqual(w1, [encode_absence_custom_id("grasses", "SOURCE_EXCLUSIVE", 0),
+                              encode_absence_custom_id("toilets", "SOURCE_EXCLUSIVE", 0)])
+        self.assertEqual(w2, [encode_absence_custom_id("grasses", "SOURCE_EXCLUSIVE", 1),
+                              encode_absence_custom_id("toilets", "SOURCE_EXCLUSIVE", 1)])
+        done = {("m", "SOURCE_EXCLUSIVE", "grasses"): 2, ("m", "SOURCE_EXCLUSIVE", "toilets"): 1}
+        w1, w2 = absence_wave_plan(done, 2, "m", instructions=instr, ladders=ladders)
+        self.assertEqual(w1, [encode_absence_custom_id("toilets", "SOURCE_EXCLUSIVE", 1)])
+        self.assertEqual(w2, [])
+
+    def test_wave_plan_real_data_counts(self):
+        w1, w2 = absence_wave_plan({}, 1, "claude-sonnet-5")
+        self.assertEqual(len(w1), len(PERTURBATION_LADDERS) * len(SYSTEM_INSTRUCTIONS))
+        self.assertEqual(w2, [])
+
+    def test_absence_row_judges_against_deleted_doc(self):
+        fact = next(f for f in PERTURBATION_LADDERS if f["fact"] == "grasses")
+        deleted = absence_doc(fact)
+        with mock.patch("harness.abstention_judge", return_value=(True, "abstained", "judge-snap")) as j:
+            row = _absence_row("m", "anthropic", "SOURCE_EXCLUSIVE", fact, deleted, "NOT IN DOCUMENT", "snap", 1)
+        j.assert_called_once_with(fact["q"], deleted, "NOT IN DOCUMENT")
+        self.assertEqual(row["evidence_state"], "absent")
+        self.assertEqual(row["label"], FAITHFUL)
+        self.assertEqual((row["fact"], row["rep"], row["snapshot"], row["judge_snapshot"]),
+                         ("grasses", 1, "snap", "judge-snap"))
+        self.assertFalse(row["reports_deleted_value"])
+        self.assertTrue(row["verbatim_abstention"])
+
+
+class TestSignTest(unittest.TestCase):
+    def test_all_positive(self):
+        p, pos, n = sign_test([0.1, 0.2, 0.3])
+        self.assertEqual((pos, n), (3, 3))
+        self.assertAlmostEqual(p, 0.25)
+
+    def test_split_is_uninformative(self):
+        p, pos, n = sign_test([0.5, -0.5])
+        self.assertEqual((pos, n), (1, 2))
+        self.assertEqual(p, 1.0)
+
+    def test_zeros_excluded(self):
+        p, pos, n = sign_test([0.0, 0.0, 0.4])
+        self.assertEqual((pos, n), (1, 1))
+
+    def test_all_zero(self):
+        self.assertEqual(sign_test([0.0, 0.0]), (1.0, 0, 0))
+
+
+class TestBootstrapCI(unittest.TestCase):
+    def test_constant_values_give_point_interval(self):
+        lo, hi = bootstrap_ci([0.4] * 10, iters=200)
+        self.assertAlmostEqual(lo, 0.4)
+        self.assertAlmostEqual(hi, 0.4)
+
+    def test_deterministic_and_ordered(self):
+        vals = [0.0, 0.2, 0.5, 0.9, 1.0]
+        a = bootstrap_ci(vals, iters=500)
+        b = bootstrap_ci(vals, iters=500)
+        self.assertEqual(a, b)
+        self.assertLessEqual(a[0], a[1])
+
+    def test_interval_within_value_range(self):
+        lo, hi = bootstrap_ci([0.1, 0.9], iters=500)
+        self.assertGreaterEqual(lo, 0.1)
+        self.assertLessEqual(hi, 0.9)
+
+
+class TestFactorialEffects(unittest.TestCase):
+    def rates(self, wg, fi, se, sefi):
+        return {"WEAK_GROUNDING": {"f": wg}, "FLAG_INVITING": {"f": fi},
+                "SOURCE_EXCLUSIVE": {"f": se}, "SOURCE_EXCLUSIVE_FLAG_INVITING": {"f": sefi}}
+
+    def test_pure_invitation_effect(self):
+        effects, usable = factorial_effects(self.rates(0.0, 1.0, 0.0, 1.0), ["f"])
+        self.assertEqual(usable, ["f"])
+        self.assertEqual(effects["SE_main"], [0.0])
+        self.assertEqual(effects["FI_main"], [1.0])
+        self.assertEqual(effects["interaction"], [0.0])
+
+    def test_exclusivity_cancels_invitation(self):
+        effects, _ = factorial_effects(self.rates(0.0, 1.0, 0.0, 0.0), ["f"])
+        self.assertEqual(effects["SE_main"], [-0.5])
+        self.assertEqual(effects["FI_main"], [0.5])
+        self.assertEqual(effects["interaction"], [-1.0])
+
+    def test_missing_arm_drops_unit(self):
+        rates = self.rates(0.0, 1.0, 0.0, 1.0)
+        rates["SOURCE_EXCLUSIVE"]["f"] = None
+        effects, usable = factorial_effects(rates, ["f"])
+        self.assertEqual(usable, [])
+        self.assertEqual(effects["FI_main"], [])
+
+
+class TestSelective(unittest.TestCase):
+    def cav(self, fact, sev, stance, n=3):
+        return [{"model": "m", "instruction": "i", "fact": fact, "severity": sev, "stance": stance}] * n
+
+    def ab(self, fact, faithful, n=3):
+        return [{"model": "m", "instruction": "i", "fact": fact, "faithful": faithful}] * n
+
+    def test_all_three_states_required(self):
+        cav_rows = self.cav("a", 0, "silent") + self.cav("a", 3, "questioned") + self.cav("a", 5, "questioned")
+        self.assertEqual(_selective(cav_rows, self.ab("a", True), "m", "i"), (1, 1))
+        self.assertEqual(_selective(cav_rows, self.ab("a", False), "m", "i"), (0, 1))
+
+    def test_s0_flag_fails_accept(self):
+        cav_rows = self.cav("a", 0, "questioned") + self.cav("a", 3, "questioned") + self.cav("a", 5, "questioned")
+        self.assertEqual(_selective(cav_rows, self.ab("a", True), "m", "i"), (0, 1))
+
+    def test_majority_not_unanimity(self):
+        cav_rows = (self.cav("a", 0, "silent") + self.cav("a", 3, "questioned", 2) + self.cav("a", 3, "silent", 1)
+                    + self.cav("a", 4, "questioned", 2) + self.cav("a", 4, "endorsed", 1)
+                    + self.cav("a", 5, "questioned"))
+        self.assertEqual(_selective(cav_rows, self.ab("a", True), "m", "i"), (1, 1))
+
+
+class TestPerturb(unittest.TestCase):
+    def test_replaces(self):
+        self.assertEqual(perturb("every 20 persons", [("every 20", "every 13")]), "every 13 persons") # when 20 is replaced with 13 does it equal argument 3
+
+    def test_raises_on_noop(self):
+        with self.assertRaises(AssertionError):
+            perturb("nothing to change here", [("absent token", "x")]) # argument 1 is a phrase that doesn't exist in passage, thus nothing to replace, raising the assertion error for the perturb function
+
+    def test_raises_when_one_of_several_replacements_misses(self):
+        with self.assertRaises(AssertionError):
+            perturb("every 20 persons", [("every 20", "every 25"), ("part of 20 persons", "part of 25 persons")])
+
+
+class TestCaveatPrompt(unittest.TestCase):
+    def test_prompt_contains_its_two_args(self):
+        prompt = build_caveat_prompt("How tall is X?", "It is 500 metres.")
+        self.assertIn("How tall is X?", prompt)
+        self.assertIn("It is 500 metres.", prompt)
+
+    def test_prompt_takes_no_document(self):
+        with self.assertRaises(TypeError):
+            build_caveat_prompt("q", "a", "the correct value is 10cm")
+
+
+class TestCaveatSchema(unittest.TestCase):
+    def test_schema_shape(self):
+        self.assertEqual(CAVEAT_SCHEMA["required"], ["stance", "corroboration", "reason"])
+        self.assertIs(CAVEAT_SCHEMA["additionalProperties"], False)
+        self.assertEqual(CAVEAT_SCHEMA["properties"]["stance"]["enum"], list(CAVEAT_LABELS))
+        self.assertEqual(CAVEAT_SCHEMA["properties"]["corroboration"]["enum"], list(CORROBORATION_LABELS))
+
+    def test_labels_are_the_four_stances(self):
+        self.assertEqual(CAVEAT_LABELS, (QUESTIONED, SILENT, ENDORSED, DECLINED))
+
+
+class TestWithRetry(unittest.TestCase):
+    def test_returns_on_first_success(self):
+        calls = []
+        def fn(x):
+            calls.append(x)
+            return x * 2
+        self.assertEqual(with_retry(fn, 5), 10)
+        self.assertEqual(len(calls), 1)
+
+    def test_raises_after_exhausting_attempts(self):
+        def fn():
+            raise ValueError("boom")
+        with self.assertRaises(ValueError):
+            with_retry(fn, attempts=1)
+
+    def test_retries_then_succeeds(self):
+        state = {"n": 0}
+        def fn():
+            state["n"] += 1
+            if state["n"] < 3:
+                raise RuntimeError("transient")
+            return "ok"
+        with mock.patch("config.time.sleep"):
+            self.assertEqual(with_retry(fn, attempts=5), "ok")
+        self.assertEqual(state["n"], 3)
+
+
+class TestEffortConvention(unittest.TestCase):
+    def test_v1_gpt54_candidates_stay_pinned_low(self):
+        self.assertEqual(openai_reasoning("gpt-5.4-nano"), {"reasoning": {"effort": "low"}})
+        self.assertEqual(openai_reasoning("gpt-5.4-mini"), {"reasoning": {"effort": "low"}})
+
+    def test_new_models_run_at_vendor_default(self):
+        self.assertEqual(openai_reasoning("gpt-5.6-terra"), {})
+        self.assertEqual(openai_reasoning("gpt-4o-mini"), {})
+
+
+class TestVectorCells(unittest.TestCase):
+    def test_groups_by_cell_and_unit(self):
+        rows = [
+            {"model": "m", "instruction": "i", "severity": 1, "fact": "a", "label": "questioned"},
+            {"model": "m", "instruction": "i", "severity": 1, "fact": "a", "label": "silent"},
+            {"model": "m", "instruction": "i", "severity": 1, "fact": "b", "label": "questioned"},
+            {"model": "m", "instruction": "i", "severity": 2, "fact": "a", "label": "questioned"},
+        ]
+        cells = vector_cells(rows, "fact", "severity", "questioned")
+        self.assertEqual(cells[("m", "i", 1)], {"a": (1, 2), "b": (1, 1)})
+        self.assertEqual(cells[("m", "i", 2)], {"a": (1, 1)})
+
+
+class TestConcurrentMap(unittest.TestCase):
+    def test_preserves_order(self):
+        items = list(range(50))
+        self.assertEqual(concurrent_map(lambda x: x * x, items, workers=8), [x * x for x in items])
+
+    def test_serial_fallback_matches(self):
+        self.assertEqual(concurrent_map(str, [1, 2, 3], workers=1), ["1", "2", "3"])
+
+    def test_empty_and_singleton(self):
+        self.assertEqual(concurrent_map(lambda x: x, [], workers=8), [])
+        self.assertEqual(concurrent_map(lambda x: x + 1, [41], workers=8), [42])
+
+    def test_propagates_exception(self):
+        def boom(x):
+            if x == 3:
+                raise ValueError("boom")
+            return x
+        with self.assertRaises(ValueError):
+            concurrent_map(boom, [1, 2, 3, 4], workers=4)
+
+
+class TestAppears(unittest.TestCase):
+    def test_no_substring_match(self):
+        self.assertFalse(appears("230", "approved in 2023"))
+
+    def test_phrase_token(self):
+        self.assertTrue(appears("BAL 19", "rated BAL 19 under AS 3959"))
+        self.assertFalse(appears("BAL 19", "see condition 19. Approval to Operate"))
+
+    def test_case_insensitive(self):
+        self.assertTrue(appears("not in document", "NOT IN DOCUMENT"))
+
+
+class TestLegacyGoldGuard(unittest.TestCase):
+    def test_legacy_schema_raises_before_judging(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+            json.dump([{"question": "x", "firmness": "FIRM", "role": "clean-ungrounded anchor",
+                        "answer": "y", "human": FAITHFUL}], f)
+            path = f.name
+        try:
+            with self.assertRaises(SystemExit):
+                _meta_evaluate(path, "unused.json", "judge", "m", (FAITHFUL, UNGROUNDED),
+                         lambda row: self.fail("judge must not be called"), "instruction")
+        finally:
+            os.unlink(path)
+
+
+class TestLoadDone(unittest.TestCase):
+    def test_counts_by_fields(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as f:
+            for row in [{"model": "m", "instruction": "S", "item_id": "a"},
+                        {"model": "m", "instruction": "S", "item_id": "a"},
+                        {"model": "m", "instruction": "P", "item_id": "b"}]:
+                f.write(json.dumps(row) + "\n")
+            path = f.name
+        try:
+            done = load_done(path, ["model", "instruction", "item_id"])
+            self.assertEqual(done[("m", "S", "a")], 2)
+            self.assertEqual(done[("m", "P", "b")], 1)
+        finally:
+            os.unlink(path)
+
+    def test_missing_file_is_empty(self):
+        self.assertEqual(load_done("no_such_results_file.jsonl", ["model"]), {})
+
+
+class TestExpandSchedule(unittest.TestCase):
+    ITEMS = [{"item_id": "old", "prior_strength": 5}, {"item_id": "new", "prior_strength": 5}]
+
+    def test_only_uncovered_items_scheduled(self):
+        schedule = expand_schedule([{"item_id": "old", "human": "faithful"}], self.ITEMS, reps=2)
+        self.assertEqual({p["item_id"] for p, _, _ in schedule}, {"new"})
+        self.assertEqual(len(schedule), 2)
+
+    def test_empty_existing_schedules_everything(self):
+        schedule = expand_schedule([], self.ITEMS, reps=2)
+        self.assertEqual({p["item_id"] for p, _, _ in schedule}, {"old", "new"})
+
+    def test_fully_covered_schedules_nothing(self):
+        existing = [{"item_id": "old"}, {"item_id": "new"}]
+        self.assertEqual(expand_schedule(existing, self.ITEMS, reps=2), [])
 
 
 class TestCustomIds(unittest.TestCase):
@@ -747,61 +888,6 @@ class TestAbstentionWavePlan(unittest.TestCase):
         wave1, wave2 = abstention_wave_plan({}, 2, "m", instructions=self.INSTR, items=self.ITEMS)
         self.assertEqual(wave1, [encode_abstention_custom_id("a", "SOURCE_EXCLUSIVE", 0)])
         self.assertIn(encode_abstention_custom_id("a", "SOURCE_EXCLUSIVE", 1), wave2)
-
-
-class TestMatchedAbsence(unittest.TestCase):
-    def test_every_fact_has_a_patch(self):
-        self.assertEqual(set(ABSENCE_PATCHES), {f["fact"] for f in PERTURBATION_LADDERS})
-        for f in PERTURBATION_LADDERS:
-            self.assertIn("absence", f)
-
-    def test_validation_clean_on_real_data(self):
-        self.assertEqual(validate_absence(), [])
-
-    def test_deleted_doc_differs_from_base(self):
-        for f in PERTURBATION_LADDERS:
-            self.assertNotEqual(absence_doc(f), doc_text(f["doc"]))
-
-    def test_codec_roundtrip_and_format(self):
-        cid = encode_absence_custom_id("grasses", "SELECTIVE_AUDIT", 2)
-        self.assertEqual(cid, "ma-grasses-SELECTIVE_AUDIT-r2")
-        self.assertEqual(decode_absence_custom_id(cid),
-                         {"fact": "grasses", "instruction": "SELECTIVE_AUDIT", "rep": 2})
-
-    def test_decode_rejects_other_prefixes(self):
-        with self.assertRaises(ValueError):
-            decode_absence_custom_id(encode_abstention_custom_id("water_boil", "SOURCE_EXCLUSIVE", 0))
-
-    def test_wave_plan_rep0_per_cell_and_resume(self):
-        instr = [("SOURCE_EXCLUSIVE", "sys")]
-        ladders = [{"fact": "grasses"}, {"fact": "toilets"}]
-        w1, w2 = absence_wave_plan({}, 2, "m", instructions=instr, ladders=ladders)
-        self.assertEqual(w1, [encode_absence_custom_id("grasses", "SOURCE_EXCLUSIVE", 0),
-                              encode_absence_custom_id("toilets", "SOURCE_EXCLUSIVE", 0)])
-        self.assertEqual(w2, [encode_absence_custom_id("grasses", "SOURCE_EXCLUSIVE", 1),
-                              encode_absence_custom_id("toilets", "SOURCE_EXCLUSIVE", 1)])
-        done = {("m", "SOURCE_EXCLUSIVE", "grasses"): 2, ("m", "SOURCE_EXCLUSIVE", "toilets"): 1}
-        w1, w2 = absence_wave_plan(done, 2, "m", instructions=instr, ladders=ladders)
-        self.assertEqual(w1, [encode_absence_custom_id("toilets", "SOURCE_EXCLUSIVE", 1)])
-        self.assertEqual(w2, [])
-
-    def test_wave_plan_real_data_counts(self):
-        w1, w2 = absence_wave_plan({}, 1, "claude-sonnet-5")
-        self.assertEqual(len(w1), len(PERTURBATION_LADDERS) * len(SYSTEM_INSTRUCTIONS))
-        self.assertEqual(w2, [])
-
-    def test_absence_row_judges_against_deleted_doc(self):
-        fact = next(f for f in PERTURBATION_LADDERS if f["fact"] == "grasses")
-        deleted = absence_doc(fact)
-        with mock.patch("harness.abstention_judge", return_value=(True, "abstained", "judge-snap")) as j:
-            row = _absence_row("m", "anthropic", "SOURCE_EXCLUSIVE", fact, deleted, "NOT IN DOCUMENT", "snap", 1)
-        j.assert_called_once_with(fact["q"], deleted, "NOT IN DOCUMENT")
-        self.assertEqual(row["evidence_state"], "absent")
-        self.assertEqual(row["label"], FAITHFUL)
-        self.assertEqual((row["fact"], row["rep"], row["snapshot"], row["judge_snapshot"]),
-                         ("grasses", 1, "snap", "judge-snap"))
-        self.assertFalse(row["reports_deleted_value"])
-        self.assertTrue(row["verbatim_abstention"])
 
 
 class TestManifest(unittest.TestCase):
@@ -907,70 +993,6 @@ class TestPilotSelection(unittest.TestCase):
             pilot_selection("claude-sonnet-5", "zoning")
 
 
-class TestSignTest(unittest.TestCase):
-    def test_all_positive(self):
-        p, pos, n = sign_test([0.1, 0.2, 0.3])
-        self.assertEqual((pos, n), (3, 3))
-        self.assertAlmostEqual(p, 0.25)
-
-    def test_split_is_uninformative(self):
-        p, pos, n = sign_test([0.5, -0.5])
-        self.assertEqual((pos, n), (1, 2))
-        self.assertEqual(p, 1.0)
-
-    def test_zeros_excluded(self):
-        p, pos, n = sign_test([0.0, 0.0, 0.4])
-        self.assertEqual((pos, n), (1, 1))
-
-    def test_all_zero(self):
-        self.assertEqual(sign_test([0.0, 0.0]), (1.0, 0, 0))
-
-
-class TestBootstrapCI(unittest.TestCase):
-    def test_constant_values_give_point_interval(self):
-        lo, hi = bootstrap_ci([0.4] * 10, iters=200)
-        self.assertAlmostEqual(lo, 0.4)
-        self.assertAlmostEqual(hi, 0.4)
-
-    def test_deterministic_and_ordered(self):
-        vals = [0.0, 0.2, 0.5, 0.9, 1.0]
-        a = bootstrap_ci(vals, iters=500)
-        b = bootstrap_ci(vals, iters=500)
-        self.assertEqual(a, b)
-        self.assertLessEqual(a[0], a[1])
-
-    def test_interval_within_value_range(self):
-        lo, hi = bootstrap_ci([0.1, 0.9], iters=500)
-        self.assertGreaterEqual(lo, 0.1)
-        self.assertLessEqual(hi, 0.9)
-
-
-class TestFactorialEffects(unittest.TestCase):
-    def rates(self, wg, fi, se, sefi):
-        return {"WEAK_GROUNDING": {"f": wg}, "FLAG_INVITING": {"f": fi},
-                "SOURCE_EXCLUSIVE": {"f": se}, "SOURCE_EXCLUSIVE_FLAG_INVITING": {"f": sefi}}
-
-    def test_pure_invitation_effect(self):
-        effects, usable = factorial_effects(self.rates(0.0, 1.0, 0.0, 1.0), ["f"])
-        self.assertEqual(usable, ["f"])
-        self.assertEqual(effects["SE_main"], [0.0])
-        self.assertEqual(effects["FI_main"], [1.0])
-        self.assertEqual(effects["interaction"], [0.0])
-
-    def test_exclusivity_cancels_invitation(self):
-        effects, _ = factorial_effects(self.rates(0.0, 1.0, 0.0, 0.0), ["f"])
-        self.assertEqual(effects["SE_main"], [-0.5])
-        self.assertEqual(effects["FI_main"], [0.5])
-        self.assertEqual(effects["interaction"], [-1.0])
-
-    def test_missing_arm_drops_unit(self):
-        rates = self.rates(0.0, 1.0, 0.0, 1.0)
-        rates["SOURCE_EXCLUSIVE"]["f"] = None
-        effects, usable = factorial_effects(rates, ["f"])
-        self.assertEqual(usable, [])
-        self.assertEqual(effects["FI_main"], [])
-
-
 class TestUnitCounts(unittest.TestCase):
     ROWS = [{"fact": "a", "stance": "questioned"}, {"fact": "a", "stance": "silent"},
             {"fact": "b", "stance": "questioned"}]
@@ -982,29 +1004,6 @@ class TestUnitCounts(unittest.TestCase):
     def test_rate_map_fills_missing_units_with_none(self):
         rates = unit_rate_map(self.ROWS, lambda r: r["stance"] == "questioned", ["a", "b", "c"])
         self.assertEqual(rates, {"a": 0.5, "b": 1.0, "c": None})
-
-
-class TestSelective(unittest.TestCase):
-    def cav(self, fact, sev, stance, n=3):
-        return [{"model": "m", "instruction": "i", "fact": fact, "severity": sev, "stance": stance}] * n
-
-    def ab(self, fact, faithful, n=3):
-        return [{"model": "m", "instruction": "i", "fact": fact, "faithful": faithful}] * n
-
-    def test_all_three_states_required(self):
-        cav_rows = self.cav("a", 0, "silent") + self.cav("a", 3, "questioned") + self.cav("a", 5, "questioned")
-        self.assertEqual(_selective(cav_rows, self.ab("a", True), "m", "i"), (1, 1))
-        self.assertEqual(_selective(cav_rows, self.ab("a", False), "m", "i"), (0, 1))
-
-    def test_s0_flag_fails_accept(self):
-        cav_rows = self.cav("a", 0, "questioned") + self.cav("a", 3, "questioned") + self.cav("a", 5, "questioned")
-        self.assertEqual(_selective(cav_rows, self.ab("a", True), "m", "i"), (0, 1))
-
-    def test_majority_not_unanimity(self):
-        cav_rows = (self.cav("a", 0, "silent") + self.cav("a", 3, "questioned", 2) + self.cav("a", 3, "silent", 1)
-                    + self.cav("a", 4, "questioned", 2) + self.cav("a", 4, "endorsed", 1)
-                    + self.cav("a", 5, "questioned"))
-        self.assertEqual(_selective(cav_rows, self.ab("a", True), "m", "i"), (1, 1))
 
 
 class TestBuildBatchMessageParams(unittest.TestCase):
