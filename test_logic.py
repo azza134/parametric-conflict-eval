@@ -17,8 +17,7 @@ from harness import (wilson_interval, PERTURBATION_LADDERS, SEVERITIES, validate
                      encode_absence_custom_id, decode_absence_custom_id, absence_wave_plan,
                      total_steps, total_cells, derive_label, lexical_caveat, UNANSWERABLE_ITEMS, validate_items,
                      load_done, tradeoff_rows, cluster_icc, vector_cells,
-                     probe_targets, _probe_row, probe_item_rates, measured_prior_bins, resolve_prior_levels,
-                     PRIOR_STRENGTHS, prior_bin, prior_bin_label,
+                     probe_targets, _probe_row,
                      encode_caveat_custom_id, decode_caveat_custom_id,
                      encode_abstention_custom_id, decode_abstention_custom_id,
                      caveat_wave_plan, abstention_wave_plan, concurrent_map, pilot_selection,
@@ -216,79 +215,6 @@ class TestClusterIcc(unittest.TestCase): # anova splits variance, icc converts t
         p, icc, n_eff = cluster_icc([(1, 8), (0, 8), (0, 8), (0, 8), (1, 8), (0, 8)])
         self.assertEqual(icc, 0.0)
         self.assertAlmostEqual(n_eff, 48.0)
-
-
-class TestMeasuredPriorBins(unittest.TestCase):
-    def test_no_probe_file_yields_no_bins(self): # replaces the file with a non-existent path to ensure it returns an empty dict
-        with mock.patch("harness.PROBE_RESULTS", "no_such_probe_file.jsonl"):
-            self.assertEqual(probe_item_rates(), {})
-            self.assertEqual(measured_prior_bins(), {})
-
-    def test_partial_probe_coverage_yields_no_bins(self): # unfinished doc will still return empty dict, this is an optional section that shouldn't crash if unfinished
-        with mock.patch("harness.probe_item_rates", return_value={"water_boil": 1.0}):
-            self.assertEqual(measured_prior_bins(), {})
-
-    def test_fixed_edges_do_not_move_with_the_sample(self):
-        self.assertEqual(prior_bin(0.0), 0)
-        self.assertEqual(prior_bin(0.24), 0)
-        self.assertEqual(prior_bin(0.25), 1)
-        self.assertEqual(prior_bin(0.5), 2)
-        self.assertEqual(prior_bin(0.75), 3)
-        self.assertEqual(prior_bin(1.0), 3)
-        self.assertEqual(prior_bin_label(0), "0.00-0.25")
-        self.assertEqual(prior_bin_label(3), "0.75-1.00")
-
-    def test_lopsided_sample_yields_lopsided_bins(self): # ensures bin boundaries don't have goalposts moved
-        rates = {p["item_id"]: 0.9 for p in UNANSWERABLE_ITEMS}
-        with mock.patch("harness.probe_item_rates", return_value=rates):
-            bins = measured_prior_bins()
-        self.assertEqual(len(bins), len(UNANSWERABLE_ITEMS))
-        self.assertEqual({b for b, _ in bins.values()}, {3})
-
-    def test_even_spread_fills_all_bins(self):
-        n = len(UNANSWERABLE_ITEMS)
-        rates = {p["item_id"]: i / (n - 1) for i, p in enumerate(UNANSWERABLE_ITEMS)} # even spread eg. n = 6 returns 0, 0.2, 0.4, 0.6, 0.8, 1
-        with mock.patch("harness.probe_item_rates", return_value=rates):
-            bins = measured_prior_bins()
-        counts = {}
-        for b, label in bins.values():
-            counts[b] = counts.get(b, 0) + 1
-        self.assertEqual(set(counts), {0, 1, 2, 3}) # at least one item in each bin
-        self.assertEqual(sum(counts.values()), n) # total item count across bins = original amount
-
-    def test_retired_items_in_probe_file_are_ignored(self):
-        rates = {p["item_id"]: 0.9 for p in UNANSWERABLE_ITEMS}
-        rates["some_retired_item"] = 0.1 # this item is not in UNANSWERABLE_ITEMS and will not be called
-        with mock.patch("harness.probe_item_rates", return_value=rates):
-            bins = measured_prior_bins()
-        self.assertEqual(set(bins), {p["item_id"] for p in UNANSWERABLE_ITEMS})
-
-    def test_rates_pool_reps_and_models(self):
-        rows = [{"kind": "item", "name": "x", "reports_expected": True},
-                {"kind": "item", "name": "x", "reports_expected": False},
-                {"kind": "fact", "name": "y", "reports_expected": True}]
-        with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as f:
-            for r in rows:
-                f.write(json.dumps(r) + "\n") # writes the rows to the real json, the last row will be tested to see it will not count due to wrong kind and name
-        with mock.patch("harness.PROBE_RESULTS", f.name):
-            self.assertEqual(probe_item_rates(), {"x": 0.5})
-
-    def test_resolver_prefers_measured_bins(self):
-        with mock.patch("harness.measured_prior_bins",
-                        return_value={"water_boil": (3, "0.75-1.00"), "grove_patron_cap": (0, "0.00-0.25")}):
-            level_of, levels, level_label, measured = resolve_prior_levels()
-        self.assertTrue(measured)
-        self.assertEqual(levels, [0, 3])
-        self.assertEqual(level_label, {3: "0.75-1.00", 0: "0.00-0.25"})
-        self.assertEqual(level_of({"item_id": "water_boil", "prior_strength": 1}), 3)
-
-    def test_resolver_falls_back_to_authored(self):
-        with mock.patch("harness.measured_prior_bins", return_value={}):
-            level_of, levels, level_label, measured = resolve_prior_levels()
-        self.assertFalse(measured)
-        self.assertEqual(levels, PRIOR_STRENGTHS)
-        self.assertEqual(level_of({"item_id": "water_boil", "prior_strength": 4}), 4)
-        self.assertEqual(level_label[4], "P4")
 
 
 class TestPriorProbe(unittest.TestCase):

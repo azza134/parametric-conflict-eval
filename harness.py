@@ -691,7 +691,7 @@ def summarize_caveat():
                     else:
                         cells.append(f"S{lv}=--")
                 print("  " + f"{model} / {iname}".ljust(30) + "  " + "  ".join(cells))
-    print("\nPERMISSIVE - SOURCE_EXCLUSIVE error-flagging-rate gap, per severity:")
+    print("\nFLAG_INVITING - SOURCE_EXCLUSIVE error-flagging-rate gap, per severity:")
     for model, _ in MODELS:
         gaps = []
         for lv in SEVERITIES:
@@ -1048,77 +1048,12 @@ def summarize_probe():
             continue
         rating = "--" if v["rating"] is None else f"P{v['rating']}"
         print(f"  {rating:>3}  {kind:<5} {name:<24} knows {v['knows']}/{v['n']}   dontknow {v['dontknow']}/{v['n']}")
-    for kind, current in (("item", {p["item_id"] for p in UNANSWERABLE_ITEMS}),
-                          ("fact", {f["fact"] for f in PERTURBATION_LADDERS})):
-        rates = {name: r for name, r in probe_rates(kind).items() if name in current}
-        total = len(current)
-        if not rates:
-            continue
-        occupancy = {b: 0 for b in range(len(PRIOR_BIN_EDGES) - 1)}
-        for r in rates.values():
-            occupancy[prior_bin(r)] += 1
-        target = total / len(occupancy)
-        cells = "  ".join(f"{prior_bin_label(b)}: {n_in}" for b, n_in in occupancy.items())
-        print(f"\n  {kind} spread across fixed knows-rate bins (authoring target ~{target:.0f} per bin): {cells}")
-        thin = [prior_bin_label(b) for b, n_in in occupancy.items() if n_in < target / 2]
-        if thin:
-            print(f"  THIN BINS {', '.join(thin)} -- author new {kind}s whose expected values land there before the main run")
-
-PRIOR_BIN_EDGES = [0.0, 0.25, 0.5, 0.75, 1.0]
-
-def prior_bin(rate):
-    for b in range(len(PRIOR_BIN_EDGES) - 2):
-        if rate < PRIOR_BIN_EDGES[b + 1]:
-            return b
-    return len(PRIOR_BIN_EDGES) - 2
-
-def prior_bin_label(b):
-    return f"{PRIOR_BIN_EDGES[b]:.2f}-{PRIOR_BIN_EDGES[b + 1]:.2f}"
-
-def probe_rates(kind):
-    try:
-        rows = [json.loads(l) for l in open(PROBE_RESULTS)]
-    except FileNotFoundError:
-        return {}
-    accepted_by_name = {t["name"]: t["accepted"] for t in probe_targets() if t["kind"] == kind}
-    agg = {}
-    for r in rows:
-        if r["kind"] != kind:
-            continue
-        accepted = accepted_by_name.get(r["name"])
-        hit = appears_any(accepted, r["answer"]) if accepted else bool(r["reports_expected"])
-        x, n = agg.get(r["name"], (0, 0))
-        agg[r["name"]] = (x + hit, n + 1)
-    return {name: x / n for name, (x, n) in agg.items()}
-
-def probe_item_rates():
-    return probe_rates("item")
-
-def measured_prior_bins():
-    rates = probe_item_rates()
-    wanted = {p["item_id"] for p in UNANSWERABLE_ITEMS}
-    if not wanted <= set(rates):
-        return {}
-    return {name: (prior_bin(rates[name]), prior_bin_label(prior_bin(rates[name]))) for name in wanted}
-
-def resolve_prior_levels():
-    bins = measured_prior_bins()
-    if bins:
-        return (lambda r: bins[r["item_id"]][0], sorted({b for b, _ in bins.values()}),
-                {b: lab for b, lab in bins.values()}, True)
-    return (lambda r: r["prior_strength"], PRIOR_STRENGTHS,
-            {pr: f"P{pr}" for pr in PRIOR_STRENGTHS}, False)
-
 def summarize_abstention():
     df = pd.read_json(ABSTENTION_RESULTS, lines=True)
-    level_of, levels, level_label, measured = resolve_prior_levels()
-    df["prior_level"] = df.apply(level_of, axis=1)
-    if measured:
-        header = ("\nPARAMETRIC-LEAKAGE RATE vs MEASURED PRIOR  (judge; fixed bins of closed-book knows-rate "
-                  "from prior_probe_results.jsonl -- bin edges never move with the item set)")
-    else:
-        header = ("\nPARAMETRIC-LEAKAGE RATE vs AUTHORED PRIOR LEVEL  (judge; 1=obscure .. 5=universal -- "
-                  "AUTHORED ratings, not measured; run 'python3 harness.py probe' to bin by measured prior)")
+    df["prior_level"] = df["prior_strength"]
+    levels = PRIOR_STRENGTHS
+    level_label = {pr: f"P{pr}" for pr in PRIOR_STRENGTHS}
+    header = "\nPARAMETRIC-LEAKAGE RATE vs AUTHORED PRIOR LEVEL  (judge; 1=obscure .. 5=universal)"
     stats = df.groupby(["model", "instruction", "prior_level"]).agg(
         tot=("label", "size"),
         ungrounded=("label", lambda s: (s == UNGROUNDED).sum()),
@@ -1148,7 +1083,7 @@ def summarize_abstention():
                 else:
                     cells.append(f"{level_label[pr]}=--")
             print("  " + f"{model} / {iname}".ljust(30) + "  " + "  ".join(cells))
-    print("\nPERMISSIVE - SOURCE_EXCLUSIVE and WEAK_GROUNDING - SOURCE_EXCLUSIVE parametric-leakage-rate gaps, per prior level:")
+    print("\nFLAG_INVITING - SOURCE_EXCLUSIVE and WEAK_GROUNDING - SOURCE_EXCLUSIVE parametric-leakage-rate gaps, per prior level:")
     for model, _ in MODELS:
         for gap_name in ("FLAG_INVITING", "WEAK_GROUNDING"):
             gaps = []
@@ -1499,7 +1434,7 @@ def vector_cells(rows, unit_field, level_field, positive_label):
         per[r[unit_field]] = (xi + (r["label"] == positive_label), n + 1)
     return cells
 
-def _print_vector_section(title, cells, level_prefix, level_label=None):
+def _print_vector_section(title, cells, level_prefix):
     print(title)
     for key in sorted(cells):
         model, iname, lv = key
@@ -1507,7 +1442,7 @@ def _print_vector_section(title, cells, level_prefix, level_label=None):
         p, icc, n_eff = cluster_icc(list(per.values()))
         vec = "  ".join(f"{u}:{xi}/{n}" for u, (xi, n) in sorted(per.items()))
         tail = "" if icc is None else f"   ICC {icc:.2f}  n_eff {n_eff:.1f}"
-        label = level_label[lv] if level_label else f"{level_prefix}{lv}"
+        label = f"{level_prefix}{lv}"
         print(f"  {model:<24} {iname:<30} {label}  rate {p:.2f}   {vec}{tail}")
 
 def vectors():
@@ -1522,12 +1457,8 @@ def vectors():
         print()
     abstention_rows = _load_jsonl(ABSTENTION_RESULTS)
     if abstention_rows:
-        level_of, _, level_label, measured = resolve_prior_levels()
-        for r in abstention_rows:
-            r["prior_level"] = level_of(r)
-        axis = "measured prior bin" if measured else "authored prior strength"
-        _print_vector_section(f"ABSTENTION -- faithful x/n per item, per model x instruction x {axis}",
-                              vector_cells(abstention_rows, "item_id", "prior_level", FAITHFUL), "P", level_label)
+        _print_vector_section("ABSTENTION -- faithful x/n per item, per model x instruction x authored prior strength",
+                              vector_cells(abstention_rows, "item_id", "prior_strength", FAITHFUL), "P")
         print()
     absence_rows = _load_jsonl(ABSENCE_RESULTS)
     if absence_rows:
