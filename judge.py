@@ -97,8 +97,7 @@ def judge_gate(rows, kappa, threshold=KAPPA_THRESHOLD):
     bad = anchor_disagreements(rows)
     if n_anchors == 0:
         failed = True  
-        reasons.append("anchor check FAILED: no clean-anchor rows present -- PRIMARY gate is "
-                       "vacuous (fail-closed; check the gold fixture)")
+        reasons.append("anchor check FAILED: no clean-anchor rows present")
     elif bad:
         failed = True # next line generates the report of which anchors were wrong 
         detail = ", ".join(f"[{r.get('role', '?')}] human={r['human']} judge={r['judge']}" for r in bad)

@@ -16,9 +16,9 @@ N_PER_CELL = 3
 JUDGE_CONCURRENCY = 4
 
 DOCUMENTS = {
-    "consent": "document1_consent.txt",
-    "epl": "document2_epl.txt",
-    "liquor": "document3_liquor.txt",
+    "consent": "documents/document1_consent.txt",
+    "epl": "documents/document2_epl.txt",
+    "liquor": "documents/document3_liquor.txt",
 }
 _here = os.path.dirname(os.path.abspath(__file__))
 DOCUMENT_TEXTS = {name: open(os.path.join(_here, fname)).read() for name, fname in DOCUMENTS.items()}
@@ -64,11 +64,11 @@ def ask_anthropic(system_instruction, question, doc, model):
         print(f"    WARNING: answer truncated at max_tokens ({model})", flush=True)
     return "".join(b.text for b in response.content if b.type == "text"), response.model # Returns only text sections of the model output
 
-def openai_reasoning(model):
+def openai_reasoning_kwargs(model):
     return {"reasoning": {"effort": "low"}} if model.startswith("gpt-5.4") else {}
 
 def ask_openai(system_instruction, question, doc, model):
-    reasoning = openai_reasoning(model)
+    reasoning = openai_reasoning_kwargs(model)
     r = openai_client().responses.create(model=model, instructions=system_instruction,
         input="Passage:\n" + doc + "\n\nQuestion: " + question,
         max_output_tokens=2000, **reasoning)
@@ -81,12 +81,12 @@ def call(model, provider, system, question, doc):
         return ask_anthropic(system, question, doc, model)
     return ask_openai(system, question, doc, model)
 
-def call_docfree(model, provider, system, question):
+def call_closed_book(model, provider, system, question):
     if provider == "anthropic":
         response = anthropic_client().messages.create(model=model, max_tokens=1200, system=system,
             messages=[{"role": "user", "content": question}])
         return "".join(b.text for b in response.content if b.type == "text"), response.model
-    reasoning = openai_reasoning(model)
+    reasoning = openai_reasoning_kwargs(model)
     r = openai_client().responses.create(model=model, instructions=system, input=question,
         max_output_tokens=2000, **reasoning)
     if r.status == "incomplete":
@@ -105,12 +105,12 @@ def with_retry(fn, *args, attempts=8):
             time.sleep(wait)
 
 # Ensures API keys are only called when needed and saved after first use
-_client = None
+_anthropic = None
 def anthropic_client():
-    global _client
-    if _client is None:
-        _client = anthropic.Anthropic()
-    return _client
+    global _anthropic
+    if _anthropic is None:
+        _anthropic = anthropic.Anthropic()
+    return _anthropic
 
 _openai = None
 def openai_client():

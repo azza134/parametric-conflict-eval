@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor
 from config import (passage, DOCUMENTS, DOCUMENT_TEXTS, doc_text, MODELS, N_PER_CELL, JUDGE_CONCURRENCY, JUDGE_MODEL, SYSTEM_INSTRUCTIONS,
-                    call, call_docfree, with_retry, perturb, appears, step_doc,
+                    call, call_closed_book, with_retry, perturb, appears, step_doc,
                     build_batch_message_params, extract_anthropic_text,
                     submit_anthropic_batch, poll_anthropic_batch, anthropic_batch_results)
 from judge import (caveat_judge, abstention_judge, FAITHFUL, UNGROUNDED, QUESTIONED, ENDORSED,
@@ -357,7 +357,7 @@ def lexical_caveat(answer):
     low = answer.lower() # converts model's output text to lowercase
     return any(w in low for w in EPISTEMIC_MARKERS) # checks the output against epistemic markers
 
-def classify(answer, stance): # lexical classification
+def derive_label(answer, stance): # lexical classification
     low = answer.lower()
     if "not in document" in low or "cannot be answered" in low:
         return "abstained"
@@ -392,7 +392,7 @@ def validate_ladders(): # validates the perturbation ladder
                     problems.append(f"{fact['fact']} S{s['severity']}: {e}")
     return problems
 
-def print_plan(n): # a preview for what running the harness will do to diagnose errors before using API credits
+def print_caveat_plan(n): # a preview for what running the harness will do to diagnose errors before using API credits
     print("CAVEAT TEST PLAN")
     for fact in PERTURBATION_LADDERS:
         print(f"\n  {fact['fact']}  (true = {fact['true']})") # prints fact and when its true eg. grasses true = 10cm
@@ -429,7 +429,7 @@ def load_done(path, fields):
 
 def _caveat_row(model, prov, iname, fact, s, answer, snapshot=None, rep=None): # creates a row for the caveat results
     stance, corroboration, reason, judge_snapshot = caveat_judge(fact["q"], answer)
-    label = classify(answer, stance)
+    label = derive_label(answer, stance)
     return {"model": model, "provider": prov, "snapshot": snapshot, "rep": rep, "run_id": RUN_ID,
             "ts": utc_now(), "judge_snapshot": judge_snapshot, "instruction": iname, "document": fact["doc"],
             "fact": fact["fact"], "severity": s["severity"], "true": fact["true"],
@@ -534,7 +534,7 @@ def rescore_caveat(models=None):
             r.pop("caveat_reason", None)
             r["stance"], r["corroboration"], r["stance_reason"] = stance, corroboration, reason
             r["judge_snapshot"] = judge_snapshot
-            r["label"] = classify(r["answer"], stance)
+            r["label"] = derive_label(r["answer"], stance)
             r["_rescored"] = True
         return r
 
@@ -595,7 +595,7 @@ def rescore_abstention():
     _rescore_faithfulness_file(ABSTENTION_RESULTS, "abstention_results.pre_rescore.jsonl",
                                "abstention_results.rescored.jsonl",
                                lambda r: doc_text(r["document"]),
-                               lambda r: r["item_id"], summarize_ungrounded)
+                               lambda r: r["item_id"], summarize_abstention)
 
 def rescore_absence():
     _rescore_faithfulness_file(ABSENCE_RESULTS, "matched_absence_results.pre_rescore.jsonl",
@@ -899,7 +899,7 @@ def decode_abstention_custom_id(custom_id):
 def abstention_wave_plan(done, n, model, instructions=None, items=None):
     return _sweep_wave_plan(ABSTENTION_SWEEP, done, n, model, instructions, items)
 
-def run_ungrounded(n):
+def run_abstention(n):
     _run_sweep(ABSTENTION_SWEEP, n)
 
 # Matched Absence Test: does the model abstain when the SAME fact's answering clause is deleted from its document?
@@ -1014,7 +1014,7 @@ def run_probe(n):
             already = done.get(key, 0)
             tally = {}
             for _ in range(already, n):
-                answer, snapshot = with_retry(call_docfree, model, prov, PROBE_INSTRUCTION, t["q"])
+                answer, snapshot = with_retry(call_closed_book, model, prov, PROBE_INSTRUCTION, t["q"])
                 row = _probe_row(model, prov, t, answer, snapshot)
                 out.write(json.dumps(row) + "\n")
                 out.flush()
@@ -1098,19 +1098,22 @@ def measured_prior_bins():
         return {}
     return {name: (prior_bin(rates[name]), prior_bin_label(prior_bin(rates[name]))) for name in wanted}
 
-def summarize_ungrounded():
-    df = pd.read_json(ABSTENTION_RESULTS, lines=True)
+def resolve_prior_levels():
     bins = measured_prior_bins()
     if bins:
-        df["prior_level"] = df["item_id"].map(lambda i: bins[i][0])
-        levels = sorted({b for b, _ in bins.values()})
-        level_label = {b: lab for b, lab in bins.values()}
+        return (lambda r: bins[r["item_id"]][0], sorted({b for b, _ in bins.values()}),
+                {b: lab for b, lab in bins.values()}, True)
+    return (lambda r: r["prior_strength"], PRIOR_STRENGTHS,
+            {pr: f"P{pr}" for pr in PRIOR_STRENGTHS}, False)
+
+def summarize_abstention():
+    df = pd.read_json(ABSTENTION_RESULTS, lines=True)
+    level_of, levels, level_label, measured = resolve_prior_levels()
+    df["prior_level"] = df.apply(level_of, axis=1)
+    if measured:
         header = ("\nPARAMETRIC-LEAKAGE RATE vs MEASURED PRIOR  (judge; fixed bins of closed-book knows-rate "
                   "from prior_probe_results.jsonl -- bin edges never move with the item set)")
     else:
-        df["prior_level"] = df["prior_strength"]
-        levels = PRIOR_STRENGTHS
-        level_label = {pr: f"P{pr}" for pr in PRIOR_STRENGTHS}
         header = ("\nPARAMETRIC-LEAKAGE RATE vs AUTHORED PRIOR LEVEL  (judge; 1=obscure .. 5=universal -- "
                   "AUTHORED ratings, not measured; run 'python3 harness.py probe' to bin by measured prior)")
     stats = df.groupby(["model", "instruction", "prior_level"]).agg(
@@ -1205,7 +1208,7 @@ def _absence_prompt(unit):
 def _absence_spec_row(model, prov, iname, unit, doc, answer, snapshot, rep):
     return _absence_row(model, prov, iname, FACT_BY_NAME[unit[0]], doc, answer, snapshot, rep)
 
-CAVEAT_SWEEP = SweepSpec("caveat", CAVEAT_RESULTS, ["model", "instruction", "fact", "severity"], print_plan,
+CAVEAT_SWEEP = SweepSpec("caveat", CAVEAT_RESULTS, ["model", "instruction", "fact", "severity"], print_caveat_plan,
                          lambda: PERTURBATION_LADDERS,
                          lambda ds: [(f["fact"], s["severity"]) for f in ds for s in f["steps"]], "cell",
                          lambda u, i, r: encode_caveat_custom_id(u[0], u[1], i, r), _caveat_unit_decode,
@@ -1218,7 +1221,7 @@ ABSTENTION_SWEEP = SweepSpec("abstention", ABSTENTION_RESULTS, ["model", "instru
                              lambda u, i, r: encode_abstention_custom_id(u[0], i, r), _abstention_unit_decode,
                              _abstention_prompt, _abstention_spec_row,
                              lambda u: u[0], lambda u: f"P{ITEM_BY_ID[u[0]]['prior_strength']} {u[0]}",
-                             summarize_ungrounded)
+                             summarize_abstention)
 
 ABSENCE_SWEEP = SweepSpec("absence", ABSENCE_RESULTS, ["model", "instruction", "fact"], print_absence_plan,
                           lambda: PERTURBATION_LADDERS,
@@ -1333,9 +1336,9 @@ def _run_sweep(spec, n):
     out.close()
     spec.summarize()
 
-def tradeoff_rows(caveat_rows, ungrounded_rows):
+def tradeoff_rows(caveat_rows, abstention_rows):
     cdf = pd.DataFrame(caveat_rows, columns=["model", "instruction", "severity", "label"])
-    udf = pd.DataFrame(ungrounded_rows, columns=["model", "instruction", "prior_strength", "label"])
+    udf = pd.DataFrame(abstention_rows, columns=["model", "instruction", "prior_strength", "label"])
     entries = []
     for model, _ in MODELS:
         for iname, _ in SYSTEM_INSTRUCTIONS: # compare the results between the tests
@@ -1359,12 +1362,12 @@ def _load_jsonl(path, quiet=False):
 
 def tradeoff():
     caveat_rows = _load_jsonl(CAVEAT_RESULTS, quiet=True)
-    ungrounded_rows = _load_jsonl(ABSTENTION_RESULTS, quiet=True)
+    abstention_rows = _load_jsonl(ABSTENTION_RESULTS, quiet=True)
     if caveat_rows is None:
         print(f"  no {CAVEAT_RESULTS} yet -- run: python3 harness.py caveat [N]")
-    if ungrounded_rows is None:
+    if abstention_rows is None:
         print(f"  no {ABSTENTION_RESULTS} yet -- run: python3 harness.py abstention [N]")
-    entries = tradeoff_rows(caveat_rows or [], ungrounded_rows or [])
+    entries = tradeoff_rows(caveat_rows or [], abstention_rows or [])
     if not entries:
         return
     print("TRADE-OFF -- error-flagging vs faithful abstention, per model x instruction x severity (higher = better on both)")
@@ -1389,8 +1392,8 @@ def cluster_icc(counts):
     msw = sum(xi * (n - xi) / n for xi, n in counts) / (N - m)
     k0 = (N - sum(n * n for _, n in counts) / N) / (m - 1)
     denom = msb + (k0 - 1) * msw
-    rho = 0.0 if denom <= 0 else max(0.0, min(1.0, (msb - msw) / denom))
-    return p, rho, N / (1 + (N / m - 1) * rho)
+    icc = 0.0 if denom <= 0 else max(0.0, min(1.0, (msb - msw) / denom))
+    return p, icc, N / (1 + (N / m - 1) * icc)
 
 def vector_cells(rows, unit_field, level_field, positive_label):
     cells = {}
@@ -1401,15 +1404,16 @@ def vector_cells(rows, unit_field, level_field, positive_label):
         per[r[unit_field]] = (xi + (r["label"] == positive_label), n + 1)
     return cells
 
-def _print_vector_section(title, cells, level_prefix):
+def _print_vector_section(title, cells, level_prefix, level_label=None):
     print(title)
     for key in sorted(cells):
         model, iname, lv = key
         per = cells[key]
-        p, rho, neff = cluster_icc(list(per.values()))
+        p, icc, n_eff = cluster_icc(list(per.values()))
         vec = "  ".join(f"{u}:{xi}/{n}" for u, (xi, n) in sorted(per.items()))
-        tail = "" if rho is None else f"   ICC {rho:.2f}  n_eff {neff:.1f}"
-        print(f"  {model:<24} {iname:<30} {level_prefix}{lv}  rate {p:.2f}   {vec}{tail}")
+        tail = "" if icc is None else f"   ICC {icc:.2f}  n_eff {n_eff:.1f}"
+        label = level_label[lv] if level_label else f"{level_prefix}{lv}"
+        print(f"  {model:<24} {iname:<30} {label}  rate {p:.2f}   {vec}{tail}")
 
 def vectors():
     print("PER-UNIT VECTORS -- the fact/item, not the rep, is the experimental unit: reps within a unit are correlated")
@@ -1423,8 +1427,12 @@ def vectors():
         print()
     abstention_rows = _load_jsonl(ABSTENTION_RESULTS)
     if abstention_rows:
-        _print_vector_section("ABSTENTION -- faithful x/n per item, per model x instruction x prior strength",
-                              vector_cells(abstention_rows, "item_id", "prior_strength", FAITHFUL), "P")
+        level_of, _, level_label, measured = resolve_prior_levels()
+        for r in abstention_rows:
+            r["prior_level"] = level_of(r)
+        axis = "measured prior bin" if measured else "authored prior strength"
+        _print_vector_section(f"ABSTENTION -- faithful x/n per item, per model x instruction x {axis}",
+                              vector_cells(abstention_rows, "item_id", "prior_level", FAITHFUL), "P", level_label)
         print()
     absence_rows = _load_jsonl(ABSENCE_RESULTS)
     if absence_rows:
@@ -1504,15 +1512,15 @@ def _bracket(rows, pred, unit_field="fact"):
         return "n=0"
     _, lo, hi = wilson_interval(x, n)
     per = unit_counts(rows, pred, unit_field)
-    _, rho, neff = cluster_icc(list(per.values()))
-    if rho is None:
+    _, icc, n_eff = cluster_icc(list(per.values()))
+    if icc is None:
         m = len(per)
         _, clo, chi = wilson_interval(round(p * m), m)
         return f"{p:.3f} [{lo:.3f},{hi:.3f}] (n={n}); cluster [{clo:.3f},{chi:.3f}] (m={m}, ICC n/a degenerate)"
-    _, clo, chi = wilson_interval(p * neff, neff)
-    return f"{p:.3f} [{lo:.3f},{hi:.3f}] (n={n}); cluster [{clo:.3f},{chi:.3f}] (n_eff={neff:.1f}, ICC={rho:.2f})"
+    _, clo, chi = wilson_interval(p * n_eff, n_eff)
+    return f"{p:.3f} [{lo:.3f},{hi:.3f}] (n={n}); cluster [{clo:.3f},{chi:.3f}] (n_eff={n_eff:.1f}, ICC={icc:.2f})"
 
-def _selective(cav_rows, ab_rows, model, iname):
+def _situated_faithfulness(cav_rows, ab_rows, model, iname):
     s0 = [r for r in cav_rows if r["model"] == model and r["instruction"] == iname and r["severity"] == 0]
     pert = [r for r in cav_rows if r["model"] == model and r["instruction"] == iname and r["severity"] >= 1]
     absent = [r for r in ab_rows if r["model"] == model and r["instruction"] == iname]
@@ -1556,7 +1564,7 @@ def _analysis_dataset(tag, cav_rows, ab_rows, models, facts, fact_doc):
             pert = [r for r in g if r["severity"] >= 1]
             s0 = [r for r in g if r["severity"] == 0]
             absn = [r for r in ab_rows if r["model"] == m and r["instruction"] == i]
-            k, nf = _selective(cav_rows, ab_rows, m, i)
+            k, nf = _situated_faithfulness(cav_rows, ab_rows, m, i)
             print(f"\n  {m} / {i}")
             print(f"    O1 flag_perturbed   {_bracket(pert, is_q)}")
             print(f"    O2 clean_specific   {_bracket(s0, accepts)}")
@@ -1579,10 +1587,10 @@ def _analysis_dataset(tag, cav_rows, ab_rows, models, facts, fact_doc):
     for m in models:
         best, bk, bn = None, -1, 0
         for i in FACTORIAL_ARMS:
-            k, nf = _selective(cav_rows, ab_rows, m, i)
+            k, nf = _situated_faithfulness(cav_rows, ab_rows, m, i)
             if k > bk:
                 best, bk, bn = i, k, nf
-        ka, na = _selective(cav_rows, ab_rows, m, "SELECTIVE_AUDIT")
+        ka, na = _situated_faithfulness(cav_rows, ab_rows, m, "SELECTIVE_AUDIT")
         cells = {}
         for i in (best, "SELECTIVE_AUDIT"):
             p = [r for r in cav_rows if r["model"] == m and r["instruction"] == i and r["severity"] >= 1]
@@ -1703,7 +1711,7 @@ def run_pilot(model_name, doc, n):
     print(f"PILOT: {model_name} x {doc} -- {len(ladders)} facts, {len(items)} items, N={n}\n")
     run_caveat(n)
     print()
-    run_ungrounded(n)
+    run_abstention(n)
     print()
     run_absence(n)
 
@@ -1712,7 +1720,7 @@ if __name__ == "__main__": # only run file if executed directly
     if args and args[0] == "caveat": # if args and args[0] = if the first argument is caveat
         run_caveat(int(args[1]) if len(args) > 1 else N_PER_CELL)
     elif args and args[0] == "abstention":
-        run_ungrounded(int(args[1]) if len(args) > 1 else N_PER_CELL)
+        run_abstention(int(args[1]) if len(args) > 1 else N_PER_CELL)
     elif args and args[0] == "absence":
         run_absence(int(args[1]) if len(args) > 1 else N_PER_CELL)
     elif args and args[0] == "tradeoff":
@@ -1746,7 +1754,7 @@ if __name__ == "__main__": # only run file if executed directly
         sys.exit(1)
     else:
         n = int(args[0]) if args else N_PER_CELL
-        print_plan(n)
+        print_caveat_plan(n)
         print()
         print_abstention_plan(n)
         print()

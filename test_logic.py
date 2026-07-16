@@ -6,21 +6,22 @@ import tempfile
 import unittest
 from unittest import mock
 
-from config import (perturb, with_retry, DOCUMENTS, doc_text, openai_reasoning, MODELS, FLAG_INVITING, SOURCE_EXCLUSIVE,
+from config import (perturb, with_retry, DOCUMENTS, doc_text, openai_reasoning_kwargs, MODELS, FLAG_INVITING, SOURCE_EXCLUSIVE,
                     SOURCE_EXCLUSIVE_FLAG_INVITING, SYSTEM_INSTRUCTIONS,
                     appears, passage, step_doc, build_batch_message_params)
 from harness import (wilson_interval, PERTURBATION_LADDERS, SEVERITIES, validate_ladders,
                      ABSENCE_PATCHES, absence_doc, validate_absence, _absence_row,
                      encode_absence_custom_id, decode_absence_custom_id, absence_wave_plan,
-                     total_steps, total_cells, classify, lexical_caveat, UNANSWERABLE_ITEMS, validate_items,
+                     total_steps, total_cells, derive_label, lexical_caveat, UNANSWERABLE_ITEMS, validate_items,
                      load_done, tradeoff_rows, cluster_icc, vector_cells,
-                     probe_targets, _probe_row, probe_item_rates, measured_prior_bins, prior_bin, prior_bin_label,
+                     probe_targets, _probe_row, probe_item_rates, measured_prior_bins, resolve_prior_levels,
+                     PRIOR_STRENGTHS, prior_bin, prior_bin_label,
                      encode_caveat_custom_id, decode_caveat_custom_id,
                      encode_abstention_custom_id, decode_abstention_custom_id,
                      caveat_wave_plan, abstention_wave_plan, concurrent_map, pilot_selection,
                      _run_anthropic_wave, _chunked_judge_sink, build_manifest,
                      SweepSpec, CAVEAT_SWEEP, ABSTENTION_SWEEP, ABSENCE_SWEEP, _sweep_wave_plan, _run_sweep,
-                     sign_test, bootstrap_ci, unit_counts, unit_rate_map, factorial_effects, _selective)
+                     sign_test, bootstrap_ci, unit_counts, unit_rate_map, factorial_effects, _situated_faithfulness)
 from judge import (cohens_kappa, FAITHFUL, UNGROUNDED,
                    judge_gate, anchor_disagreements, GATE_PASS, GATE_FAIL, KAPPA_THRESHOLD,
                    QUESTIONED, SILENT, ENDORSED, DECLINED, CAVEAT_LABELS, CAVEAT_SCHEMA, build_caveat_prompt,
@@ -38,7 +39,7 @@ class TestWilsonInterval(unittest.TestCase):
         p, low, high = wilson_interval(5, 5)
         self.assertEqual(p, 1.0)
         self.assertEqual(high, 1.0)   
-        self.assertLess(low, 1.0)     # prevents [1.00, 1.00] that Wald CI gives
+        self.assertLess(low, 1.0)     
 
 
 class TestCohensKappa(unittest.TestCase):
@@ -68,11 +69,10 @@ class TestCohensKappa(unittest.TestCase):
 
 
 class TestJudgeGate(unittest.TestCase):
-    # the gate only reads role/human/judge off each row, so a tiny factory is enough
     def _row(self, role, human, judge):
         return {"role": role, "human": human, "judge": judge}
 
-    def _agree_anchor(self):  # an anchor row the judge got right (keeps PRIMARY gate non-vacuous)
+    def _agree_anchor(self):  
         return self._row("clean-ungrounded anchor", FAITHFUL, FAITHFUL)
 
     def test_clean_anchors_high_kappa_passes(self):
@@ -80,14 +80,13 @@ class TestJudgeGate(unittest.TestCase):
         self.assertEqual(verdict, GATE_PASS)
 
     def test_anchor_disagreement_fails_despite_high_kappa(self):
-        # PRIMARY dominates: an obvious-case miss fails even with perfect aggregate agreement
         verdict, reasons = judge_gate([self._row("clean-ungrounded anchor", FAITHFUL, UNGROUNDED)], 1.0)
         self.assertEqual(verdict, GATE_FAIL)
-        self.assertTrue(any("anchor" in r.lower() for r in reasons))
+        self.assertTrue(any("anchor" in r.lower() for r in reasons)) # ensures the reason attached in this gate fail scenario involves anchor
 
     def test_low_kappa_with_clean_anchors_fails(self):
         verdict, reasons = judge_gate([self._agree_anchor()], 0.5)
-        self.assertEqual(verdict, GATE_FAIL)
+        self.assertEqual(verdict, GATE_FAIL) 
         self.assertTrue(any("kappa" in r.lower() for r in reasons))
 
     def test_borderline_disagreement_only_passes(self):
@@ -98,30 +97,28 @@ class TestJudgeGate(unittest.TestCase):
     def test_nan_kappa_clean_anchors_passes_with_warning(self):
         verdict, reasons = judge_gate([self._agree_anchor()], float("nan"))
         self.assertEqual(verdict, GATE_PASS)
-        self.assertTrue(any("WARNING" in r for r in reasons))
+        self.assertTrue(any("WARNING" in r for r in reasons)) # ensures even nan kappa passes with a warning attached
 
     def test_nan_kappa_anchor_disagreement_still_fails(self):
-        # NaN must not mask an anchor miss
         verdict, _ = judge_gate([self._row("clean-faithful anchor", FAITHFUL, UNGROUNDED)], float("nan"))
         self.assertEqual(verdict, GATE_FAIL)
 
     def test_kappa_exactly_threshold_passes(self):
-        verdict, _ = judge_gate([self._agree_anchor()], KAPPA_THRESHOLD)  # pins inclusive >=
-        self.assertEqual(verdict, GATE_PASS)
+        verdict, _ = judge_gate([self._agree_anchor()], KAPPA_THRESHOLD) 
+        self.assertEqual(verdict, GATE_PASS) 
 
     def test_anchor_matching_is_substring(self):
         rows = [self._row("clean-ungrounded anchor", FAITHFUL, UNGROUNDED),
                 self._row("clean-faithful anchor", FAITHFUL, UNGROUNDED),
                 self._row("borderline", FAITHFUL, UNGROUNDED)]
         bad = anchor_disagreements(rows)
-        self.assertEqual(len(bad), 2)  # both anchors, not the borderline
+        self.assertEqual(len(bad), 2)  
         self.assertTrue(all("anchor" in r["role"] for r in bad))
 
     def test_no_anchor_rows_fails(self):
-        # fail-closed: only borderline rows -> PRIMARY gate is vacuous
         verdict, reasons = judge_gate([self._row("borderline", FAITHFUL, FAITHFUL)], 0.95)
         self.assertEqual(verdict, GATE_FAIL)
-        self.assertTrue(any("vacuous" in r.lower() or "anchor" in r.lower() for r in reasons))
+        self.assertTrue(any("anchor" in r.lower() for r in reasons))
 
 
 class TestCaveatGate(unittest.TestCase):
@@ -184,14 +181,14 @@ class TestInstructions(unittest.TestCase):
                     len(encode_absence_custom_id(longest_fact, longest_instr, 2)))
         self.assertLessEqual(worst, 64)
 
-    def test_permissive_invites_flagging(self):
+    def test_permissive_invites_flagging(self): # lexical check that 'flag' is in 'flag inviting' instruction
         self.assertIn("flag", FLAG_INVITING.lower())
 
     def test_composed_arm_reuses_source_exclusive_verbatim(self):
         self.assertTrue(SOURCE_EXCLUSIVE_FLAG_INVITING.startswith(SOURCE_EXCLUSIVE))
         self.assertIn("flag your concern", SOURCE_EXCLUSIVE_FLAG_INVITING)
 
-    def test_no_hyphens_in_instruction_names(self):
+    def test_no_hyphens_in_instruction_names(self): # hyphens are a delimiter in harness.py that constrains what can be named
         for name, _ in SYSTEM_INSTRUCTIONS:
             self.assertNotIn("-", name)
 
@@ -200,30 +197,30 @@ class TestInstructions(unittest.TestCase):
             self.assertNotIn("-", fact["fact"])
 
 
-class TestClusterIcc(unittest.TestCase):
+class TestClusterIcc(unittest.TestCase): # anova splits variance, icc converts the split to compute redundancy, n_eff uses icc discounts sample size which goes to wilsons
     def test_all_or_nothing_clusters(self):
-        p, rho, neff = cluster_icc([(0, 8), (0, 8), (0, 8), (8, 8), (8, 8), (8, 8)])
+        p, icc, n_eff = cluster_icc([(0, 8), (0, 8), (0, 8), (8, 8), (8, 8), (8, 8)])
         self.assertEqual(p, 0.5)
-        self.assertEqual(rho, 1.0)
-        self.assertAlmostEqual(neff, 6.0)
+        self.assertEqual(icc, 1.0) # one-way random-effects, where clusters are random and repeats are nested inside
+        self.assertAlmostEqual(n_eff, 6.0) 
 
-    def test_degenerate_cell_has_no_icc(self):
+    def test_degenerate_cell_has_no_icc(self): # no variation 
         self.assertEqual(cluster_icc([(0, 8)] * 6), (0.0, None, None))
         self.assertEqual(cluster_icc([(8, 8)] * 6), (1.0, None, None))
 
     def test_uncorrelated_reps_keep_full_n(self):
-        p, rho, neff = cluster_icc([(1, 8), (0, 8), (0, 8), (0, 8), (1, 8), (0, 8)])
-        self.assertEqual(rho, 0.0)
-        self.assertAlmostEqual(neff, 48.0)
+        p, icc, n_eff = cluster_icc([(1, 8), (0, 8), (0, 8), (0, 8), (1, 8), (0, 8)])
+        self.assertEqual(icc, 0.0)
+        self.assertAlmostEqual(n_eff, 48.0)
 
 
 class TestMeasuredPriorBins(unittest.TestCase):
-    def test_no_probe_file_yields_no_bins(self):
+    def test_no_probe_file_yields_no_bins(self): # replaces the file with a non-existent path to ensure it returns an empty dict
         with mock.patch("harness.PROBE_RESULTS", "no_such_probe_file.jsonl"):
             self.assertEqual(probe_item_rates(), {})
             self.assertEqual(measured_prior_bins(), {})
 
-    def test_partial_probe_coverage_yields_no_bins(self):
+    def test_partial_probe_coverage_yields_no_bins(self): # unfinished doc will still return empty dict, this is an optional section that shouldn't crash if unfinished
         with mock.patch("harness.probe_item_rates", return_value={"water_boil": 1.0}):
             self.assertEqual(measured_prior_bins(), {})
 
@@ -237,7 +234,7 @@ class TestMeasuredPriorBins(unittest.TestCase):
         self.assertEqual(prior_bin_label(0), "0.00-0.25")
         self.assertEqual(prior_bin_label(3), "0.75-1.00")
 
-    def test_lopsided_sample_yields_lopsided_bins(self):
+    def test_lopsided_sample_yields_lopsided_bins(self): # ensures bin boundaries don't have goalposts moved
         rates = {p["item_id"]: 0.9 for p in UNANSWERABLE_ITEMS}
         with mock.patch("harness.probe_item_rates", return_value=rates):
             bins = measured_prior_bins()
@@ -246,18 +243,18 @@ class TestMeasuredPriorBins(unittest.TestCase):
 
     def test_even_spread_fills_all_bins(self):
         n = len(UNANSWERABLE_ITEMS)
-        rates = {p["item_id"]: i / (n - 1) for i, p in enumerate(UNANSWERABLE_ITEMS)}
+        rates = {p["item_id"]: i / (n - 1) for i, p in enumerate(UNANSWERABLE_ITEMS)} # even spread eg. n = 6 returns 0, 0.2, 0.4, 0.6, 0.8, 1
         with mock.patch("harness.probe_item_rates", return_value=rates):
             bins = measured_prior_bins()
         counts = {}
         for b, label in bins.values():
             counts[b] = counts.get(b, 0) + 1
-        self.assertEqual(set(counts), {0, 1, 2, 3})
-        self.assertEqual(sum(counts.values()), n)
+        self.assertEqual(set(counts), {0, 1, 2, 3}) # at least one item in each bin
+        self.assertEqual(sum(counts.values()), n) # total item count across bins = original amount
 
     def test_retired_items_in_probe_file_are_ignored(self):
         rates = {p["item_id"]: 0.9 for p in UNANSWERABLE_ITEMS}
-        rates["some_retired_item"] = 0.1
+        rates["some_retired_item"] = 0.1 # this item is not in UNANSWERABLE_ITEMS and will not be called
         with mock.patch("harness.probe_item_rates", return_value=rates):
             bins = measured_prior_bins()
         self.assertEqual(set(bins), {p["item_id"] for p in UNANSWERABLE_ITEMS})
@@ -268,9 +265,26 @@ class TestMeasuredPriorBins(unittest.TestCase):
                 {"kind": "fact", "name": "y", "reports_expected": True}]
         with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as f:
             for r in rows:
-                f.write(json.dumps(r) + "\n")
+                f.write(json.dumps(r) + "\n") # writes the rows to the real json, the last row will be tested to see it will not count due to wrong kind and name
         with mock.patch("harness.PROBE_RESULTS", f.name):
             self.assertEqual(probe_item_rates(), {"x": 0.5})
+
+    def test_resolver_prefers_measured_bins(self):
+        with mock.patch("harness.measured_prior_bins",
+                        return_value={"water_boil": (3, "0.75-1.00"), "grove_patron_cap": (0, "0.00-0.25")}):
+            level_of, levels, level_label, measured = resolve_prior_levels()
+        self.assertTrue(measured)
+        self.assertEqual(levels, [0, 3])
+        self.assertEqual(level_label, {3: "0.75-1.00", 0: "0.00-0.25"})
+        self.assertEqual(level_of({"item_id": "water_boil", "prior_strength": 1}), 3)
+
+    def test_resolver_falls_back_to_authored(self):
+        with mock.patch("harness.measured_prior_bins", return_value={}):
+            level_of, levels, level_label, measured = resolve_prior_levels()
+        self.assertFalse(measured)
+        self.assertEqual(levels, PRIOR_STRENGTHS)
+        self.assertEqual(level_of({"item_id": "water_boil", "prior_strength": 4}), 4)
+        self.assertEqual(level_label[4], "P4")
 
 
 class TestPriorProbe(unittest.TestCase):
@@ -280,7 +294,7 @@ class TestPriorProbe(unittest.TestCase):
         self.assertEqual({t["kind"] for t in targets}, {"fact", "item"})
         for t in targets:
             self.assertIn(t["doc"], DOCUMENTS)
-            self.assertTrue(t["q"] and t["expected"])
+            self.assertTrue(t["q"] and t["expected"]) # ensures q and expected are not empty
 
     def test_item_targets_use_prior_strength_as_rating(self):
         t = next(t for t in probe_targets() if t["name"] == "water_boil")
@@ -391,19 +405,19 @@ class TestMultiDocument(unittest.TestCase):
 
 class TestSeverityClassify(unittest.TestCase):
     def test_abstention_detected(self):
-        self.assertEqual(classify("NOT IN DOCUMENT", SILENT), "abstained")
+        self.assertEqual(derive_label("NOT IN DOCUMENT", SILENT), "abstained")
 
     def test_abstention_beats_stance(self):
-        self.assertEqual(classify("NOT IN DOCUMENT. That figure would be implausible.", QUESTIONED), "abstained")
+        self.assertEqual(derive_label("NOT IN DOCUMENT. That figure would be implausible.", QUESTIONED), "abstained")
 
     def test_questioned_follows_judge(self):
-        self.assertEqual(classify("It says 500 metres, which is implausible.", QUESTIONED), "questioned")
+        self.assertEqual(derive_label("It says 500 metres, which is implausible.", QUESTIONED), "questioned")
 
     def test_silent_follows_judge(self):
-        self.assertEqual(classify("It says 500 metres.", SILENT), "silent")
+        self.assertEqual(derive_label("It says 500 metres.", SILENT), "silent")
 
     def test_endorsed_follows_judge(self):
-        self.assertEqual(classify("It says 500 metres, which is standard.", ENDORSED), "endorsed")
+        self.assertEqual(derive_label("It says 500 metres, which is standard.", ENDORSED), "endorsed")
 
     def test_lexical_caveat_catches_caveat(self):
         self.assertTrue(lexical_caveat("This value seems implausible."))
@@ -622,7 +636,7 @@ class TestFactorialEffects(unittest.TestCase):
         self.assertEqual(effects["FI_main"], [])
 
 
-class TestSelective(unittest.TestCase):
+class TestSituatedFaithfulness(unittest.TestCase):
     def cav(self, fact, sev, stance, n=3):
         return [{"model": "m", "instruction": "i", "fact": fact, "severity": sev, "stance": stance}] * n
 
@@ -631,18 +645,18 @@ class TestSelective(unittest.TestCase):
 
     def test_all_three_states_required(self):
         cav_rows = self.cav("a", 0, "silent") + self.cav("a", 3, "questioned") + self.cav("a", 5, "questioned")
-        self.assertEqual(_selective(cav_rows, self.ab("a", True), "m", "i"), (1, 1))
-        self.assertEqual(_selective(cav_rows, self.ab("a", False), "m", "i"), (0, 1))
+        self.assertEqual(_situated_faithfulness(cav_rows, self.ab("a", True), "m", "i"), (1, 1))
+        self.assertEqual(_situated_faithfulness(cav_rows, self.ab("a", False), "m", "i"), (0, 1))
 
     def test_s0_flag_fails_accept(self):
         cav_rows = self.cav("a", 0, "questioned") + self.cav("a", 3, "questioned") + self.cav("a", 5, "questioned")
-        self.assertEqual(_selective(cav_rows, self.ab("a", True), "m", "i"), (0, 1))
+        self.assertEqual(_situated_faithfulness(cav_rows, self.ab("a", True), "m", "i"), (0, 1))
 
     def test_majority_not_unanimity(self):
         cav_rows = (self.cav("a", 0, "silent") + self.cav("a", 3, "questioned", 2) + self.cav("a", 3, "silent", 1)
                     + self.cav("a", 4, "questioned", 2) + self.cav("a", 4, "endorsed", 1)
                     + self.cav("a", 5, "questioned"))
-        self.assertEqual(_selective(cav_rows, self.ab("a", True), "m", "i"), (1, 1))
+        self.assertEqual(_situated_faithfulness(cav_rows, self.ab("a", True), "m", "i"), (1, 1))
 
 
 class TestPerturb(unittest.TestCase):
@@ -709,12 +723,12 @@ class TestWithRetry(unittest.TestCase):
 
 class TestEffortConvention(unittest.TestCase):
     def test_v1_gpt54_candidates_stay_pinned_low(self):
-        self.assertEqual(openai_reasoning("gpt-5.4-nano"), {"reasoning": {"effort": "low"}})
-        self.assertEqual(openai_reasoning("gpt-5.4-mini"), {"reasoning": {"effort": "low"}})
+        self.assertEqual(openai_reasoning_kwargs("gpt-5.4-nano"), {"reasoning": {"effort": "low"}})
+        self.assertEqual(openai_reasoning_kwargs("gpt-5.4-mini"), {"reasoning": {"effort": "low"}})
 
     def test_new_models_run_at_vendor_default(self):
-        self.assertEqual(openai_reasoning("gpt-5.6-terra"), {})
-        self.assertEqual(openai_reasoning("gpt-4o-mini"), {})
+        self.assertEqual(openai_reasoning_kwargs("gpt-5.6-terra"), {})
+        self.assertEqual(openai_reasoning_kwargs("gpt-4o-mini"), {})
 
 
 class TestVectorCells(unittest.TestCase):
