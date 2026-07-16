@@ -3,8 +3,11 @@ import json
 import math
 import os
 import tempfile
+import types
 import unittest
 from unittest import mock
+
+import config
 
 from config import (perturb, with_retry, DOCUMENTS, doc_text, openai_reasoning_kwargs, MODELS, FLAG_INVITING, SOURCE_EXCLUSIVE,
                     SOURCE_EXCLUSIVE_FLAG_INVITING, SYSTEM_INSTRUCTIONS,
@@ -21,7 +24,8 @@ from harness import (wilson_interval, PERTURBATION_LADDERS, SEVERITIES, validate
                      caveat_wave_plan, abstention_wave_plan, concurrent_map, pilot_selection,
                      _run_anthropic_wave, _chunked_judge_sink, build_manifest,
                      SweepSpec, CAVEAT_SWEEP, ABSTENTION_SWEEP, ABSENCE_SWEEP, _sweep_wave_plan, _run_sweep,
-                     sign_test, bootstrap_ci, unit_counts, unit_rate_map, factorial_effects, _situated_faithfulness)
+                     sign_test, bootstrap_ci, unit_counts, unit_rate_map, factorial_effects, _situated_faithfulness,
+                     _openai_batch_chunks)
 from judge import (cohens_kappa, FAITHFUL, UNGROUNDED,
                    judge_gate, anchor_disagreements, GATE_PASS, GATE_FAIL, KAPPA_THRESHOLD,
                    QUESTIONED, SILENT, ENDORSED, DECLINED, CAVEAT_LABELS, CAVEAT_SCHEMA, build_caveat_prompt,
@@ -1078,22 +1082,149 @@ class TestRunSweep(unittest.TestCase):
         self.assertEqual(w1, ["fk-u1-I-r1"])
         self.assertEqual(w2, ["fk-u2-I-r0", "fk-u2-I-r1"])
 
+    def _ok_rec(self, cid):
+        return (cid, {"custom_id": cid, "error": None,
+                      "response": {"status_code": 200, "body": {"model": "snap", "output": [
+                          {"type": "message", "content": [{"type": "output_text", "text": "ans"}]}]}}})
+
     def test_run_sweep_writes_then_resumes(self):
         with tempfile.TemporaryDirectory() as td:
             path = os.path.join(td, "r.jsonl")
             spec = self._fake_spec(path)
+            submitted = []
+            def fake_submit(reqs, endpoint="/v1/responses"):
+                submitted.append([cid for cid, _ in reqs])
+                return "b1"
+            def fake_results(bid):
+                for cid in submitted[-1]:
+                    yield self._ok_rec(cid)
             with mock.patch("harness.MODELS", [("m", "openai")]), \
                  mock.patch("harness.SYSTEM_INSTRUCTIONS", [("I", "sys")]), \
-                 mock.patch("harness.with_retry", return_value=("ans", "snap")) as wr:
+                 mock.patch("harness.INSTR_BY_NAME", {"I": "sys"}), \
+                 mock.patch("harness.submit_openai_batch", side_effect=fake_submit), \
+                 mock.patch("harness.poll_openai_batch", return_value=None), \
+                 mock.patch("harness.openai_batch_results", side_effect=fake_results):
                 _run_sweep(spec, 1)
-                self.assertEqual(wr.call_count, 2)
+                self.assertEqual(len(submitted), 1)
                 with open(path) as f:
                     rows = [json.loads(l) for l in f]
                 self.assertEqual([r["u"] for r in rows], ["u1", "u2"])
+                self.assertEqual([r["answer"] for r in rows], ["ans", "ans"])
                 _run_sweep(spec, 1)
-                self.assertEqual(wr.call_count, 2)
+                self.assertEqual(len(submitted), 1)
                 with open(path) as f:
                     self.assertEqual(len(f.readlines()), 2)
+
+    def test_run_sweep_openai_error_falls_back_to_sync(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = os.path.join(td, "r.jsonl")
+            spec = self._fake_spec(path)
+            submitted = []
+            def fake_submit(reqs, endpoint="/v1/responses"):
+                submitted.append([cid for cid, _ in reqs])
+                return "b1"
+            def fake_results(bid):
+                cids = submitted[-1]
+                yield self._ok_rec(cids[0])
+                yield (cids[1], {"custom_id": cids[1], "response": None, "error": {"message": "boom"}})
+            with mock.patch("harness.MODELS", [("m", "openai")]), \
+                 mock.patch("harness.SYSTEM_INSTRUCTIONS", [("I", "sys")]), \
+                 mock.patch("harness.INSTR_BY_NAME", {"I": "sys"}), \
+                 mock.patch("harness.submit_openai_batch", side_effect=fake_submit), \
+                 mock.patch("harness.poll_openai_batch", return_value=None), \
+                 mock.patch("harness.openai_batch_results", side_effect=fake_results), \
+                 mock.patch("harness.with_retry", return_value=("synced", "snap2")) as wr:
+                _run_sweep(spec, 1)
+                self.assertEqual(wr.call_count, 1)
+                with open(path) as f:
+                    answers = sorted(json.loads(l)["answer"] for l in f)
+                self.assertEqual(answers, ["ans", "synced"])
+
+
+class TestOpenAIBatch(unittest.TestCase):
+    def test_body_terra_no_reasoning_no_format(self):
+        b = config.build_openai_batch_body("gpt-5.6-terra", "sys", "in")
+        self.assertEqual(b["model"], "gpt-5.6-terra")
+        self.assertEqual(b["instructions"], "sys")
+        self.assertEqual(b["input"], "in")
+        self.assertEqual(b["max_output_tokens"], 2000)
+        self.assertNotIn("reasoning", b)
+        self.assertNotIn("text", b)
+
+    def test_body_judge_reasoning_and_format(self):
+        fmt = {"type": "json_schema", "name": "verdict"}
+        b = config.build_openai_batch_body("gpt-5.4-mini", "s", "i", max_output_tokens=2048, text_format=fmt)
+        self.assertEqual(b["reasoning"], {"effort": "low"})
+        self.assertEqual(b["text"], {"format": fmt})
+        self.assertEqual(b["max_output_tokens"], 2048)
+
+    @mock.patch("config.openai_client")
+    def test_submit_writes_jsonl_and_creates_batch(self, oc):
+        client = oc.return_value
+        client.files.create.return_value = types.SimpleNamespace(id="file-1")
+        client.batches.create.return_value = types.SimpleNamespace(id="batch-1")
+        body = config.build_openai_batch_body("gpt-5.6-terra", "sys", "in")
+        bid = config.submit_openai_batch([("cid-1", body)])
+        self.assertEqual(bid, "batch-1")
+        _, fkwargs = client.files.create.call_args
+        _, data = fkwargs["file"]
+        line = json.loads(data.decode())
+        self.assertEqual(line["custom_id"], "cid-1")
+        self.assertEqual(line["method"], "POST")
+        self.assertEqual(line["url"], "/v1/responses")
+        self.assertEqual(line["body"]["model"], "gpt-5.6-terra")
+        self.assertEqual(fkwargs["purpose"], "batch")
+        _, bkwargs = client.batches.create.call_args
+        self.assertEqual(bkwargs["input_file_id"], "file-1")
+        self.assertEqual(bkwargs["endpoint"], "/v1/responses")
+        self.assertEqual(bkwargs["completion_window"], "24h")
+
+    @mock.patch("config.time.sleep")
+    @mock.patch("config.openai_client")
+    def test_poll_loops_until_terminal(self, oc, sleep):
+        client = oc.return_value
+        client.batches.retrieve.side_effect = [types.SimpleNamespace(status="in_progress"),
+                                               types.SimpleNamespace(status="completed")]
+        seen = []
+        b = config.poll_openai_batch("b1", poll_interval=0, on_poll=lambda x: seen.append(x.status))
+        self.assertEqual(b.status, "completed")
+        self.assertEqual(seen, ["in_progress", "completed"])
+        sleep.assert_called_once()
+
+    @mock.patch("config.openai_client")
+    def test_results_yields_success_and_error_lines(self, oc):
+        client = oc.return_value
+        client.batches.retrieve.return_value = types.SimpleNamespace(output_file_id="out", error_file_id="err")
+        texts = {"out": '{"custom_id":"a","response":{"status_code":200,"body":{"x":1}},"error":null}\n',
+                 "err": '{"custom_id":"b","response":null,"error":{"message":"boom"}}\n'}
+        client.files.content.side_effect = lambda fid: types.SimpleNamespace(text=texts[fid])
+        got = dict(config.openai_batch_results("b1"))
+        self.assertEqual(got["a"]["response"]["status_code"], 200)
+        self.assertIsNone(got["a"]["error"])
+        self.assertEqual(got["b"]["error"]["message"], "boom")
+
+    def test_extract_text_skips_reasoning_item(self):
+        body = {"model": "m", "output": [
+            {"type": "reasoning", "summary": []},
+            {"type": "message", "role": "assistant", "content": [
+                {"type": "output_text", "text": "hello "},
+                {"type": "output_text", "text": "world"}]}]}
+        self.assertEqual(config.extract_openai_text(body), "hello world")
+        self.assertEqual(config.extract_openai_text({"output": []}), "")
+
+    def test_chunks_split_by_token_budget(self):
+        reqs = [(f"c{i}", {"instructions": "x" * 400, "input": "y" * 400}) for i in range(5)]
+        with mock.patch("harness.OPENAI_BATCH_TOKEN_BUDGET", 500), \
+             mock.patch("harness.OPENAI_BATCH_MAX_REQUESTS", 100):
+            chunks = list(_openai_batch_chunks(reqs))
+        self.assertEqual([len(c) for c in chunks], [2, 2, 1])
+
+    def test_chunks_split_by_max_requests(self):
+        reqs = [(f"c{i}", {"instructions": "", "input": ""}) for i in range(5)]
+        with mock.patch("harness.OPENAI_BATCH_TOKEN_BUDGET", 10 ** 9), \
+             mock.patch("harness.OPENAI_BATCH_MAX_REQUESTS", 2):
+            chunks = list(_openai_batch_chunks(reqs))
+        self.assertEqual([len(c) for c in chunks], [2, 2, 1])
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 import anthropic
+import json
 import os
 import re
 import time
@@ -170,3 +171,53 @@ def poll_anthropic_batch(batch_id, poll_interval=30, on_poll=None):
 def anthropic_batch_results(batch_id):
     for r in anthropic_client().messages.batches.results(batch_id):
         yield r.custom_id, r.result
+
+def build_openai_batch_body(model, instructions, input_text, max_output_tokens=2000, text_format=None):
+    body = {"model": model, "instructions": instructions, "input": input_text,
+            "max_output_tokens": max_output_tokens, **openai_reasoning_kwargs(model)}
+    if text_format is not None:
+        body["text"] = {"format": text_format}
+    return body
+
+def submit_openai_batch(requests, endpoint="/v1/responses"):
+    lines = "".join(json.dumps({"custom_id": cid, "method": "POST", "url": endpoint, "body": body}) + "\n"
+                    for cid, body in requests)
+    upload = with_retry(lambda: openai_client().files.create(file=("batch.jsonl", lines.encode()), purpose="batch"))
+    batch = with_retry(lambda: openai_client().batches.create(
+        input_file_id=upload.id, endpoint=endpoint, completion_window="24h"))
+    return batch.id
+
+OPENAI_BATCH_TERMINAL = {"completed", "failed", "expired", "cancelled"}
+
+def poll_openai_batch(batch_id, poll_interval=30, on_poll=None):
+    while True:
+        batch = with_retry(lambda: openai_client().batches.retrieve(batch_id))
+        if on_poll:
+            on_poll(batch)
+        if batch.status in OPENAI_BATCH_TERMINAL:
+            return batch
+        time.sleep(poll_interval)
+
+def openai_batch_results(batch_id):
+    batch = with_retry(lambda: openai_client().batches.retrieve(batch_id))
+    for fid in (batch.output_file_id, batch.error_file_id):
+        if not fid:
+            continue
+        content = with_retry(lambda: openai_client().files.content(fid)).text
+        for line in content.splitlines():
+            if line.strip():
+                rec = json.loads(line)
+                yield rec["custom_id"], rec
+
+def extract_openai_text(body):
+    parts = []
+    for item in body.get("output", []):
+        if item.get("type") == "message":
+            for c in item.get("content", []):
+                if c.get("type") == "output_text":
+                    parts.append(c.get("text", ""))
+    return "".join(parts)
+
+def build_openai_candidate_body(model, system_instruction, question, doc, max_output_tokens=2000):
+    return build_openai_batch_body(model, system_instruction,
+        "Passage:\n" + doc + "\n\nQuestion: " + question, max_output_tokens)

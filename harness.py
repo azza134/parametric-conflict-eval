@@ -15,7 +15,9 @@ from concurrent.futures import ThreadPoolExecutor
 from config import (passage, DOCUMENTS, DOCUMENT_TEXTS, doc_text, MODELS, N_PER_CELL, JUDGE_CONCURRENCY, JUDGE_MODEL, SYSTEM_INSTRUCTIONS,
                     call, call_closed_book, with_retry, perturb, appears, step_doc,
                     build_batch_message_params, extract_anthropic_text,
-                    submit_anthropic_batch, poll_anthropic_batch, anthropic_batch_results)
+                    submit_anthropic_batch, poll_anthropic_batch, anthropic_batch_results,
+                    build_openai_candidate_body, submit_openai_batch, poll_openai_batch,
+                    openai_batch_results, extract_openai_text)
 from judge import (caveat_judge, abstention_judge, FAITHFUL, UNGROUNDED, QUESTIONED, ENDORSED,
                    DECLINED, NAMED_AUTHORITY, CAVEAT_SYSTEM, ABSTENTION_SYSTEM)
 
@@ -1306,6 +1308,107 @@ def _run_sweep_anthropic_batch(spec, model, prov, n, done, out, seen, total):
             print(f"  [{seen}/{total}] {model} / {iname} / {spec.cell_label(u)}  {status}", flush=True)
     return seen
 
+OPENAI_BATCH_TOKEN_BUDGET = 1_500_000
+OPENAI_BATCH_MAX_REQUESTS = 2000
+
+def _openai_batch_chunks(requests):
+    chunk, size = [], 0
+    for cid, body in requests:
+        t = (len(body.get("instructions", "")) + len(body.get("input", ""))) // 4
+        if chunk and (size + t > OPENAI_BATCH_TOKEN_BUDGET or len(chunk) >= OPENAI_BATCH_MAX_REQUESTS):
+            yield chunk
+            chunk, size = [], 0
+        chunk.append((cid, body))
+        size += t
+    if chunk:
+        yield chunk
+
+def _run_openai_wave(model, prov, custom_ids, wave_label, build_request_fn, sync_call_fn, on_answer):
+    if not custom_ids:
+        return
+    requests = [(cid, build_request_fn(model, cid)) for cid in custom_ids]
+    chunks = list(_openai_batch_chunks(requests))
+    for idx, chunk in enumerate(chunks, 1):
+        label = wave_label if len(chunks) == 1 else f"{wave_label} chunk {idx}/{len(chunks)}"
+        print(f"  submitting {label}: {len(chunk)} request(s)", flush=True)
+        batch_id = submit_openai_batch(chunk)
+        print(f"    batch id: {batch_id}", flush=True)
+
+        def on_poll(batch, label=label, batch_id=batch_id):
+            rc = batch.request_counts
+            print(f"    {label} [{batch_id}] {batch.status}  "
+                  f"completed={getattr(rc, 'completed', 0)} failed={getattr(rc, 'failed', 0)} "
+                  f"total={getattr(rc, 'total', 0)}", flush=True)
+
+        poll_openai_batch(batch_id, poll_interval=30, on_poll=on_poll)
+
+        submitted = {cid for cid, _ in chunk}
+        fallbacks, seen_ids = [], set()
+        for cid, rec in openai_batch_results(batch_id):
+            if cid not in submitted or cid in seen_ids:
+                continue
+            seen_ids.add(cid)
+            resp = rec.get("response")
+            if resp and resp.get("status_code") == 200 and rec.get("error") is None:
+                body = resp["body"]
+                on_answer(cid, extract_openai_text(body), body.get("model"))
+            else:
+                print(f"    {label}: {cid} -> error; deferring to synchronous retry", flush=True)
+                fallbacks.append(cid)
+        for cid in submitted:
+            if cid not in seen_ids:
+                print(f"    {label}: {cid} missing from batch results; deferring to synchronous retry", flush=True)
+                fallbacks.append(cid)
+        for cid in fallbacks:
+            answer, snapshot = sync_call_fn(cid)
+            on_answer(cid, answer, snapshot)
+
+def _run_sweep_openai_batch(spec, model, prov, n, done, out, seen, total):
+    wave1_ids, wave2_ids = _sweep_wave_plan(spec, done, n, model)
+    custom_ids = wave1_ids + wave2_ids
+    cell_tally = {}
+
+    def sync_fallback(cid):
+        unit, iname, rep = spec.decode(cid)
+        q, doc = spec.prompt(unit)
+        return with_retry(call, model, prov, INSTR_BY_NAME[iname], q, doc)
+
+    def batch_request(req_model, cid):
+        unit, iname, rep = spec.decode(cid)
+        q, doc = spec.prompt(unit)
+        return build_openai_candidate_body(req_model, INSTR_BY_NAME[iname], q, doc)
+
+    def judge_one(item):
+        cid, answer, snapshot = item
+        unit, iname, rep = spec.decode(cid)
+        q, doc = spec.prompt(unit)
+        return (unit, iname, rep), spec.row(model, prov, iname, unit, doc, answer, snapshot, rep)
+
+    def write_row(res):
+        (unit, iname, rep), row = res
+        out.write(json.dumps(row) + "\n")
+        out.flush()
+        key = (iname,) + unit
+        cell_tally.setdefault(key, {})
+        cell_tally[key][row["label"]] = cell_tally[key].get(row["label"], 0) + 1
+        print(f"    {model} / {iname} / {spec.wave_label(unit)} rep{rep} -> {row['label']}", flush=True)
+
+    push, flush = _chunked_judge_sink(judge_one, write_row)
+    _run_openai_wave(model, prov, custom_ids, f"{spec.name} batch", batch_request, sync_fallback, push)
+    flush()
+
+    for iname, instr in SYSTEM_INSTRUCTIONS:
+        for u in spec.units(spec.dataset()):
+            seen += 1
+            already = done.get((model, iname) + u, 0)
+            if already >= n:
+                status = "complete (resumed)"
+            else:
+                tally = cell_tally.get((iname,) + u, {})
+                status = " ".join(f"{k}={v}" for k, v in sorted(tally.items()))
+            print(f"  [{seen}/{total}] {model} / {iname} / {spec.cell_label(u)}  {status}", flush=True)
+    return seen
+
 def _run_sweep(spec, n):
     if not spec.plan(n):
         sys.exit(1)
@@ -1317,22 +1420,8 @@ def _run_sweep(spec, n):
     for model, prov in MODELS:
         if prov == "anthropic":
             seen = _run_sweep_anthropic_batch(spec, model, prov, n, done, out, seen, total)
-            continue
-        for iname, instr in SYSTEM_INSTRUCTIONS:
-            for u in units:
-                seen += 1
-                key = (model, iname) + u
-                already = done.get(key, 0)
-                cell = {}
-                q, doc = spec.prompt(u)
-                for rep_i in range(already, n):
-                    answer, snapshot = with_retry(call, model, prov, instr, q, doc)
-                    row = spec.row(model, prov, iname, u, doc, answer, snapshot, rep_i)
-                    out.write(json.dumps(row) + "\n")
-                    out.flush()
-                    cell[row["label"]] = cell.get(row["label"], 0) + 1
-                status = "complete (resumed)" if already >= n else " ".join(f"{k}={v}" for k, v in sorted(cell.items()))
-                print(f"  [{seen}/{total}] {model} / {iname} / {spec.cell_label(u)}  {status}", flush=True)
+        else:
+            seen = _run_sweep_openai_batch(spec, model, prov, n, done, out, seen, total)
     out.close()
     spec.summarize()
 
