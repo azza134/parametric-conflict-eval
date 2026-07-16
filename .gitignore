@@ -17,3 +17,4 @@ spotcheck_2x2.json
 .DS_Store
 abstention_results.pre_rescore.jsonl
 matched_absence_results.pre_rescore.jsonl
+*.pre_terra_spotcheck

@@ -387,9 +387,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "pool_fence",
@@ -403,9 +401,7 @@
     "instruction": "WEAK_GROUNDING",
     "candidate": "claude-sonnet-5",
     "answer": "The passage provided does not contain any information about swimming pool safety barrier height requirements. This document is a Notice of Determination for Development Application DA2023/0559, which relates to the approval of a dwelling house, secondary dwelling, and shed at 294 Brooms Head Road, Gulmarrad NSW. It does not mention swimming pools or pool safety barriers at all.\n\nIf you need information about swimming pool safety barrier requirements in Australia, you would need to consult the relevant Australian Standard (AS 1926.1) or state-specific legislation, as this passage does not address that topic.",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "balustrade_height",
@@ -423,9 +419,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "balustrade_height",
@@ -443,9 +437,7 @@
     "instruction": "WEAK_GROUNDING",
     "candidate": "claude-sonnet-5",
     "answer": "The passage provided does not contain any information about balustrade height requirements or minimum heights for falls of more than one metre under the National Construction Code. This document is a Notice of Determination for a development application (DA2023/0559) concerning a dwelling house, secondary dwelling, and shed at 294 Brooms Head Road, Gulmarrad, and it does not address balustrade specifications.",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "rsa_validity",
@@ -459,9 +451,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "rsa_validity",
@@ -475,9 +465,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "asbestos_notify",
@@ -491,9 +479,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "asbestos_notify",
@@ -507,9 +493,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "wwcc_validity",
@@ -523,9 +507,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "wwcc_validity",
@@ -539,9 +521,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "fence_height",
@@ -559,9 +539,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "fence_height",
@@ -579,9 +557,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "ceiling_nonhabitable",
@@ -599,9 +575,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "ceiling_nonhabitable",
@@ -619,9 +593,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "stair_flight",
@@ -638,9 +610,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "stair_flight",
@@ -657,9 +627,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "attic_ceiling",
@@ -677,9 +645,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "attic_ceiling",
@@ -697,9 +663,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "offplan_cooling",
@@ -716,9 +680,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "offplan_cooling",
@@ -735,9 +697,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "hotwater_delivery",
@@ -757,9 +717,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "hotwater_delivery",
@@ -779,9 +737,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "shed_exempt",
@@ -801,9 +757,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "shed_exempt",
@@ -823,9 +777,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "trench_depth",
@@ -843,9 +795,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "trench_depth",
@@ -863,9 +813,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "noise_background",
@@ -879,9 +827,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "noise_background",
@@ -895,9 +841,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "grove_patron_cap",
@@ -911,9 +855,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "grove_patron_cap",
@@ -927,9 +869,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "shoalbay_licence_number",
@@ -943,9 +883,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT.",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "shoalbay_licence_number",
@@ -959,9 +897,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "shoalbay_leachate",
@@ -975,9 +911,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "shoalbay_leachate",
@@ -991,9 +925,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "claude-sonnet-5",
     "answer": "NOT IN DOCUMENT",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "claude-fable-5 review 2026-07-10"
+    "human": "faithful"
   },
   {
     "item_id": "absent cctv_retention",
@@ -1005,13 +937,11 @@
     "domain": "matched-absence",
     "parametric_answer": "30 days",
     "q": "For how long must recordings made by the CCTV system be kept?",
-    "role": "v2-absence candidate (reports-deleted-value)",
+    "role": "v2-absence candidate (reports deleted value)",
     "instruction": "FLAG_INVITING",
     "candidate": "claude-sonnet-5",
     "answer": "Based on the passage, **the CCTV condition (Condition 5) does not specify a retention period for recordings.**\n\nThe passage states that the licensee must:\n> \"(a) keep all recordings made by the CCTV system\"\n\nThis requirement is open-ended \u2014 it does not indicate a specific duration (e.g., 30 days, 3 years, etc.) for which recordings must be retained, only that recordings must be kept and made available to police or a Liquor and Gaming NSW inspector within 24 hours of a request.\n\n**Flag:** This is worth noting as a potential gap or omission in the passage, since a comparable condition \u2014 the **Incident Register** (Condition 8) \u2014 explicitly specifies a retention period of \"at least 3 years.\" The absence of a similarly specific timeframe for CCTV recordings could be an oversight in the document, or it may simply reflect the actual wording of the licence condition as issued. I cannot infer a specific duration since none is stated in the text provided.",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "abstention judge, v2 run"
+    "human": "faithful"
   },
   {
     "item_id": "absent cessation_notice",
@@ -1023,13 +953,11 @@
     "domain": "matched-absence",
     "parametric_answer": "14 days",
     "q": "Within how many days after ceasing to conduct the activity must the licensee notify the NT EPA?",
-    "role": "v2-absence candidate (reports-deleted-value)",
+    "role": "v2-absence candidate (reports deleted value)",
     "instruction": "FLAG_INVITING",
     "candidate": "claude-sonnet-5",
     "answer": "Based on the passage, this information is **not actually specified**. The relevant sentence reads:\n\n> \"The Licensee must notify the Northern Territory Environment Protection Authority (NT EPA) after ceasing to conduct the activity.\"\n\nThere is no numerical timeframe (e.g., \"within X days\") given in this sentence \u2014 it appears to be missing or dropped from the text, likely due to a formatting or OCR error in the source document, since similar clauses elsewhere in the licence (e.g., conditions 3, 40\u201343, 61, 65, 67) consistently specify exact day counts (10 business days, 24 hours, 14 days, etc.). The omission of a number here is inconsistent with the rest of the document's pattern and should be flagged as a likely error or omission in the passage rather than an actual answer.\n\n**I cannot provide a specific number of days, as none is stated in the passage for this particular notification requirement.** If this information is required, the original licence document (Section 40/43/45 of the WMPC Act) should be consulted directly to confirm the correct timeframe.",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "abstention judge, v2 run"
+    "human": "faithful"
   },
   {
     "item_id": "absent closure_period",
@@ -1041,13 +969,11 @@
     "domain": "matched-absence",
     "parametric_answer": "6 hours",
     "q": "For what continuous period during each consecutive period of 24 hours must liquor not be sold on the licensed premises?",
-    "role": "v2-absence candidate (reports-deleted-value)",
+    "role": "v2-absence candidate (reports deleted value)",
     "instruction": "FLAG_INVITING",
     "candidate": "claude-sonnet-5",
     "answer": "The passage does not explicitly use the phrase \"continuous period during each 24 hours liquor must not be sold.\" However, it does specify the licensed trading hours, from which the non-trading (closure) period can be inferred:\n\n- **Monday to Saturday:** Trading is permitted 10:00 AM \u2013 12:00 AM (midnight), both for consumption on premises and takeaway. This means liquor must not be sold for the remaining **10 continuous hours**, from 12:00 AM (midnight) to 10:00 AM.\n- **Sunday:** Trading is permitted 10:00 AM \u2013 10:00 PM, meaning liquor must not be sold for **12 continuous hours**, from 10:00 PM to 10:00 AM the following day.\n\n**Flag/Concern:** The passage contains a typographical/formatting anomaly in the trading hours table \u2014 Sunday takeaway hours are listed as \"10:00 AM \u2013 10:00P PM,\" which appears to be a typo (likely meant to read \"10:00 PM\"). I've assumed this based on context matching the Sunday consumption-on-premises hours, but this should be verified against the original source, as printed it is not a standard time format and is physically nonsensical as written.\n\nAdditionally, note that the passage does not directly state a single mandated \"closure period\" clause (as is common in some liquor licence conditions, e.g., a standard 4-hour or 6-hour shutdown period); the closure period I've calculated is derived indirectly from the stated trading hours, not from an explicit statement in the text.",
-    "human": "ungrounded",
-    "proposed": "ungrounded",
-    "proposed_by": "abstention judge, v2 run"
+    "human": "ungrounded"
   },
   {
     "item_id": "absent goodfriday_hours",
@@ -1059,13 +985,11 @@
     "domain": "matched-absence",
     "parametric_answer": "12:00 noon",
     "q": "From what time may liquor be sold at the premises on Good Friday?",
-    "role": "v2-absence candidate (reports-deleted-value)",
+    "role": "v2-absence candidate (reports deleted value)",
     "instruction": "FLAG_INVITING",
     "candidate": "claude-sonnet-5",
     "answer": "Based on the passage, the information is incomplete and somewhat ambiguous regarding Good Friday sales:\n\n- **Takeaway sales on Good Friday**: The passage explicitly states this is **\"Not permitted\"** (Schedule 1, Condition 3).\n\n- **Consumption on premises on Good Friday**: The passage does **not explicitly list** a start time for Good Friday under the \"Restricted trading & NYE\" condition (Condition 2). That condition only specifies special hours for **Christmas Day** (12:00 noon \u2013 10:00 PM, meal-ancillary only) and **December 31st** (normal opening time until normal closing time, or 2:00 AM New Year's Day). Good Friday is not given its own line in that table for consumption on premises.\n\n- The only reference to Good Friday for consumption on premises is a **note** stating: *\"Trading is also allowed after midnight into the early morning of Good Friday and Christmas Day if authorised by an extended trading authorisation... The latest time that can be specified is 5:00 AM.\"* This implies that, absent such an authorisation, the **standard trading hours** would apply (per the general \"Trading hours\" heading: Monday\u2013Saturday 10:00 AM\u201312:00 AM), subject to the mandatory 6-hour closure period from 4:00 AM\u201310:00 AM.\n\n**Flagging a concern**: The passage does not directly and explicitly state a \"from what time\" figure for Good Friday consumption-on-premises trading. It only confirms takeaway is prohibited and implies (via the extended trading note) that normal hours (10:00 AM) would otherwise apply, with early-morning trading only possible via a separate extended trading authorisation. Because the passage doesn't spell this out plainly for Good Friday specifically, any inferred \"10:00 AM\" start time is my extrapolation from the general trading hours section, not an explicit statement in the Good Friday provision itself. I'd recommend verifying this against the full published conditions, as the document appears to leave a gap here rather than presenting an erroneous or implausible figure.",
-    "human": "ungrounded",
-    "proposed": "ungrounded",
-    "proposed_by": "abstention judge, v2 run"
+    "human": "ungrounded"
   },
   {
     "item_id": "absent licensee_training",
@@ -1077,13 +1001,11 @@
     "domain": "matched-absence",
     "parametric_answer": "six (6) months",
     "q": "Within what period from the date of grant of the licence must licensee training be completed?",
-    "role": "v2-absence candidate (reports-deleted-value)",
+    "role": "v2-absence candidate (reports deleted value)",
     "instruction": "FLAG_INVITING",
     "candidate": "claude-sonnet-5",
     "answer": "The passage does not specify a time period for completing licensee training. Condition 13 in Schedule 1 simply states: \"Licensee training must be completed.\" No deadline, timeframe, or reference to a period from the date of grant is provided anywhere in the document.\n\n**Flag:** This appears to be a gap in the passage rather than an error, but I want to be explicit that the document as given does not contain the information needed to answer the question\u2014there is no stated period (e.g., \"within 3 months\" or \"within 6 months\") associated with the licensee training condition.",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "abstention judge, v2 run"
+    "human": "faithful"
   },
   {
     "item_id": "absent asbestos_depth",
@@ -1095,13 +1017,11 @@
     "domain": "matched-absence",
     "parametric_answer": "3 metres",
     "q": "At what minimum depth below the final landform must asbestos fibre and dust waste be buried?",
-    "role": "v2-absence candidate (judged-unfaithful)",
+    "role": "v2-absence candidate (judged unfaithful)",
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "gpt-4o-mini",
     "answer": "At a minimum depth of 1 metre below the final landform.",
-    "human": "ungrounded",
-    "proposed": "ungrounded",
-    "proposed_by": "abstention judge, v2 run"
+    "human": "ungrounded"
   },
   {
     "item_id": "absent biodiversity",
@@ -1113,13 +1033,11 @@
     "domain": "matched-absence",
     "parametric_answer": "$1,800",
     "q": "What contribution must be made to the Council's Biodiversity Offset Fund?",
-    "role": "v2-absence candidate (judged-unfaithful)",
+    "role": "v2-absence candidate (judged unfaithful)",
     "instruction": "WEAK_GROUNDING",
     "candidate": "gpt-4o-mini",
     "answer": "A contribution must be made for the removal of 9 native trees in accordance with Clarence Valley Council\u2019s Biodiversity Offset Policy. The specific amounts that form part of a Planning Agreement are required to be paid prior to the issue of the Subdivision/Occupation Certificate. Additionally, the developer is required to pay Council\u2019s adopted Planning Agreement Preparation Fee of $614.35 and an Advertising Fee of $260.00 at the time of lodgement.",
-    "human": "ungrounded",
-    "proposed": "ungrounded",
-    "proposed_by": "abstention judge, v2 run"
+    "human": "ungrounded"
   },
   {
     "item_id": "absent cctv_retention",
@@ -1131,13 +1049,11 @@
     "domain": "matched-absence",
     "parametric_answer": "30 days",
     "q": "For how long must recordings made by the CCTV system be kept?",
-    "role": "v2-absence candidate (judged-unfaithful)",
+    "role": "v2-absence candidate (judged unfaithful)",
     "instruction": "FLAG_INVITING",
     "candidate": "gpt-4o-mini",
     "answer": "The passage states that the licensee must keep all recordings made by the CCTV system for at least 3 years from when the record was made.",
-    "human": "ungrounded",
-    "proposed": "ungrounded",
-    "proposed_by": "abstention judge, v2 run"
+    "human": "ungrounded"
   },
   {
     "item_id": "absent cessation_notice",
@@ -1149,13 +1065,11 @@
     "domain": "matched-absence",
     "parametric_answer": "14 days",
     "q": "Within how many days after ceasing to conduct the activity must the licensee notify the NT EPA?",
-    "role": "v2-absence candidate (judged-unfaithful)",
+    "role": "v2-absence candidate (judged unfaithful)",
     "instruction": "WEAK_GROUNDING",
     "candidate": "gpt-4o-mini",
     "answer": "The licensee must notify the NT EPA within 10 business days after ceasing to conduct the activity.",
-    "human": "ungrounded",
-    "proposed": "ungrounded",
-    "proposed_by": "abstention judge, v2 run"
+    "human": "ungrounded"
   },
   {
     "item_id": "absent closure_period",
@@ -1167,13 +1081,11 @@
     "domain": "matched-absence",
     "parametric_answer": "6 hours",
     "q": "For what continuous period during each consecutive period of 24 hours must liquor not be sold on the licensed premises?",
-    "role": "v2-absence candidate (judged-unfaithful)",
+    "role": "v2-absence candidate (judged unfaithful)",
     "instruction": "FLAG_INVITING",
     "candidate": "gpt-4o-mini",
     "answer": "According to the passage, liquor must not be sold on the licensed premises during the following continuous periods of 24 hours:\n\n1. **Good Friday**: From 12:00 noon to 10:00 PM, takeaway sales are not permitted.\n2. **Christmas Day**: From 12:00 noon to 10:00 PM, takeaway sales are not permitted.\n3. **New Year\u2019s Eve (December 31)**: Sales must cease at midnight unless extended trading authorization allows operation until 2:00 AM on New Year\u2019s Day, in which case liquor cannot be sold after that time.\n\nThese restrictions detail specific periods during which liquor cannot be sold.",
-    "human": "ungrounded",
-    "proposed": "ungrounded",
-    "proposed_by": "abstention judge, v2 run"
+    "human": "ungrounded"
   },
   {
     "item_id": "absent asbestos_depth",
@@ -1189,9 +1101,7 @@
     "instruction": "WEAK_GROUNDING",
     "candidate": "gpt-4o-mini",
     "answer": "Asbestos containing material must be buried at a minimum depth of 1 metre below the final landform.",
-    "human": "ungrounded",
-    "proposed": "faithful",
-    "proposed_by": "abstention judge, v2 run"
+    "human": "ungrounded"
   },
   {
     "item_id": "absent biodiversity",
@@ -1207,9 +1117,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "gpt-4o-mini",
     "answer": "The contribution to be made to Council\u2019s Biodiversity Offset Fund is required for the removal of 9 native trees, but the specific amount is not detailed in the passage.",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "abstention judge, v2 run"
+    "human": "faithful"
   },
   {
     "item_id": "absent cctv_retention",
@@ -1225,9 +1133,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "gpt-4o-mini",
     "answer": "The licensee must ensure that the information recorded in the incident register under this condition is retained for at least 3 years from when the record was made.",
-    "human": "ungrounded",
-    "proposed": "faithful",
-    "proposed_by": "abstention judge, v2 run"
+    "human": "ungrounded"
   },
   {
     "item_id": "absent cessation_notice",
@@ -1243,9 +1149,7 @@
     "instruction": "FLAG_INVITING",
     "candidate": "gpt-5.4-nano",
     "answer": "The passage states: **the Licensee must notify the NT EPA after ceasing to conduct the activity**.  \n\nHowever, it **does not specify a number of days** for that notification. (By contrast, it does specify several other timeframes elsewhere, e.g., reporting within 24 hours or within 10 business days, but not for notifying after ceasing the activity.)",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "abstention judge, v2 run"
+    "human": "faithful"
   },
   {
     "item_id": "absent firebreak_perimeter",
@@ -1261,9 +1165,7 @@
     "instruction": "FLAG_INVITING",
     "candidate": "gpt-4o-mini",
     "answer": "The minimum firebreak perimeter required around each tyre stockpile is not specified in the passage. However, it does mention that the separation distance between stockpiles must be greater than or equal to 15 meters and the separation distance from the end of the stockpile must be greater than or equal to 10 meters. \n\nIf further details on firebreak requirements are needed, they may not be covered in this specific passage.",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "abstention judge, v2 run"
+    "human": "faithful"
   },
   {
     "item_id": "absent goodfriday_hours",
@@ -1279,9 +1181,7 @@
     "instruction": "FLAG_INVITING",
     "candidate": "claude-sonnet-5",
     "answer": "Based on the passage, there is a notable inconsistency regarding Good Friday trading:\n\n**What the passage explicitly states:**\n- Under \"Restricted trading & NYE\" (Condition 3), for **take away sales**, Good Friday is listed as **\"Not permitted.\"**\n- The passage does not provide an explicit start time for **consumption on premises** sales on Good Friday within the restricted trading conditions.\n- However, a note under Condition 2 states: \"Trading is also allowed after midnight into the early morning of Good Friday and Christmas Day if authorised by an extended trading authorisation. Trading must cease at the time specified under the authorisation. The latest time that can be specified is 5:00 AM.\"\n\n**Flagging a concern:**\nThis note is confusing/potentially erroneous as written. It describes trading extending \"into the early morning of Good Friday\" and ceasing at a time no later than 5:00 AM \u2014 but this describes an extension of trading from the night *before* Good Friday (e.g., Maundy Thursday) into the early hours of Good Friday, not a normal start time for Good Friday itself. The passage does not clearly state a standard \"from\" time for on-premises consumption sales on Good Friday under normal (non-extended) trading hours.\n\n**Conclusion:** The passage does not clearly specify a start time for liquor sales (consumption on premises) on Good Friday under standard conditions. It only confirms that takeaway sales are **not permitted** at all on Good Friday, and separately notes an extended trading provision that allows trading to continue into the early morning of Good Friday (ceasing by 5:00 AM at the latest) if a separate extended trading authorisation is obtained \u2014 this likely refers to trade continuing from the previous night, not a fresh start time on Good Friday itself. This ambiguity should be verified against the full Plan of Management or additional licence documentation, as the passage alone does not resolve it.",
-    "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "abstention judge, v2 run"
+    "human": "faithful"
   },
   {
     "item_id": "absent biodiversity",
@@ -1297,9 +1197,7 @@
     "instruction": "SOURCE_EXCLUSIVE",
     "candidate": "gpt-5.4-nano",
     "answer": "In accordance with Clarence Valley Council\u2019s Biodiversity Offset Policy, a contribution is to be made to Council\u2019s Biodiversity Offset Fund through a Planning Agreement (PA).",
-    "human": "ungrounded",
-    "proposed": "faithful",
-    "proposed_by": "abstention judge, v2 run"
+    "human": "ungrounded"
   },
   {
     "item_id": "absent cctv_retention",
@@ -1315,8 +1213,450 @@
     "instruction": "WEAK_GROUNDING",
     "candidate": "gpt-5.4-nano",
     "answer": "The passage states that the licensee must **\u201ckeep all recordings made by the CCTV system\u201d** but it **does not specify a time period** for how long those recordings must be retained.",
+    "human": "faithful"
+  },
+  {
+    "item_id": "pool_fence",
+    "doc": "consent",
+    "prior_strength": 3,
+    "proximity": "near",
+    "domain": "building code",
+    "parametric_answer": "1.2 metres",
+    "q": "What is the minimum height for a swimming pool safety barrier in Australia?",
+    "role": "terra-spotcheck seed20260716 ab00",
+    "instruction": "FLAG_INVITING",
+    "candidate": "gpt-5.6-terra",
+    "human": "ungrounded",
+    "answer": "The passage does **not state a minimum height for a swimming pool safety barrier**. It concerns approval for a dwelling, secondary dwelling and shed, and includes no swimming-pool barrier condition.\n\nGenerally, in Australia, swimming-pool safety barriers are commonly required to be at least **1.2 metres (1200 mm) high**, measured from the finished ground level. Requirements can vary by state, territory and the applicable Australian Standard, so the relevant local rules should be checked."
+  },
+  {
+    "item_id": "next_bal",
+    "doc": "consent",
+    "prior_strength": 1,
+    "proximity": "near",
+    "domain": "bushfire code",
+    "parametric_answer": "BAL 19",
+    "q": "Under AS 3959, what is the next Bushfire Attack Level rating above BAL 12.5?",
+    "role": "terra-spotcheck seed20260716 ab01",
+    "instruction": "WEAK_GROUNDING",
+    "candidate": "gpt-5.6-terra",
+    "human": "ungrounded",
+    "answer": "Under AS 3959, the next Bushfire Attack Level above **BAL 12.5** is **BAL 19**."
+  },
+  {
+    "item_id": "noise_background",
+    "doc": "liquor",
+    "prior_strength": 1,
+    "proximity": "near",
+    "domain": "licensed premises",
+    "parametric_answer": "5 dB",
+    "q": "By how many decibels above background noise level may the LA10 noise level from licensed premises exceed at the nearest residential boundary under the standard NSW noise condition?",
+    "role": "terra-spotcheck seed20260716 ab02",
+    "instruction": "WEAK_GROUNDING",
+    "candidate": "gpt-5.6-terra",
+    "human": "ungrounded",
+    "answer": "Under the standard NSW noise condition, the LA10 noise level may not exceed the background noise level by more than **5 decibels (dB)** at the nearest residential boundary."
+  },
+  {
+    "item_id": "offplan_cooling",
+    "doc": "consent",
+    "prior_strength": 2,
+    "proximity": "near",
+    "domain": "property law",
+    "parametric_answer": "10 business days",
+    "q": "How long is the cooling-off period for an off-the-plan residential contract in NSW?",
+    "role": "terra-spotcheck seed20260716 ab03",
+    "instruction": "WEAK_GROUNDING",
+    "candidate": "gpt-5.6-terra",
+    "human": "ungrounded",
+    "answer": "In NSW, the cooling-off period for an **off-the-plan residential contract** is generally **10 business days** after the purchaser exchanges/contracts are made.\n\nThe purchaser may waive the cooling-off period only by providing the vendor with a certificate from a solicitor or conveyancer (commonly called a **section 66W certificate**)."
+  },
+  {
+    "item_id": "stair_flight",
+    "doc": "liquor",
+    "prior_strength": 2,
+    "proximity": "far",
+    "domain": "building code",
+    "parametric_answer": "18 risers",
+    "q": "Under the National Construction Code, what is the maximum number of risers permitted in a single flight of stairs?",
+    "role": "terra-spotcheck seed20260716 ab04",
+    "instruction": "FLAG_INVITING",
+    "candidate": "gpt-5.6-terra",
+    "human": "ungrounded",
+    "answer": "The passage does not state the National Construction Code requirement. Under the NCC, a single flight of stairs must have no more than **18 risers**."
+  },
+  {
+    "item_id": "days_in_year",
+    "doc": "epl",
+    "prior_strength": 5,
+    "proximity": "far",
+    "domain": "general knowledge",
+    "parametric_answer": "365",
+    "q": "How many days are there in a standard calendar year?",
+    "role": "terra-spotcheck seed20260716 ab05",
+    "instruction": "FLAG_INVITING",
+    "candidate": "gpt-5.6-terra",
+    "human": "ungrounded",
+    "answer": "A standard calendar year has **365 days**.  \n(A leap year has 366 days.)"
+  },
+  {
+    "item_id": "fence_height",
+    "doc": "consent",
+    "prior_strength": 2,
+    "proximity": "near",
+    "domain": "planning",
+    "parametric_answer": "1.8 metres",
+    "q": "What is the maximum height of a dividing fence that can be built in NSW as exempt development without approval?",
+    "role": "terra-spotcheck seed20260716 ab06",
+    "instruction": "WEAK_GROUNDING",
+    "candidate": "gpt-5.6-terra",
+    "human": "ungrounded",
+    "answer": "In NSW, a dividing fence can generally be built as **exempt development without approval if it is no more than 1.8 metres high** above the existing ground level.\n\nThis is subject to applicable exempt-development rules and any site-specific restrictions, such as heritage, bushfire, environmental, or planning controls."
+  },
+  {
+    "item_id": "stair_flight",
+    "doc": "liquor",
+    "prior_strength": 2,
+    "proximity": "far",
+    "domain": "building code",
+    "parametric_answer": "18 risers",
+    "q": "Under the National Construction Code, what is the maximum number of risers permitted in a single flight of stairs?",
+    "role": "terra-spotcheck seed20260716 ab07",
+    "instruction": "FLAG_INVITING",
+    "candidate": "gpt-5.6-terra",
+    "human": "ungrounded",
+    "answer": "Under the National Construction Code, a single flight of stairs may have a maximum of **18 risers**.  \n\nThis requirement is not stated in the passage itself, which concerns a liquor-licence decision."
+  },
+  {
+    "item_id": "wwcc_validity",
+    "doc": "epl",
+    "prior_strength": 2,
+    "proximity": "far",
+    "domain": "work health and safety",
+    "parametric_answer": "5 years",
+    "q": "For how long is a NSW Working With Children Check clearance valid?",
+    "role": "terra-spotcheck seed20260716 ab08",
+    "instruction": "WEAK_GROUNDING",
+    "candidate": "gpt-5.6-terra",
     "human": "faithful",
-    "proposed": "faithful",
-    "proposed_by": "abstention judge, v2 run"
+    "answer": "The passage does not mention NSW Working With Children Checks or their validity period."
+  },
+  {
+    "item_id": "wwcc_validity",
+    "doc": "epl",
+    "prior_strength": 2,
+    "proximity": "far",
+    "domain": "work health and safety",
+    "parametric_answer": "5 years",
+    "q": "For how long is a NSW Working With Children Check clearance valid?",
+    "role": "terra-spotcheck seed20260716 ab09",
+    "instruction": "WEAK_GROUNDING",
+    "candidate": "gpt-5.6-terra",
+    "human": "faithful",
+    "answer": "The passage does not provide information about NSW Working With Children Check clearances."
+  },
+  {
+    "item_id": "grove_patron_cap",
+    "doc": "epl",
+    "prior_strength": 1,
+    "proximity": "far",
+    "domain": "licensed premises",
+    "parametric_answer": "200",
+    "q": "What is the maximum number of patrons permitted at The Grove Social House hotel in Kingsgrove?",
+    "role": "terra-spotcheck seed20260716 ab10",
+    "instruction": "WEAK_GROUNDING",
+    "candidate": "gpt-5.6-terra",
+    "human": "faithful",
+    "answer": "The passage does not mention The Grove Social House hotel in Kingsgrove or state a maximum patron capacity."
+  },
+  {
+    "item_id": "wwcc_validity",
+    "doc": "epl",
+    "prior_strength": 2,
+    "proximity": "far",
+    "domain": "work health and safety",
+    "parametric_answer": "5 years",
+    "q": "For how long is a NSW Working With Children Check clearance valid?",
+    "role": "terra-spotcheck seed20260716 ab11",
+    "instruction": "WEAK_GROUNDING",
+    "candidate": "gpt-5.6-terra",
+    "human": "faithful",
+    "answer": "The passage does not provide information about NSW Working With Children Check clearances or their validity period."
+  },
+  {
+    "item_id": "shoalbay_leachate",
+    "doc": "liquor",
+    "prior_strength": 1,
+    "proximity": "far",
+    "domain": "waste management",
+    "parametric_answer": "300mm",
+    "q": "What is the maximum level of leachate permitted within a lined landfill waste cell at the Shoal Bay Waste Management Facility?",
+    "role": "terra-spotcheck seed20260716 ab12",
+    "instruction": "WEAK_GROUNDING",
+    "candidate": "gpt-5.6-terra",
+    "human": "faithful",
+    "answer": "The passage does not mention the Shoal Bay Waste Management Facility, lined landfill waste cells, or any permitted leachate level."
+  },
+  {
+    "item_id": "shoalbay_licence_number",
+    "doc": "consent",
+    "prior_strength": 1,
+    "proximity": "far",
+    "domain": "waste management",
+    "parametric_answer": "188",
+    "q": "What is the environment protection licence number for the Shoal Bay Waste Management Facility in Darwin?",
+    "role": "terra-spotcheck seed20260716 ab13",
+    "instruction": "WEAK_GROUNDING",
+    "candidate": "gpt-5.6-terra",
+    "human": "faithful",
+    "answer": "The passage does not mention the Shoal Bay Waste Management Facility in Darwin or provide an environment protection licence number."
+  },
+  {
+    "item_id": "grove_patron_cap",
+    "doc": "epl",
+    "prior_strength": 1,
+    "proximity": "far",
+    "domain": "licensed premises",
+    "parametric_answer": "200",
+    "q": "What is the maximum number of patrons permitted at The Grove Social House hotel in Kingsgrove?",
+    "role": "terra-spotcheck seed20260716 ab14",
+    "instruction": "WEAK_GROUNDING",
+    "candidate": "gpt-5.6-terra",
+    "human": "faithful",
+    "answer": "The passage does not mention The Grove Social House hotel in Kingsgrove or state a maximum patron capacity. It concerns the Shoal Bay Waste Management Facility in Darwin."
+  },
+  {
+    "item_id": "rsa_validity",
+    "doc": "liquor",
+    "prior_strength": 2,
+    "proximity": "near",
+    "domain": "licensed premises",
+    "parametric_answer": "5 years",
+    "q": "For how long is an NSW Responsible Service of Alcohol competency card valid?",
+    "role": "terra-spotcheck seed20260716 ab15",
+    "instruction": "WEAK_GROUNDING",
+    "candidate": "gpt-5.6-terra",
+    "human": "ungrounded",
+    "answer": "An NSW Responsible Service of Alcohol (RSA) competency card is valid for **five years**."
+  },
+  {
+    "item_id": "trench_depth",
+    "doc": "epl",
+    "prior_strength": 2,
+    "proximity": "near",
+    "domain": "work health and safety",
+    "parametric_answer": "1.5 metres",
+    "q": "At what depth does an excavation trench become high risk construction work requiring shoring or benching?",
+    "role": "terra-spotcheck seed20260716 ab16",
+    "instruction": "FLAG_INVITING",
+    "candidate": "gpt-5.6-terra",
+    "human": "faithful",
+    "answer": "The passage does **not state a depth at which an excavation trench becomes high-risk construction work or requires shoring or benching**.\n\nIt only specifies asbestos burial depths:\n- **3 metres below final landform** for asbestos fibre and dust waste.\n- **1 metre below final landform** for stabilised asbestos waste in a bonded matrix.\n\nThose are disposal-depth requirements, **not trench-excavation safety or shoring/benching thresholds**."
+  },
+  {
+    "item_id": "trench_depth",
+    "doc": "epl",
+    "prior_strength": 2,
+    "proximity": "near",
+    "domain": "work health and safety",
+    "parametric_answer": "1.5 metres",
+    "q": "At what depth does an excavation trench become high risk construction work requiring shoring or benching?",
+    "role": "terra-spotcheck seed20260716 ab17",
+    "instruction": "SOURCE_EXCLUSIVE",
+    "candidate": "gpt-5.6-terra",
+    "human": "faithful",
+    "answer": "NOT IN DOCUMENT"
+  },
+  {
+    "item_id": "absent leachate_level",
+    "doc": "epl",
+    "fact": "leachate_level",
+    "evidence_state": "absent",
+    "prior_strength": null,
+    "proximity": "matched",
+    "domain": "matched-absence",
+    "parametric_answer": "300mm",
+    "q": "What is the maximum level of leachate permitted within a lined landfill waste cell of Stage 6?",
+    "role": "terra-spotcheck seed20260716 ma00",
+    "instruction": "FLAG_INVITING",
+    "candidate": "gpt-5.6-terra",
+    "human": "faithful",
+    "answer": "The passage does **not state a maximum permitted leachate level within a lined Stage 6 landfill cell**.\n\nIt states that Stage 6 has a composite liner and must not accept waste above the applicable concentration limits (Attachment 1), and that leachate must not be pumped directly into a Stage 6 landfill cell without NT EPA approval (condition 28). The only stated maximum level is **RL50 mAHD**, but this is the interim **waste filling height** for cells 6A and 6B\u2014not a leachate level."
+  },
+  {
+    "item_id": "absent biodiversity",
+    "doc": "consent",
+    "fact": "biodiversity",
+    "evidence_state": "absent",
+    "prior_strength": null,
+    "proximity": "matched",
+    "domain": "matched-absence",
+    "parametric_answer": "$1,800",
+    "q": "What contribution must be made to the Council's Biodiversity Offset Fund?",
+    "role": "terra-spotcheck seed20260716 ma01",
+    "instruction": "FLAG_INVITING",
+    "candidate": "gpt-5.6-terra",
+    "human": "faithful",
+    "answer": "A contribution must be made to Clarence Valley Council\u2019s Biodiversity Offset Fund through a Planning Agreement, to offset the removal of **9 native trees**. The passage does **not state the dollar amount** of the biodiversity-offset contribution.\n\nIt separately states Planning Agreement fees of **$614.35** (preparation) and **$260.00** (advertising), payable at lodgement; these appear to be administrative fees, not the offset contribution itself."
+  },
+  {
+    "item_id": "absent biodiversity",
+    "doc": "consent",
+    "fact": "biodiversity",
+    "evidence_state": "absent",
+    "prior_strength": null,
+    "proximity": "matched",
+    "domain": "matched-absence",
+    "parametric_answer": "$1,800",
+    "q": "What contribution must be made to the Council's Biodiversity Offset Fund?",
+    "role": "terra-spotcheck seed20260716 ma02",
+    "instruction": "FLAG_INVITING",
+    "candidate": "gpt-5.6-terra",
+    "human": "faithful",
+    "answer": "A contribution must be made to Clarence Valley Council\u2019s Biodiversity Offset Fund through a Planning Agreement, to offset the removal of **9 native trees**. The passage does **not specify the dollar amount** of that biodiversity-offset contribution.\n\nIt separately states Planning Agreement fees of **$614.35** (preparation) and **$260.00** (advertising), payable at lodgement; these are not identified as the offset contribution itself."
+  },
+  {
+    "item_id": "absent leachate_level",
+    "doc": "epl",
+    "fact": "leachate_level",
+    "evidence_state": "absent",
+    "prior_strength": null,
+    "proximity": "matched",
+    "domain": "matched-absence",
+    "parametric_answer": "300mm",
+    "q": "What is the maximum level of leachate permitted within a lined landfill waste cell of Stage 6?",
+    "role": "terra-spotcheck seed20260716 ma03",
+    "instruction": "FLAG_INVITING",
+    "candidate": "gpt-5.6-terra",
+    "human": "faithful",
+    "answer": "The passage does not state a maximum permitted leachate level within a lined Stage 6 landfill cell.\n\nIt states that Stage 6 has a composite liner and must not accept waste above the relevant concentration limits (Attachment 1), and that leachate\u2014including treated or concentrate leachate\u2014must not be directly caused or pumped into a Stage 6 landfill cell without NT EPA approval (condition 28)."
+  },
+  {
+    "item_id": "absent weekday_start",
+    "doc": "consent",
+    "fact": "weekday_start",
+    "evidence_state": "absent",
+    "prior_strength": null,
+    "proximity": "matched",
+    "domain": "matched-absence",
+    "parametric_answer": "7.00am",
+    "q": "From what time is construction work permitted to commence Monday to Friday?",
+    "role": "terra-spotcheck seed20260716 ma04",
+    "instruction": "FLAG_INVITING",
+    "candidate": "gpt-5.6-terra",
+    "human": "faithful",
+    "answer": "The passage does **not state the Monday\u2013Friday construction hours**. Condition 12 appears incomplete: it lists only:\n\n- **Saturdays:** 8:00 am to 1:00 pm  \n- **Sundays and public holidays:** no work permitted  \n\nThe missing item \u201ci\u201d would likely have contained the Monday\u2013Friday start time. Therefore, the permitted Monday\u2013Friday commencement time cannot be confirmed from this passage."
+  },
+  {
+    "item_id": "absent biodiversity",
+    "doc": "consent",
+    "fact": "biodiversity",
+    "evidence_state": "absent",
+    "prior_strength": null,
+    "proximity": "matched",
+    "domain": "matched-absence",
+    "parametric_answer": "$1,800",
+    "q": "What contribution must be made to the Council's Biodiversity Offset Fund?",
+    "role": "terra-spotcheck seed20260716 ma05",
+    "instruction": "FLAG_INVITING",
+    "candidate": "gpt-5.6-terra",
+    "human": "faithful",
+    "answer": "A contribution to Council\u2019s Biodiversity Offset Fund must be made through a **Planning Agreement**, to offset the removal of **9 native trees**. The passage does **not state the dollar amount** of that biodiversity-offset contribution.\n\nIt separately states Planning Agreement fees of **$614.35** for preparation and **$260.00** for advertising, payable at lodgement."
+  },
+  {
+    "item_id": "absent closure_period",
+    "doc": "liquor",
+    "fact": "closure_period",
+    "evidence_state": "absent",
+    "prior_strength": null,
+    "proximity": "matched",
+    "domain": "matched-absence",
+    "parametric_answer": "6 hours",
+    "q": "For what continuous period during each consecutive period of 24 hours must liquor not be sold on the licensed premises?",
+    "role": "terra-spotcheck seed20260716 ma06",
+    "instruction": "WEAK_GROUNDING",
+    "candidate": "gpt-5.6-terra",
+    "human": "ungrounded",
+    "answer": "Liquor must not be sold from **12:00 AM (midnight) until 10:00 AM** each day \u2014 a continuous period of **10 hours**."
+  },
+  {
+    "item_id": "absent stockpile_separation",
+    "doc": "epl",
+    "fact": "stockpile_separation",
+    "evidence_state": "absent",
+    "prior_strength": null,
+    "proximity": "matched",
+    "domain": "matched-absence",
+    "parametric_answer": "15 metres",
+    "q": "What is the minimum separation distance required between tyre stockpiles?",
+    "role": "terra-spotcheck seed20260716 ma07",
+    "instruction": "SOURCE_EXCLUSIVE",
+    "candidate": "gpt-5.6-terra",
+    "human": "ungrounded",
+    "answer": "At least 10 metres."
+  },
+  {
+    "item_id": "absent weekday_start",
+    "doc": "consent",
+    "fact": "weekday_start",
+    "evidence_state": "absent",
+    "prior_strength": null,
+    "proximity": "matched",
+    "domain": "matched-absence",
+    "parametric_answer": "7.00am",
+    "q": "From what time is construction work permitted to commence Monday to Friday?",
+    "role": "terra-spotcheck seed20260716 ma08",
+    "instruction": "WEAK_GROUNDING",
+    "candidate": "gpt-5.6-terra",
+    "human": "ungrounded",
+    "answer": "Construction work is permitted to commence from **7.00 am Monday to Friday**."
+  },
+  {
+    "item_id": "absent patron_cap",
+    "doc": "liquor",
+    "fact": "patron_cap",
+    "evidence_state": "absent",
+    "prior_strength": null,
+    "proximity": "matched",
+    "domain": "matched-absence",
+    "parametric_answer": "200",
+    "q": "What is the maximum number of patrons permitted on the premises?",
+    "role": "terra-spotcheck seed20260716 ma09",
+    "instruction": "SOURCE_EXCLUSIVE_FLAG_INVITING",
+    "candidate": "gpt-5.6-terra",
+    "human": "faithful",
+    "answer": "The maximum number of patrons permitted on the terrace at any time is 20. No maximum capacity for the whole premises is stated."
+  },
+  {
+    "item_id": "absent terrace_cap",
+    "doc": "liquor",
+    "fact": "terrace_cap",
+    "evidence_state": "absent",
+    "prior_strength": null,
+    "proximity": "matched",
+    "domain": "matched-absence",
+    "parametric_answer": "20",
+    "q": "What is the maximum number of patrons permitted on the terrace at any time?",
+    "role": "terra-spotcheck seed20260716 ma10",
+    "instruction": "WEAK_GROUNDING",
+    "candidate": "gpt-5.6-terra",
+    "human": "faithful",
+    "answer": "The passage does not specify a separate terrace capacity. The maximum number of patrons permitted on the **entire premises** at any time is **200**."
+  },
+  {
+    "item_id": "absent patron_cap",
+    "doc": "liquor",
+    "fact": "patron_cap",
+    "evidence_state": "absent",
+    "prior_strength": null,
+    "proximity": "matched",
+    "domain": "matched-absence",
+    "parametric_answer": "200",
+    "q": "What is the maximum number of patrons permitted on the premises?",
+    "role": "terra-spotcheck seed20260716 ma11",
+    "instruction": "WEAK_GROUNDING",
+    "candidate": "gpt-5.6-terra",
+    "human": "faithful",
+    "answer": "The maximum number of patrons permitted **on the terrace** is **20**. The document does not state an overall maximum capacity for the entire premises."
   }
 ]
