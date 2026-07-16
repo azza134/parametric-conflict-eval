@@ -313,6 +313,11 @@ class TestPriorProbe(unittest.TestCase):
         self.assertFalse(row["reports_expected"])
         self.assertTrue(row["says_dont_know"])
 
+    def test_probe_row_stamps_truncated(self):
+        t = {"kind": "fact", "name": "x", "doc": "consent", "q": "?", "expected": "20", "accepted": ["20"], "prior_rating": 3}
+        self.assertFalse(_probe_row("m", "openai", t, "20")["truncated"])
+        self.assertTrue(_probe_row("m", "openai", t, "20", "snap", True)["truncated"])
+
 
 class TestLadders(unittest.TestCase):
     def test_all_perturbations_apply_to_document(self):
@@ -574,6 +579,12 @@ class TestMatchedAbsence(unittest.TestCase):
                          ("grasses", 1, "snap", "judge-snap"))
         self.assertFalse(row["reports_deleted_value"])
         self.assertTrue(row["verbatim_abstention"])
+
+    def test_absence_row_stamps_truncated(self):
+        fact = next(f for f in PERTURBATION_LADDERS if f["fact"] == "grasses")
+        with mock.patch("harness.abstention_judge", return_value=(True, "abstained", "judge-snap")):
+            self.assertFalse(_absence_row("m", "anthropic", "SOURCE_EXCLUSIVE", fact, "DOC", "a", "snap", 1)["truncated"])
+            self.assertTrue(_absence_row("m", "anthropic", "SOURCE_EXCLUSIVE", fact, "DOC", "a", "snap", 1, True)["truncated"])
 
 
 class TestSignTest(unittest.TestCase):
@@ -959,8 +970,9 @@ class TestChunkedJudgeSink(unittest.TestCase):
 
 
 class TestRunAnthropicWave(unittest.TestCase):
-    def _succeeded(self, text):
-        return mock.Mock(type="succeeded", message=mock.Mock(content=[mock.Mock(type="text", text=text)], model="snap-1"))
+    def _succeeded(self, text, stop_reason="end_turn"):
+        return mock.Mock(type="succeeded", message=mock.Mock(content=[mock.Mock(type="text", text=text)],
+                                                             model="snap-1", stop_reason=stop_reason))
 
     def _patched(self, results):
         return (mock.patch("harness.submit_anthropic_batch", return_value="b1"),
@@ -973,9 +985,19 @@ class TestRunAnthropicWave(unittest.TestCase):
         p1, p2, p3 = self._patched(results)
         with p1, p2, p3:
             _run_anthropic_wave("m", "anthropic", ["a", "b"], "w", lambda m, c: {},
-                                lambda cid: (events.append(("sync", cid)), ("B", "snap-2"))[1],
-                                lambda cid, ans, snap: events.append(("row", cid, ans, snap)))
-        self.assertEqual(events, [("row", "a", "A", "snap-1"), ("sync", "b"), ("row", "b", "B", "snap-2")])
+                                lambda cid: (events.append(("sync", cid)), ("B", "snap-2", False))[1],
+                                lambda cid, ans, snap, trunc: events.append(("row", cid, ans, snap, trunc)))
+        self.assertEqual(events, [("row", "a", "A", "snap-1", False), ("sync", "b"), ("row", "b", "B", "snap-2", False)])
+
+    def test_truncated_flag_threaded_from_stop_reason(self):
+        events = []
+        results = [("a", self._succeeded("A", stop_reason="max_tokens"))]
+        p1, p2, p3 = self._patched(results)
+        with p1, p2, p3:
+            _run_anthropic_wave("m", "anthropic", ["a"], "w", lambda m, c: {},
+                                lambda cid: ("", "", False),
+                                lambda cid, ans, snap, trunc: events.append((cid, trunc)))
+        self.assertEqual(events, [("a", True)])
 
     def test_fallback_crash_preserves_succeeded_rows(self):
         written = []
@@ -985,7 +1007,7 @@ class TestRunAnthropicWave(unittest.TestCase):
         with p1, p2, p3:
             with self.assertRaises(RuntimeError):
                 _run_anthropic_wave("m", "anthropic", ["a", "b"], "w", lambda m, c: {},
-                                    boom, lambda cid, ans, snap: written.append(cid))
+                                    boom, lambda cid, ans, snap, trunc: written.append(cid))
         self.assertEqual(written, ["a"])
 
 
@@ -1068,8 +1090,9 @@ class TestRunSweep(unittest.TestCase):
             lambda u, i, r: f"fk-{u[0]}-{i}-r{r}",
             lambda cid: ((cid.split("-")[1],), cid.split("-")[2], int(cid.split("-")[3][1:])),
             lambda u: ("q?", "DOC"),
-            lambda model, prov, iname, u, doc, answer, snapshot, rep:
-                {"model": model, "instruction": iname, "u": u[0], "rep": rep, "answer": answer, "label": "ok"},
+            lambda model, prov, iname, u, doc, answer, snapshot, rep, truncated=False:
+                {"model": model, "instruction": iname, "u": u[0], "rep": rep, "answer": answer,
+                 "truncated": truncated, "label": "ok"},
             lambda u: u[0], lambda u: u[0], lambda: None)
 
     def test_generic_wave_plan_both_strategies(self):
@@ -1133,12 +1156,37 @@ class TestRunSweep(unittest.TestCase):
                  mock.patch("harness.submit_openai_batch", side_effect=fake_submit), \
                  mock.patch("harness.poll_openai_batch", return_value=None), \
                  mock.patch("harness.openai_batch_results", side_effect=fake_results), \
-                 mock.patch("harness.with_retry", return_value=("synced", "snap2")) as wr:
+                 mock.patch("harness.with_retry", return_value=("synced", "snap2", False)) as wr:
                 _run_sweep(spec, 1)
                 self.assertEqual(wr.call_count, 1)
                 with open(path) as f:
                     answers = sorted(json.loads(l)["answer"] for l in f)
                 self.assertEqual(answers, ["ans", "synced"])
+
+    def test_run_sweep_stamps_truncated_from_body_status(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = os.path.join(td, "r.jsonl")
+            spec = self._fake_spec(path)
+            submitted = []
+            def fake_submit(reqs, endpoint="/v1/responses"):
+                submitted.append([cid for cid, _ in reqs])
+                return "b1"
+            def fake_results(bid):
+                cids = submitted[-1]
+                cid, rec = self._ok_rec(cids[0])
+                rec["response"]["body"]["status"] = "incomplete"
+                yield cid, rec
+                yield self._ok_rec(cids[1])
+            with mock.patch("harness.MODELS", [("m", "openai")]), \
+                 mock.patch("harness.SYSTEM_INSTRUCTIONS", [("I", "sys")]), \
+                 mock.patch("harness.INSTR_BY_NAME", {"I": "sys"}), \
+                 mock.patch("harness.submit_openai_batch", side_effect=fake_submit), \
+                 mock.patch("harness.poll_openai_batch", return_value=None), \
+                 mock.patch("harness.openai_batch_results", side_effect=fake_results):
+                _run_sweep(spec, 1)
+                with open(path) as f:
+                    rows = [json.loads(l) for l in f]
+                self.assertEqual({r["u"]: r["truncated"] for r in rows}, {"u1": True, "u2": False})
 
 
 class TestOpenAIBatch(unittest.TestCase):

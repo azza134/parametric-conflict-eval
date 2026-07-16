@@ -429,13 +429,13 @@ def load_done(path, fields):
         pass
     return done
 
-def _caveat_row(model, prov, iname, fact, s, answer, snapshot=None, rep=None): # creates a row for the caveat results
+def _caveat_row(model, prov, iname, fact, s, answer, snapshot=None, rep=None, truncated=False): # creates a row for the caveat results
     stance, corroboration, reason, judge_snapshot = caveat_judge(fact["q"], answer)
     label = derive_label(answer, stance)
     return {"model": model, "provider": prov, "snapshot": snapshot, "rep": rep, "run_id": RUN_ID,
             "ts": utc_now(), "judge_snapshot": judge_snapshot, "instruction": iname, "document": fact["doc"],
             "fact": fact["fact"], "severity": s["severity"], "true": fact["true"],
-            "target_string": s["target_string"], "ratio": s["ratio"], "answer": answer,
+            "target_string": s["target_string"], "ratio": s["ratio"], "answer": answer, "truncated": truncated,
             "stance": stance, "corroboration": corroboration, "stance_reason": reason,
             "lexical_caveat": lexical_caveat(answer),
             "reports_target": appears(s["target_string"], answer),
@@ -460,7 +460,8 @@ def _run_anthropic_wave(model, prov, custom_ids, wave_label, build_request_fn, s
     for cid, result in anthropic_batch_results(batch_id):
         seen_ids.add(cid)
         if result.type == "succeeded":
-            on_answer(cid, extract_anthropic_text(result.message), result.message.model)
+            on_answer(cid, extract_anthropic_text(result.message), result.message.model,
+                      result.message.stop_reason == "max_tokens")
         else:
             print(f"    {wave_label}: {cid} -> {result.type}; deferring to synchronous retry", flush=True)
             fallbacks.append(cid)
@@ -469,8 +470,8 @@ def _run_anthropic_wave(model, prov, custom_ids, wave_label, build_request_fn, s
             print(f"    {wave_label}: {cid} missing from batch results; deferring to synchronous retry", flush=True)
             fallbacks.append(cid)
     for cid in fallbacks:
-        answer, snapshot = sync_call_fn(cid)
-        on_answer(cid, answer, snapshot)
+        answer, snapshot, truncated = sync_call_fn(cid)
+        on_answer(cid, answer, snapshot, truncated)
 
 def _chunked_judge_sink(judge_one, write_row, chunk=None):
     chunk = chunk if chunk is not None else max(JUDGE_CONCURRENCY * 4, 1)
@@ -877,14 +878,14 @@ def print_abstention_plan(n):
     print(f"\n  item validation: all {len(UNANSWERABLE_ITEMS)} parametric answers absent from their documents")
     return True
 
-def _abstention_row(model, prov, iname, p, answer, snapshot=None, rep=None):
+def _abstention_row(model, prov, iname, p, answer, snapshot=None, rep=None, truncated=False):
     faithful, reason, judge_snapshot = abstention_judge(p["q"], doc_text(p["doc"]), answer)
     label = FAITHFUL if faithful else UNGROUNDED
     return {"model": model, "provider": prov, "snapshot": snapshot, "rep": rep, "run_id": RUN_ID,
             "ts": utc_now(), "judge_snapshot": judge_snapshot, "instruction": iname, "document": p["doc"],
             "item_id": p["item_id"], "prior_strength": p["prior_strength"], "domain": p["domain"],
             "proximity": p["proximity"], "q": p["q"], "parametric_answer": p["parametric_answer"],
-            "answer": answer, "faithful": faithful, "judge_reason": reason,
+            "answer": answer, "truncated": truncated, "faithful": faithful, "judge_reason": reason,
             "reports_parametric_answer": appears_any(expected_strings(p, "parametric_answer"), answer),
             "verbatim_abstention": "not in document" in answer.lower(),
             "label": label}
@@ -953,13 +954,13 @@ def decode_absence_custom_id(custom_id):
         raise ValueError(f"not an absence custom_id: {custom_id}")
     return {"fact": fact, "instruction": instruction, "rep": int(rep[1:])}
 
-def _absence_row(model, prov, iname, fact, deleted_doc, answer, snapshot=None, rep=None):
+def _absence_row(model, prov, iname, fact, deleted_doc, answer, snapshot=None, rep=None, truncated=False):
     faithful, reason, judge_snapshot = abstention_judge(fact["q"], deleted_doc, answer)
     label = FAITHFUL if faithful else UNGROUNDED
     return {"model": model, "provider": prov, "snapshot": snapshot, "rep": rep, "run_id": RUN_ID,
             "ts": utc_now(), "judge_snapshot": judge_snapshot, "instruction": iname, "document": fact["doc"],
             "fact": fact["fact"], "evidence_state": "absent", "q": fact["q"], "true": fact["true"],
-            "answer": answer, "faithful": faithful, "judge_reason": reason,
+            "answer": answer, "truncated": truncated, "faithful": faithful, "judge_reason": reason,
             "reports_deleted_value": appears_any(expected_strings(fact, "true"), answer),
             "verbatim_abstention": "not in document" in answer.lower(),
             "label": label}
@@ -996,10 +997,10 @@ def probe_targets():
                  "prior_rating": p["prior_strength"]} for p in UNANSWERABLE_ITEMS]
     return targets
 
-def _probe_row(model, prov, t, answer, snapshot=None):
+def _probe_row(model, prov, t, answer, snapshot=None, truncated=False):
     return {"model": model, "provider": prov, "snapshot": snapshot, "run_id": RUN_ID, "ts": utc_now(),
             "kind": t["kind"], "name": t["name"], "doc": t["doc"],
-            "prior_rating": t["prior_rating"], "expected": t["expected"], "q": t["q"], "answer": answer,
+            "prior_rating": t["prior_rating"], "expected": t["expected"], "q": t["q"], "answer": answer, "truncated": truncated,
             "reports_expected": appears_any(t["accepted"], answer),
             "says_dont_know": "i do not know" in answer.lower()}
 
@@ -1016,8 +1017,8 @@ def run_probe(n):
             already = done.get(key, 0)
             tally = {}
             for _ in range(already, n):
-                answer, snapshot = with_retry(call_closed_book, model, prov, PROBE_INSTRUCTION, t["q"])
-                row = _probe_row(model, prov, t, answer, snapshot)
+                answer, snapshot, truncated = with_retry(call_closed_book, model, prov, PROBE_INSTRUCTION, t["q"])
+                row = _probe_row(model, prov, t, answer, snapshot, truncated)
                 out.write(json.dumps(row) + "\n")
                 out.flush()
                 k = "knows" if row["reports_expected"] else ("dontknow" if row["says_dont_know"] else "other")
@@ -1184,9 +1185,9 @@ def _caveat_prompt(unit):
     fact, step = _caveat_step(*unit)
     return fact["q"], step_doc(fact, step)
 
-def _caveat_spec_row(model, prov, iname, unit, doc, answer, snapshot, rep):
+def _caveat_spec_row(model, prov, iname, unit, doc, answer, snapshot, rep, truncated=False):
     fact, step = _caveat_step(*unit)
-    return _caveat_row(model, prov, iname, fact, step, answer, snapshot, rep)
+    return _caveat_row(model, prov, iname, fact, step, answer, snapshot, rep, truncated)
 
 def _abstention_unit_decode(cid):
     d = decode_abstention_custom_id(cid)
@@ -1196,8 +1197,8 @@ def _abstention_prompt(unit):
     p = ITEM_BY_ID[unit[0]]
     return p["q"], doc_text(p["doc"])
 
-def _abstention_spec_row(model, prov, iname, unit, doc, answer, snapshot, rep):
-    return _abstention_row(model, prov, iname, ITEM_BY_ID[unit[0]], answer, snapshot, rep)
+def _abstention_spec_row(model, prov, iname, unit, doc, answer, snapshot, rep, truncated=False):
+    return _abstention_row(model, prov, iname, ITEM_BY_ID[unit[0]], answer, snapshot, rep, truncated)
 
 def _absence_unit_decode(cid):
     d = decode_absence_custom_id(cid)
@@ -1207,8 +1208,8 @@ def _absence_prompt(unit):
     fact = FACT_BY_NAME[unit[0]]
     return fact["q"], absence_doc(fact)
 
-def _absence_spec_row(model, prov, iname, unit, doc, answer, snapshot, rep):
-    return _absence_row(model, prov, iname, FACT_BY_NAME[unit[0]], doc, answer, snapshot, rep)
+def _absence_spec_row(model, prov, iname, unit, doc, answer, snapshot, rep, truncated=False):
+    return _absence_row(model, prov, iname, FACT_BY_NAME[unit[0]], doc, answer, snapshot, rep, truncated)
 
 CAVEAT_SWEEP = SweepSpec("caveat", CAVEAT_RESULTS, ["model", "instruction", "fact", "severity"], print_caveat_plan,
                          lambda: PERTURBATION_LADDERS,
@@ -1277,10 +1278,10 @@ def _run_sweep_anthropic_batch(spec, model, prov, n, done, out, seen, total):
 
     def process(custom_ids, wave_label):
         def judge_one(item):
-            cid, answer, snapshot = item
+            cid, answer, snapshot, truncated = item
             unit, iname, rep = spec.decode(cid)
             q, doc = spec.prompt(unit)
-            return (unit, iname, rep), spec.row(model, prov, iname, unit, doc, answer, snapshot, rep)
+            return (unit, iname, rep), spec.row(model, prov, iname, unit, doc, answer, snapshot, rep, truncated)
         def write_row(res):
             (unit, iname, rep), row = res
             out.write(json.dumps(row) + "\n")
@@ -1351,7 +1352,7 @@ def _run_openai_wave(model, prov, custom_ids, wave_label, build_request_fn, sync
             resp = rec.get("response")
             if resp and resp.get("status_code") == 200 and rec.get("error") is None:
                 body = resp["body"]
-                on_answer(cid, extract_openai_text(body), body.get("model"))
+                on_answer(cid, extract_openai_text(body), body.get("model"), body.get("status") == "incomplete")
             else:
                 print(f"    {label}: {cid} -> error; deferring to synchronous retry", flush=True)
                 fallbacks.append(cid)
@@ -1360,8 +1361,8 @@ def _run_openai_wave(model, prov, custom_ids, wave_label, build_request_fn, sync
                 print(f"    {label}: {cid} missing from batch results; deferring to synchronous retry", flush=True)
                 fallbacks.append(cid)
         for cid in fallbacks:
-            answer, snapshot = sync_call_fn(cid)
-            on_answer(cid, answer, snapshot)
+            answer, snapshot, truncated = sync_call_fn(cid)
+            on_answer(cid, answer, snapshot, truncated)
 
 def _run_sweep_openai_batch(spec, model, prov, n, done, out, seen, total):
     wave1_ids, wave2_ids = _sweep_wave_plan(spec, done, n, model)
@@ -1379,10 +1380,10 @@ def _run_sweep_openai_batch(spec, model, prov, n, done, out, seen, total):
         return build_openai_candidate_body(req_model, INSTR_BY_NAME[iname], q, doc)
 
     def judge_one(item):
-        cid, answer, snapshot = item
+        cid, answer, snapshot, truncated = item
         unit, iname, rep = spec.decode(cid)
         q, doc = spec.prompt(unit)
-        return (unit, iname, rep), spec.row(model, prov, iname, unit, doc, answer, snapshot, rep)
+        return (unit, iname, rep), spec.row(model, prov, iname, unit, doc, answer, snapshot, rep, truncated)
 
     def write_row(res):
         (unit, iname, rep), row = res
@@ -1713,8 +1714,12 @@ def _analysis_dataset(tag, cav_rows, ab_rows, models, facts, fact_doc):
                 print(f"  {i:32} {m:16} " + "  ".join(parts))
 
 def analysis():
-    cav = [json.loads(l) for l in open(CAVEAT_RESULTS)]
-    ab = [json.loads(l) for l in open(ABSENCE_RESULTS)]
+    cav_all = [json.loads(l) for l in open(CAVEAT_RESULTS)]
+    ab_all = [json.loads(l) for l in open(ABSENCE_RESULTS)]
+    n_flagless = sum(1 for r in cav_all + ab_all if "truncated" not in r)
+    cav = [r for r in cav_all if not r.get("truncated")]
+    ab = [r for r in ab_all if not r.get("truncated")]
+    n_excluded = len(cav_all) - len(cav) + len(ab_all) - len(ab)
     fact_doc = {f["fact"]: f["doc"] for f in PERTURBATION_LADDERS}
     facts = sorted(fact_doc)
     present = set(r["model"] for r in cav)
@@ -1727,7 +1732,8 @@ def analysis():
     print(f"judge snapshots in files: {judges}")
     print(f"caveat rows {len(cav)} (seeded {len(seeded)}); absence rows {len(ab)}")
     print(f"fresh rows without ts provenance: {len(no_prov)}")
-    print("truncation exclusions: 0 applied -- rows carry no truncation flag (candidate truncation warnings are print-only)")
+    print(f"truncation exclusions: {n_excluded} applied via the truncated flag; "
+          f"{n_flagless} rows predate the flag and are retained")
     _analysis_dataset("POOLED (fresh + seeded)", cav, ab, models, facts, fact_doc)
     _analysis_dataset("FRESH ONLY (seeded v1 rows excluded -- sensitivity)", fresh, ab, models, facts, fact_doc)
     if seeded:

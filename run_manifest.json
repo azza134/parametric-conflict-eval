@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-07-10T04:42:42+00:00",
-  "git_sha": "f421bf2c82711a013a1d6082726d1252dd057f78",
-  "run_id": "b5c18fa87757",
+  "generated_at": "2026-07-16T03:02:34+00:00",
+  "git_sha": "354fd40f133470ecedac36f2c483b4fd974ab424",
+  "run_id": "31b01043ed0d",
   "documents": {
     "consent": "4ff07ac97d3b5b4038fa71ed667b3935c60de54b8f5fc8a2a6305c56085e3f86",
     "epl": "f155c80b12d58ce29502e6a85e07c67892a55b6a1e1605f2fd1e13139e381b6e",
@@ -72,12 +72,16 @@
     [
       "claude-sonnet-5",
       "anthropic"
+    ],
+    [
+      "gpt-5.6-terra",
+      "openai"
     ]
   ],
   "judge": {
     "model": "gpt-5.4-mini",
-    "caveat_system_sha256": "de93795c76f04f23b822e47677de5a69d4ea7288f2cf759f72fb57f4a4c32b68",
-    "abstention_system_sha256": "4761e4e569ef8b26ec0da2abfc0e2d0f8a3c8d4f2ed80d9c1441e0b876a65771"
+    "caveat_system_sha256": "565101129bd0fdb8868321925d45720db02ee68d12b1ee9c15c8416ab3b77203",
+    "abstention_system_sha256": "c305d4803df8c68fd52ed9092efa19ec747038c8f337a4a84c59374180fd6a43"
   },
   "n_per_cell": 3,
   "judge_concurrency": 4,
@@ -88,9 +92,9 @@
     "temperature": "API default"
   },
   "expected_cells": {
-    "caveat": 2160,
-    "abstention": 360,
-    "absence": 360
+    "caveat": 2880,
+    "abstention": 480,
+    "absence": 480
   },
   "perturbation_ladders": [
     {
