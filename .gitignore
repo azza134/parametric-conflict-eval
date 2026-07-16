@@ -18,3 +18,4 @@ spotcheck_2x2.json
 abstention_results.pre_rescore.jsonl
 matched_absence_results.pre_rescore.jsonl
 *.pre_terra_spotcheck
+spotcheck_sidecar_*.json

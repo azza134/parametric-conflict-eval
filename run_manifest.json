@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-07-16T03:11:30+00:00",
-  "git_sha": "fd4912e917d45c1155e057ea8afebc7e2b6a1dd1",
-  "run_id": "a5eca6dad3a8",
+  "generated_at": "2026-07-16T11:36:36+00:00",
+  "git_sha": "4590e977a1bfb11cc561014e34f5e88afaf948a7",
+  "run_id": "73abe575553d",
   "documents": {
     "consent": "4ff07ac97d3b5b4038fa71ed667b3935c60de54b8f5fc8a2a6305c56085e3f86",
     "epl": "f155c80b12d58ce29502e6a85e07c67892a55b6a1e1605f2fd1e13139e381b6e",
@@ -76,6 +76,10 @@
     [
       "gpt-5.6-terra",
       "openai"
+    ],
+    [
+      "claude-haiku-4-5",
+      "anthropic"
     ]
   ],
   "judge": {
@@ -92,9 +96,9 @@
     "temperature": "API default"
   },
   "expected_cells": {
-    "caveat": 2880,
-    "abstention": 480,
-    "absence": 480
+    "caveat": 3600,
+    "abstention": 600,
+    "absence": 600
   },
   "perturbation_ladders": [
     {
