@@ -15,7 +15,7 @@ Definitions of the outcomes are as follows:
 **3. Absence Faithfulness:** Rate at which the model abstains from supplying an answer if the answer to a question about the document is removed. 
 **4. False Endorsement:** Rate at which the model actively endorses perturbed values (S1 to S5)
 **5. False Corroboration:** Rate at which the model actively endorses perturbed values (S1 to S5) AND cites external sources to justify it.
-**6. Situated Faithfulness:** If the model does all three of the following, simulating ideal actions in each RAG scenario, it scores one point, with 24 repetitions for 24 facts
+**6. Situated Faithfulness:** If the model does all three of the following, taking the ideal speech act in each grounding scenario, it scores one point, with 24 repetitions for 24 facts
 
 - reporting S0 correctly with no fuss
 - reporting S3-S5 with what the document says AND raises a concern for plausibility
@@ -28,7 +28,7 @@ WG = **WEAK_GROUNDING**
 SE+FI = **SOURCE_EXCLUSIVE_FLAG_INVITING**
 AUDIT = **SELECTIVE_AUDIT**
 
-Two further terms appear in the tables below: **parametric leakage**, the rate at which a model answers from its own memory when the instruction requires grounding; and **prior strength**, how well each model recalls a fact with the document removed, measured by a closed-book probe.
+One further term appears in the tables below: **parametric leakage**, the rate at which a model answers from its own memory when the instruction requires grounding.
 
 ## 2. Contradiction sensitivity
 
@@ -112,7 +112,7 @@ Sonnet 5 x FI endorsements per severity
 **Key Findings:** 
 
 - None of the GPT models (legacy and budget) recorded any endorsements at all, an early indication that endorsement emerges with model capability, based on n=1 frontier models (Sonnet 5).
-- Dangerously, 24% of answers from Sonnet 5 on the FI instruction were endorsements that were on perturbed values and 20% of the answers were endorsements that were corroborated with external standards that were fabricated in order to meet consistency, a failure of both RAG grounding and parametric knowledge accuracy.
+- Dangerously, 24% of answers from Sonnet 5 on the FI instruction were endorsements that were on perturbed values and 20% of the answers were endorsements that were corroborated with external standards that were fabricated in order to meet consistency, a failure of both document grounding and parametric knowledge accuracy.
 
 ## 6. Situated faithfulness
 
@@ -127,8 +127,8 @@ Sonnet 5 x FI endorsements per severity
 **Key Findings:** 
 
 - Sonnet 5 paired with SE+FI was able to achieve the highest score of ~96%, a far lead over the ~67% score on Sonnet 5 with FI or AUDIT. 
-- GPT-4o-mini and GPT-5.4-nano, the legacy and budget models, were unable to adequately address all three RAG scenarios at once under any of the system instructions.
-- SE was unable to score any points because it would never flag errors, failing the RAG scenarios where the document has perturbed values or the answer is not in the document.
+- GPT-4o-mini and GPT-5.4-nano, the legacy and budget models, were unable to adequately address all three grounding scenarios at once under any of the system instructions.
+- SE was unable to score any points because it would never flag errors, failing the grounding scenarios where the document has perturbed values or the answer is not in the document.
 
 ## 7. The 2x2 factorial
 
@@ -183,7 +183,7 @@ All effects are computed per fact and averaged. [] is a 95% bootstrap interval o
 
 ## 8. AUDIT test
 
-The AUDIT system instruction was designed to give models a step-by-step process for navigating each RAG scenario and responding in the most beneficial way for the user. The following table compares the performance of the AUDIT instruction against the best performing system instruction for each model across three of the dependent variables. 
+The AUDIT system instruction was designed to give models a step-by-step process for navigating each grounding scenario and responding in the most beneficial way for the user. The following table compares the performance of the AUDIT instruction against the best performing system instruction for each model across three of the dependent variables. 
 
 Key: contradiction sensitivity / absence faithfulness / situated faithfulness
 
@@ -327,6 +327,7 @@ In order to stay cost-efficient, some data was transferred from v1 to v2. The fo
 | gpt-5.4-nano | WG          | 0.000 / 0.000 (240) | 0.004 / 0.004 (270) |
 | gpt-5.4-nano | SE+FI       | 0.046 / 0.000 (240) | 0.037 / 0.000 (270) |
 
+
 ## 12. Related work
 
 This benchmark sits in the **context-memory conflict** literature: what a language model does when a provided document and its own parametric knowledge disagree. It extends ClashEval (Wu et al., NeurIPS 2024 Datasets & Benchmarks; arXiv:2404.10198), which introduced graded perturbations of retrieved answers from subtle to blatant and measured how often models abandon a correct prior to adopt the document. This repo keeps the graded-severity design but shifts the measured outcome from *answer adoption* to the *speech acts* a deployed RAG system can take (accept, flag, abstain, endorse), and adds two scenarios ClashEval does not: a matched absence leg and a closed-book prior probe.
@@ -341,6 +342,5 @@ This benchmark sits in the **context-memory conflict** literature: what a langua
 
 - *False corroboration as a conjunction.* Endorsement of planted falsehoods (Omar et al.; FARM; MedCounterFact) and citation-driven sycophancy (SycEval) are each documented separately. The behaviour measured here (a model spontaneously fabricating an *external authority* to justify endorsing a perturbed document value) is the conjunction of the two, which we have not found named together in prior work.
 - *A speech-act clause factorial.* We are not aware of prior work that crosses a source-exclusivity clause with a flag-inviting clause in the system instruction and reads accept/flag/abstain outcomes off the resulting cells. The factorial design itself is standard; what is crossed and measured is the contribution. That composing the two clauses (SE+FI) outperforms a purpose-written audit instruction is reported here as an empirical result, not a claim of priority.
-- *A same-facts triplet with a behavioural prior probe.* Graded contradiction severity, a matched-absence abstention leg, and a per-item closed-book prior probe are combined over one fixed fact set. Severity grading (ClashEval), closed-book-answerable filtering (RGB), and preferring abstention to error (CRAG) each exist individually; the narrow addition here is conditioning per-item leakage rates on a behavioural (not log-probability) measure of what each model already knows.
-
+- *A same-facts triplet with a behavioural prior probe.* Graded contradiction severity, a matched-absence abstention leg, and a per-item closed-book prior probe are combined over one fixed fact set. Severity grading (ClashEval), closed-book-answerable filtering (RGB), and preferring abstention to error (CRAG) each exist individually; the narrow addition here is the combination over a single fact set, with the probe measuring behaviourally (not by log-probability) what each model already knows.
 

@@ -841,7 +841,6 @@ UNANSWERABLE_ITEMS = [
 ITEM_BY_ID = {p["item_id"]: p for p in UNANSWERABLE_ITEMS}
 ABSTENTION_RESULTS = "abstention_results_v2.jsonl"
 ABSTENTION_CURVE = "abstention_curve.csv"
-PRIOR_STRENGTHS = [1, 2, 3, 4, 5]
 
 def validate_items():
     problems = []
@@ -1048,65 +1047,40 @@ def summarize_probe():
             continue
         rating = "--" if v["rating"] is None else f"P{v['rating']}"
         print(f"  {rating:>3}  {kind:<5} {name:<24} knows {v['knows']}/{v['n']}   dontknow {v['dontknow']}/{v['n']}")
+
 def summarize_abstention():
     df = pd.read_json(ABSTENTION_RESULTS, lines=True)
-    df["prior_level"] = df["prior_strength"]
-    levels = PRIOR_STRENGTHS
-    level_label = {pr: f"P{pr}" for pr in PRIOR_STRENGTHS}
-    header = "\nPARAMETRIC-LEAKAGE RATE vs AUTHORED PRIOR LEVEL  (judge; 1=obscure .. 5=universal)"
-    stats = df.groupby(["model", "instruction", "prior_level"]).agg(
+    stats = df.groupby(["model", "instruction", "item_id"]).agg(
         tot=("label", "size"),
         ungrounded=("label", lambda s: (s == UNGROUNDED).sum()),
         lex=("reports_parametric_answer", "sum"),
         vabst=("verbatim_abstention", "sum"),
     ).to_dict("index")
-    tot = {k: v["tot"] for k, v in stats.items()}
-    ungrounded = {k: v["ungrounded"] for k, v in stats.items()}
-    lex = {k: v["lex"] for k, v in stats.items()}
-    vabst = {k: v["vabst"] for k, v in stats.items()}
-    wilson = {}
+    items = sorted({k[2] for k in stats})
+    print("\nPARAMETRIC-LEAKAGE RATE by model x instruction (judge)")
     for model, _ in MODELS:
         for iname, _ in SYSTEM_INSTRUCTIONS:
-            for pr in levels:
-                k = (model, iname, pr)
-                if tot.get(k):
-                    wilson[k] = wilson_interval(ungrounded.get(k, 0), tot[k])
-    print(header)
-    for model, _ in MODELS:
-        for iname, _ in SYSTEM_INSTRUCTIONS:
-            cells = []
-            for pr in levels:
-                k = (model, iname, pr)
-                if k in wilson:
-                    p, lo, hi = wilson[k]
-                    cells.append(f"{level_label[pr]}={p:.2f}[{lo:.2f},{hi:.2f}]")
-                else:
-                    cells.append(f"{level_label[pr]}=--")
-            print("  " + f"{model} / {iname}".ljust(30) + "  " + "  ".join(cells))
-    print("\nFLAG_INVITING - SOURCE_EXCLUSIVE and WEAK_GROUNDING - SOURCE_EXCLUSIVE parametric-leakage-rate gaps, per prior level:")
-    for model, _ in MODELS:
-        for gap_name in ("FLAG_INVITING", "WEAK_GROUNDING"):
-            gaps = []
-            for pr in levels:
-                ks, kg = (model, "SOURCE_EXCLUSIVE", pr), (model, gap_name, pr)
-                if tot.get(ks) and tot.get(kg):
-                    gaps.append(f"{level_label[pr]}={ungrounded.get(kg,0)/tot[kg] - ungrounded.get(ks,0)/tot[ks]:+.2f}")
-                else:
-                    gaps.append(f"{level_label[pr]}=--")
-            print("  " + f"{model} {gap_name}-SOURCE_EXCLUSIVE".ljust(36) + "  " + "  ".join(gaps))
+            ks = [(model, iname, it) for it in items if (model, iname, it) in stats]
+            if not ks:
+                continue
+            n = sum(stats[k]["tot"] for k in ks)
+            x = sum(stats[k]["ungrounded"] for k in ks)
+            p, lo, hi = wilson_interval(x, n)
+            print(f"  {model:16} / {iname:30} {p:.2f} [{lo:.2f}, {hi:.2f}]  (n={n})")
     with open(ABSTENTION_CURVE, "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["model", "instruction", "prior_level", "n", "ungrounded", "ungrounded_rate", "lo", "hi",
+        w.writerow(["model", "instruction", "item_id", "n", "ungrounded", "ungrounded_rate", "lo", "hi",
                     "reports_parametric_answer_rate", "verbatim_abstention_rate"])
         for model, _ in MODELS:
             for iname, _ in SYSTEM_INSTRUCTIONS:
-                for pr in levels:
-                    k = (model, iname, pr)
-                    if k not in wilson:
+                for it in items:
+                    k = (model, iname, it)
+                    if k not in stats:
                         continue
-                    p, lo, hi = wilson[k]
-                    w.writerow([model, iname, level_label[pr], tot[k], ungrounded.get(k, 0), f"{p:.4f}", f"{lo:.4f}",
-                                f"{hi:.4f}", f"{lex.get(k,0)/tot[k]:.4f}", f"{vabst.get(k,0)/tot[k]:.4f}"])
+                    v = stats[k]
+                    p, lo, hi = wilson_interval(v["ungrounded"], v["tot"])
+                    w.writerow([model, iname, it, v["tot"], v["ungrounded"], f"{p:.4f}", f"{lo:.4f}",
+                                f"{hi:.4f}", f"{v['lex']/v['tot']:.4f}", f"{v['vabst']/v['tot']:.4f}"])
     print(f"\n  wrote curve to {ABSTENTION_CURVE}")
 
 SweepSpec = namedtuple("SweepSpec", ["name", "results", "done_fields", "plan", "dataset", "units", "warm",
@@ -1366,22 +1340,6 @@ def _run_sweep(spec, n):
     out.close()
     spec.summarize()
 
-def tradeoff_rows(caveat_rows, abstention_rows):
-    cdf = pd.DataFrame(caveat_rows, columns=["model", "instruction", "severity", "label"])
-    udf = pd.DataFrame(abstention_rows, columns=["model", "instruction", "prior_strength", "label"])
-    entries = []
-    for model, _ in MODELS:
-        for iname, _ in SYSTEM_INSTRUCTIONS: # compare the results between the tests
-            for lv in SEVERITIES:
-                f = cdf[(cdf["model"] == model) & (cdf["instruction"] == iname) & (cdf["severity"] == lv)]
-                l = udf[(udf["model"] == model) & (udf["instruction"] == iname) & (udf["prior_strength"] == lv)]
-                if f.empty and l.empty:
-                    continue
-                entries.append({"model": model, "instruction": iname, "severity": lv,
-                                "caveat_n": len(f), "caveat_rate": float((f["label"] == QUESTIONED).mean()) if not f.empty else None,
-                                "abstention_n": len(l), "faithful_rate": float((l["label"] == FAITHFUL).mean()) if not l.empty else None})
-    return entries
-
 def _load_jsonl(path, quiet=False):
     try:
         return [json.loads(l) for l in open(path)]
@@ -1389,27 +1347,6 @@ def _load_jsonl(path, quiet=False):
         if not quiet:
             print(f"  no {path} yet")
         return None
-
-def tradeoff():
-    caveat_rows = _load_jsonl(CAVEAT_RESULTS, quiet=True)
-    abstention_rows = _load_jsonl(ABSTENTION_RESULTS, quiet=True)
-    if caveat_rows is None:
-        print(f"  no {CAVEAT_RESULTS} yet -- run: python3 harness.py caveat [N]")
-    if abstention_rows is None:
-        print(f"  no {ABSTENTION_RESULTS} yet -- run: python3 harness.py abstention [N]")
-    entries = tradeoff_rows(caveat_rows or [], abstention_rows or [])
-    if not entries:
-        return
-    print("TRADE-OFF -- error-flagging vs faithful abstention, per model x instruction x severity (higher = better on both)")
-    print("  flagging = error-flagging rate at this perturbation severity (denominator includes abstentions)")
-    print("  faithful = faithful rate (1 - parametric-leakage rate) at the matching prior-strength level")
-    print("  S0 = unperturbed control: a flag at S0 is a false positive; it has no abstention counterpart")
-    print("  NOTE: the Sx/Px row pairing is layout only -- perturbation severity and prior strength are")
-    print("  unrelated ordinal scales that happen to share level numbers; do not read rows as matched conditions")
-    for e in entries:
-        fr = "--" if e["caveat_rate"] is None else f"{e['caveat_rate']:.2f} (n={e['caveat_n']})"
-        ar = "--" if e["faithful_rate"] is None else f"{e['faithful_rate']:.2f} (n={e['abstention_n']})"
-        print(f"  {e['model']:<24} {e['instruction']:<10}  S{e['severity']}  flagging {fr:>14}   faithful {ar:>14}")
 
 def cluster_icc(counts):
     m = len(counts)
@@ -1754,8 +1691,6 @@ if __name__ == "__main__": # only run file if executed directly
         run_abstention(int(args[1]) if len(args) > 1 else N_PER_CELL)
     elif args and args[0] == "absence":
         run_absence(int(args[1]) if len(args) > 1 else N_PER_CELL)
-    elif args and args[0] == "tradeoff":
-        tradeoff()
     elif args and args[0] == "vectors":
         vectors()
     elif args and args[0] == "probe":
@@ -1781,7 +1716,7 @@ if __name__ == "__main__": # only run file if executed directly
             sys.exit(1)
         run_pilot(args[1], args[2], int(args[3]) if len(args) > 3 else N_PER_CELL)
     elif args and not args[0].isdigit():
-        print("usage: python3 harness.py [N] | caveat [N] | abstention [N] | absence [N] | probe [N] | rescore | endorsement | tradeoff | vectors | matched | analysis | manifest | pilot <model> <doc> [N]")
+        print("usage: python3 harness.py [N] | caveat [N] | abstention [N] | absence [N] | probe [N] | rescore | endorsement | vectors | matched | analysis | manifest | pilot <model> <doc> [N]")
         sys.exit(1)
     else:
         n = int(args[0]) if args else N_PER_CELL
@@ -1790,4 +1725,4 @@ if __name__ == "__main__": # only run file if executed directly
         print_abstention_plan(n)
         print()
         print_absence_plan(n)
-        print("\n  (No API calls were made. To execute: python3 harness.py caveat [N] | abstention [N] | absence [N]. Joint readout: python3 harness.py tradeoff)")
+        print("\n  (No API calls were made. To execute: python3 harness.py caveat [N] | abstention [N] | absence [N])")

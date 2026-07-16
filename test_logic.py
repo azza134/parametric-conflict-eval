@@ -16,7 +16,7 @@ from harness import (wilson_interval, PERTURBATION_LADDERS, SEVERITIES, validate
                      ABSENCE_PATCHES, absence_doc, validate_absence, _absence_row,
                      encode_absence_custom_id, decode_absence_custom_id, absence_wave_plan,
                      total_steps, total_cells, derive_label, lexical_caveat, UNANSWERABLE_ITEMS, validate_items,
-                     load_done, tradeoff_rows, cluster_icc, vector_cells,
+                     load_done, cluster_icc, vector_cells,
                      probe_targets, _probe_row,
                      encode_caveat_custom_id, decode_caveat_custom_id,
                      encode_abstention_custom_id, decode_abstention_custom_id,
@@ -415,41 +415,6 @@ class TestGoldSchedule(unittest.TestCase):
         self.assertTrue(borderline)
         for item_id in {s for s, _ in borderline}:
             self.assertEqual({i for s, i in borderline if s == item_id}, {"SOURCE_EXCLUSIVE", "WEAK_GROUNDING"})
-
-
-class TestTradeoffRows(unittest.TestCase):
-    def _caveat(self, instr, level, label):
-        return {"model": MODELS[0][0], "instruction": instr, "severity": level, "label": label}
-
-    def _ungrounded(self, instr, prior, label):
-        return {"model": MODELS[0][0], "instruction": instr, "prior_strength": prior, "label": label}
-
-    def test_reports_each_severity_separately(self):
-        caveat = [self._caveat("SOURCE_EXCLUSIVE", 5, QUESTIONED), self._caveat("SOURCE_EXCLUSIVE", 4, SILENT),
-                self._caveat("SOURCE_EXCLUSIVE", 1, QUESTIONED)]
-        ungrounded = [self._ungrounded("SOURCE_EXCLUSIVE", 5, UNGROUNDED), self._ungrounded("SOURCE_EXCLUSIVE", 3, FAITHFUL)]
-        entries = {e["severity"]: e for e in tradeoff_rows(caveat, ungrounded) if e["instruction"] == "SOURCE_EXCLUSIVE"}
-        self.assertEqual(set(entries), {1, 3, 4, 5})
-        self.assertEqual(entries[5]["caveat_n"], 1)
-        self.assertAlmostEqual(entries[5]["caveat_rate"], 1.0)
-        self.assertEqual(entries[5]["abstention_n"], 1)
-        self.assertAlmostEqual(entries[5]["faithful_rate"], 0.0)
-        self.assertEqual(entries[4]["caveat_n"], 1)
-        self.assertAlmostEqual(entries[4]["caveat_rate"], 0.0)
-        self.assertIsNone(entries[4]["faithful_rate"])
-        self.assertEqual(entries[3]["abstention_n"], 1)
-        self.assertAlmostEqual(entries[3]["faithful_rate"], 1.0)
-        self.assertIsNone(entries[3]["caveat_rate"])
-
-    def test_one_side_missing_reports_other(self):
-        entry = tradeoff_rows([self._caveat("FLAG_INVITING", 5, QUESTIONED)], [])[0]
-        self.assertEqual(entry["severity"], 5)
-        self.assertIsNone(entry["faithful_rate"])
-        self.assertEqual(entry["caveat_n"], 1)
-        self.assertAlmostEqual(entry["caveat_rate"], 1.0)
-
-    def test_both_empty(self):
-        self.assertEqual(tradeoff_rows([], []), [])
 
 
 class TestMatchedAbsence(unittest.TestCase):
