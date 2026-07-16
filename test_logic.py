@@ -1125,7 +1125,7 @@ class TestRunSweep(unittest.TestCase):
                  mock.patch("harness.SYSTEM_INSTRUCTIONS", [("I", "sys")]), \
                  mock.patch("harness.INSTR_BY_NAME", {"I": "sys"}), \
                  mock.patch("harness.submit_openai_batch", side_effect=fake_submit), \
-                 mock.patch("harness.poll_openai_batch", return_value=None), \
+                 mock.patch("harness.poll_openai_batch", return_value=types.SimpleNamespace(status="completed")), \
                  mock.patch("harness.openai_batch_results", side_effect=fake_results):
                 _run_sweep(spec, 1)
                 self.assertEqual(len(submitted), 1)
@@ -1154,7 +1154,7 @@ class TestRunSweep(unittest.TestCase):
                  mock.patch("harness.SYSTEM_INSTRUCTIONS", [("I", "sys")]), \
                  mock.patch("harness.INSTR_BY_NAME", {"I": "sys"}), \
                  mock.patch("harness.submit_openai_batch", side_effect=fake_submit), \
-                 mock.patch("harness.poll_openai_batch", return_value=None), \
+                 mock.patch("harness.poll_openai_batch", return_value=types.SimpleNamespace(status="completed")), \
                  mock.patch("harness.openai_batch_results", side_effect=fake_results), \
                  mock.patch("harness.with_retry", return_value=("synced", "snap2", False)) as wr:
                 _run_sweep(spec, 1)
@@ -1181,12 +1181,30 @@ class TestRunSweep(unittest.TestCase):
                  mock.patch("harness.SYSTEM_INSTRUCTIONS", [("I", "sys")]), \
                  mock.patch("harness.INSTR_BY_NAME", {"I": "sys"}), \
                  mock.patch("harness.submit_openai_batch", side_effect=fake_submit), \
-                 mock.patch("harness.poll_openai_batch", return_value=None), \
+                 mock.patch("harness.poll_openai_batch", return_value=types.SimpleNamespace(status="completed")), \
                  mock.patch("harness.openai_batch_results", side_effect=fake_results):
                 _run_sweep(spec, 1)
                 with open(path) as f:
                     rows = [json.loads(l) for l in f]
                 self.assertEqual({r["u"]: r["truncated"] for r in rows}, {"u1": True, "u2": False})
+
+    def test_run_sweep_aborts_on_wholesale_batch_failure(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = os.path.join(td, "r.jsonl")
+            spec = self._fake_spec(path)
+            failed = types.SimpleNamespace(status="failed", errors=types.SimpleNamespace(
+                data=[types.SimpleNamespace(message="Enqueued token limit reached")]))
+            with mock.patch("harness.MODELS", [("m", "openai")]), \
+                 mock.patch("harness.SYSTEM_INSTRUCTIONS", [("I", "sys")]), \
+                 mock.patch("harness.INSTR_BY_NAME", {"I": "sys"}), \
+                 mock.patch("harness.submit_openai_batch", return_value="b1"), \
+                 mock.patch("harness.poll_openai_batch", return_value=failed), \
+                 mock.patch("harness.with_retry") as wr:
+                with self.assertRaises(SystemExit) as ctx:
+                    _run_sweep(spec, 1)
+                self.assertIn("Enqueued token limit reached", str(ctx.exception))
+                wr.assert_not_called()
+                self.assertFalse(os.path.exists(path) and open(path).read())
 
 
 class TestOpenAIBatch(unittest.TestCase):
@@ -1262,6 +1280,13 @@ class TestOpenAIBatch(unittest.TestCase):
 
     def test_chunks_split_by_token_budget(self):
         reqs = [(f"c{i}", {"instructions": "x" * 400, "input": "y" * 400}) for i in range(5)]
+        with mock.patch("harness.OPENAI_BATCH_TOKEN_BUDGET", 500), \
+             mock.patch("harness.OPENAI_BATCH_MAX_REQUESTS", 100):
+            chunks = list(_openai_batch_chunks(reqs))
+        self.assertEqual([len(c) for c in chunks], [2, 2, 1])
+
+    def test_chunks_count_max_output_tokens_toward_budget(self):
+        reqs = [(f"c{i}", {"instructions": "", "input": "", "max_output_tokens": 200}) for i in range(5)]
         with mock.patch("harness.OPENAI_BATCH_TOKEN_BUDGET", 500), \
              mock.patch("harness.OPENAI_BATCH_MAX_REQUESTS", 100):
             chunks = list(_openai_batch_chunks(reqs))

@@ -1309,13 +1309,13 @@ def _run_sweep_anthropic_batch(spec, model, prov, n, done, out, seen, total):
             print(f"  [{seen}/{total}] {model} / {iname} / {spec.cell_label(u)}  {status}", flush=True)
     return seen
 
-OPENAI_BATCH_TOKEN_BUDGET = 1_500_000
+OPENAI_BATCH_TOKEN_BUDGET = 1_000_000
 OPENAI_BATCH_MAX_REQUESTS = 2000
 
 def _openai_batch_chunks(requests):
     chunk, size = [], 0
     for cid, body in requests:
-        t = (len(body.get("instructions", "")) + len(body.get("input", ""))) // 4
+        t = (len(body.get("instructions", "")) + len(body.get("input", ""))) // 4 + body.get("max_output_tokens", 0)
         if chunk and (size + t > OPENAI_BATCH_TOKEN_BUDGET or len(chunk) >= OPENAI_BATCH_MAX_REQUESTS):
             yield chunk
             chunk, size = [], 0
@@ -1341,7 +1341,12 @@ def _run_openai_wave(model, prov, custom_ids, wave_label, build_request_fn, sync
                   f"completed={getattr(rc, 'completed', 0)} failed={getattr(rc, 'failed', 0)} "
                   f"total={getattr(rc, 'total', 0)}", flush=True)
 
-        poll_openai_batch(batch_id, poll_interval=30, on_poll=on_poll)
+        final = poll_openai_batch(batch_id, poll_interval=30, on_poll=on_poll)
+        if final.status == "failed":
+            errs = getattr(final, "errors", None)
+            detail = "; ".join(e.message for e in errs.data) if errs and errs.data else "no error detail"
+            raise SystemExit(f"{label}: batch {batch_id} failed wholesale, aborting instead of "
+                             f"sync-retrying {len(chunk)} request(s) at full price -- {detail}")
 
         submitted = {cid for cid, _ in chunk}
         fallbacks, seen_ids = [], set()
