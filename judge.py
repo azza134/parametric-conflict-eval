@@ -3,7 +3,7 @@ import json
 import os
 import math
 import sys
-from config import (openai_client, passage, doc_text, JUDGE_MODEL, GOLD_CANDIDATE, KAPPA_THRESHOLD, SOURCE_EXCLUSIVE, WEAK_GROUNDING,
+from config import (openai_client, doc_text, JUDGE_MODEL, GOLD_CANDIDATE, KAPPA_THRESHOLD, SOURCE_EXCLUSIVE, WEAK_GROUNDING,
                     call, with_retry)
 
 ABSTENTION_GOLD_FILE = "abstention_gold.json"        # ground truth

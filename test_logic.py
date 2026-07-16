@@ -11,7 +11,7 @@ import config
 
 from config import (perturb, with_retry, DOCUMENTS, doc_text, openai_reasoning_kwargs, MODELS, FLAG_INVITING, SOURCE_EXCLUSIVE,
                     SOURCE_EXCLUSIVE_FLAG_INVITING, SYSTEM_INSTRUCTIONS,
-                    appears, passage, step_doc, build_batch_message_params)
+                    appears, step_doc, build_batch_message_params)
 from harness import (wilson_interval, PERTURBATION_LADDERS, SEVERITIES, validate_ladders,
                      ABSENCE_PATCHES, absence_doc, validate_absence, _absence_row,
                      encode_absence_custom_id, decode_absence_custom_id, absence_wave_plan,
@@ -30,6 +30,8 @@ from judge import (cohens_kappa, FAITHFUL, UNGROUNDED,
                    QUESTIONED, SILENT, ENDORSED, DECLINED, CAVEAT_LABELS, CAVEAT_SCHEMA, build_caveat_prompt,
                    CORROBORATION_LABELS,
                    gold_schedule, expand_schedule, _meta_evaluate)
+
+passage = doc_text("consent")
 
 
 class TestWilsonInterval(unittest.TestCase):

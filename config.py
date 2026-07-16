@@ -23,7 +23,6 @@ DOCUMENTS = {
 }
 _here = os.path.dirname(os.path.abspath(__file__))
 DOCUMENT_TEXTS = {name: open(os.path.join(_here, fname)).read() for name, fname in DOCUMENTS.items()}
-passage = DOCUMENT_TEXTS["consent"]
 
 def doc_text(ref):
     return DOCUMENT_TEXTS[ref]

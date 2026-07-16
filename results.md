@@ -12,7 +12,7 @@ Definitions of the outcomes are as follows:
 **2. Clean Specificity:** Rate at which the model does not question or decline the document value at severity 0 (unperturbed)
 **3. Absence Faithfulness:** Rate at which the model abstains from supplying an answer if the answer to a question about the document is removed. 
 **4. False Endorsement:** Rate at which the model actively endorses perturbed values (S1 to S5)
-**5. False Corroboration:** Rate at which the model actively endorses perturbed values (S1 to S5) AND cites external sources to justify it.
+**5. False Corroboration:** Rate at which the model actively endorses perturbed values (S1 to S5) AND justifies the endorsement, either generically (the value "appears standard/reasonable") or by citing a named external authority. The two justification types are reported separately in Section 5.
 **6. Situated Faithfulness:** One point per fact (24 facts) if the model takes the ideal speech act in all three grounding scenarios, each by majority over that fact's repetitions:
 
 - does not question or decline the unperturbed value (S0)
@@ -42,7 +42,7 @@ One further term appears in the tables below: **parametric leakage**, the rate a
 **Key Findings:** 
 
 - All the models caught the most errors on FI, with a lower but still significant amount of errors still being caught under the SE+FI instruction.
-- Interestingly, only Sonnet 5 caught errors on the AUDIT instruction, a behavioural difference between Anthropic and OpenaAI models responding to this instruction in terms of catching errors.
+- Interestingly, only Sonnet 5 caught errors on the AUDIT instruction, a behavioural difference between Sonnet 5 and the OpenAI models in responding to this instruction in terms of catching errors.
 
 ## 3. Clean specificity
 
@@ -58,7 +58,7 @@ One further term appears in the tables below: **parametric leakage**, the rate a
 **Key Findings:**
 
 - All the models had a similar performance across all instructions in abstaining from raising doubts about the unperturbed value, with the anomaly of 0.85 on Sonnet 5 (FI). 
-- Between the anomalies in Sonnet 5's clean specificity on FI and contradiction sensitivity on AUDIT, Anthropic models can be seen from the data as being more likely to flag errors if the system instruction invites such behaviour, even values that are correct and unperturbed (0.85 clean specificity).
+- Between the anomalies in Sonnet 5's clean specificity on FI and contradiction sensitivity on AUDIT, Sonnet 5 can be seen from the data as being more likely to flag errors if the system instruction invites such behaviour, even values that are correct and unperturbed (0.85 clean specificity).
 
 ## 4. Absence faithfulness
 
@@ -73,7 +73,7 @@ One further term appears in the tables below: **parametric leakage**, the rate a
 
 **Key Findings:** 
 
-- Sonnet 5 recorded significantly higher absence faithfulness rates than the GPT models (including 5.6 Terra), indicating that Anthropic models are generally more likely to abstain from falling back on parametric knowledge when the answer to a question is not provided in external context at all. 
+- Sonnet 5 recorded significantly higher absence faithfulness rates than the GPT models (including 5.6 Terra), indicating that Sonnet 5 is generally more likely to abstain from falling back on parametric knowledge when the answer to a question is not provided in external context at all. Whether this extends to other Anthropic models is untested (one Anthropic model in the roster). 
 - SE had the highest faithfulness rates across the models, closely trailed by SE+FI and AUDIT, indicating that the system instructions that more heavily suppressed the use of parametric knowledge were more effective at faithfulness. FI and WG instructions recorded much lower absence faithfulness rates.
 
 ## 5. False endorsements and corroborations
@@ -116,8 +116,10 @@ Sonnet 5 x FI endorsements per severity
 **Key Findings:** 
 
 - Sonnet 5 is the only model that recorded any endorsements in 1,800 perturbed answers. 
-- Dangerously, 24% of answers from Sonnet 5 on the FI instruction were endorsements that were on perturbed values, and 20% of the answers were endorsements that were corroborated with external standards that were fabricated in order to meet consistency, a failure of both document grounding and parametric knowledge accuracy. 
-- This behaviour was only observed in Sonnet 5, indicating that this behaviour is much more pertinent in Anthropic models as opposed to OpenAI.
+- Under FI, 24% of Sonnet 5's perturbed answers were endorsements (88/360) and 20% were *corroborated* endorsements (73/360). Of the 73, 63 were justified generically (the value "appears standard/reasonable") and 10 cited a named external authority (2.8% of perturbed answers). The latter cases are the most serious ones; this involves the model invoking real standards (e.g. "Planning for Bushfire Protection 2019") to vouch for a perturbed value, a failure of both document grounding and parametric knowledge accuracy. 
+- The endorsements are concentrated at low severity: 0.78 at S1 and 0.35 at S2, falling to 0.10 at S3 and zero at S4-S5 (per-severity table above). Sonnet 5 also endorses the unperturbed value 83% of the time under FI, so the behaviour is better described as vouching for any value it deems plausible when the instruction invites a plausibility assessment. S1-S2 perturbations (1.25x to 3.5x) sit inside that plausibility window and are not reliably detectable by any model.
+  -  The failure is not endorsement of absurd values, which never happened in the data. It is confident corroboration language, sometimes citing named authorities, applied to errors the model cannot actually rule out.
+- This behaviour was only observed in Sonnet 5. Whether it is Anthropic-family-wide or idiosyncratic to Sonnet 5 is untested (one Anthropic model in the roster).
 
 ## 6. Situated faithfulness
 
@@ -159,7 +161,7 @@ All effects are computed per fact and averaged. [] is a 95% bootstrap interval o
 
 - Source exclusivity instructions lowered the rate at which errors were flagged, whereas flag invitation instructions increased this rate.
 - In the case of contradiction sensitivity, Sonnet 5 was most sensitive to the change in instructions.
-- The two mains interacted additively under Sonnet 5, whereas all the GPT models suffered from the interaction in the case of contradiction sensitivity. 
+- The two mains interacted additively under Sonnet 5, whereas all the GPT models suffered from the interaction in the case of contradiction sensitivity.
 
 **Absence faithfulness**
 
@@ -176,7 +178,7 @@ All effects are computed per fact and averaged. [] is a 95% bootstrap interval o
 
 - Both instruction sets increased faithfulness rates in comparison to WG (with the exception of Sonnet 5 on flag-invitation main), but source exclusivity instructions were much more effective than flag invitation ones across the models. 
 - On the GPT models, the interaction between the two instructions worsened the faithfulness rates, while the opposite effect was observed in Sonnet 5. 
-- Between absence faithfulness and contradiction sensitivity, GPT models appeared to have worsened performance in handling document-grounded QA under the interaction between the mains as opposed to Sonnet 5, suggesting that Anthropic models are more capable of interpreting more complex system instructions. 
+- Between absence faithfulness and contradiction sensitivity, GPT models appeared to have worsened performance in handling document-grounded QA under the interaction between the mains as opposed to Sonnet 5, suggesting that Sonnet 5 is more capable of interpreting more complex system instructions than the GPT models tested.
 
 **False endorsement**
 
@@ -284,8 +286,8 @@ Key: questioned = raised doubt about the value; endorsed = actively vouched for 
 
 - The only instance in which significant levels of endorsements were observed was Sonnet 5 on the FI system instruction. Every other combination of model and instruction observed very little if any endorsements at all.
 - GPT-5.6-terra, the second frontier model, endorsed nothing at any severity under any instruction. Thus, endorsement is a behaviour that appears to be specific to Sonnet 5 and possibly other Anthropic models rather than one that arrives with frontier capability. What remains open is whether it is model-family-specific or idiosyncratic. 
-- As discussed before, arguably the most dangerous behaviour observed throughout the results can be seen here where values that were intentionally perturbed were actively endorsed by Sonnet 5, many of which were corroborated with external standards from the model's parametric knowledge that was not verified well enough.
-  - This can lead to document-grounded QA misleading users into applying incorrect information, especially when the model uses external standards to justify its endorsements even when the standards are applied incorrectly. Users are less likely to verify information if an external standard is confidently cited by a model. 
+- As discussed in Section 5, arguably the most dangerous behaviour observed throughout the results can be seen here, where values that were intentionally perturbed were actively endorsed by Sonnet 5. Most were justified generically as appearing standard, but 10 instances cited named standards that are real but whose claimed support for the perturbed value is hallucinated. The endorsements sit almost entirely at S1-S2, the perturbations small enough to pass a plausibility check.
+  - This can lead to document-grounded QA misleading users into applying incorrect information, especially when the model uses external standards to justify its endorsements even when the standards are applied incorrectly. Users are less likely to verify information if an external standard is confidently cited by a model.
 
 ## 10. Per-document effects
 
@@ -358,9 +360,5 @@ In order to stay cost-efficient, some data was transferred from v1 to v2. The fo
 | gpt-5.4-nano | FI          | 0.163 / 0.000 (240) | 0.137 / 0.000 (270) |
 | gpt-5.4-nano | WG          | 0.000 / 0.000 (240) | 0.004 / 0.004 (270) |
 | gpt-5.4-nano | SE+FI       | 0.046 / 0.000 (240) | 0.037 / 0.000 (270) |
-
-
-
-
 
 

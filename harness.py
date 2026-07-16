@@ -12,7 +12,7 @@ from collections import namedtuple
 from datetime import datetime, timezone
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor
-from config import (passage, DOCUMENTS, DOCUMENT_TEXTS, doc_text, MODELS, N_PER_CELL, JUDGE_CONCURRENCY, JUDGE_MODEL, SYSTEM_INSTRUCTIONS,
+from config import (DOCUMENTS, DOCUMENT_TEXTS, doc_text, MODELS, N_PER_CELL, JUDGE_CONCURRENCY, JUDGE_MODEL, SYSTEM_INSTRUCTIONS,
                     call, call_closed_book, with_retry, perturb, appears, step_doc,
                     build_batch_message_params, extract_anthropic_text,
                     submit_anthropic_batch, poll_anthropic_batch, anthropic_batch_results,
