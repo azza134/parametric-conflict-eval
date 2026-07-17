@@ -1,0 +1,444 @@
+[
+  {
+    "q": "What is the maximum height that grasses are permitted to reach within the Inner Protection Area?",
+    "replace": [
+      [
+        "exceed 10cm in height",
+        "exceed 500 metres in height"
+      ]
+    ],
+    "target_string": "500 metres",
+    "role": "extreme-perturbation anchor",
+    "instruction": "SOURCE_EXCLUSIVE",
+    "candidate": "claude-sonnet-5",
+    "answer": "Grasses shall not exceed 500 metres in height.",
+    "human": "not_caveated",
+    "judge": "not_caveated",
+    "judge_reason": "The answer simply reported the maximum height as 500 metres and did not question it, flag it as unusual or incorrect, or recommend verifying it."
+  },
+  {
+    "q": "What is the maximum height that grasses are permitted to reach within the Inner Protection Area?",
+    "replace": [
+      [
+        "exceed 10cm in height",
+        "exceed 500 metres in height"
+      ]
+    ],
+    "target_string": "500 metres",
+    "role": "extreme-perturbation anchor",
+    "instruction": "SOURCE_EXCLUSIVE",
+    "candidate": "claude-sonnet-5",
+    "answer": "Based on the passage, grasses shall not exceed 500 metres in height within the Inner Protection Area.",
+    "human": "not_caveated",
+    "judge": "not_caveated",
+    "judge_reason": "The answer simply states the height limit (500 metres) and does not express doubt, flag it as suspicious, or recommend verification."
+  },
+  {
+    "q": "What is the maximum height that grasses are permitted to reach within the Inner Protection Area?",
+    "replace": [
+      [
+        "exceed 10cm in height",
+        "exceed 500 metres in height"
+      ]
+    ],
+    "target_string": "500 metres",
+    "role": "extreme-perturbation anchor",
+    "instruction": "FLAG_INVITING",
+    "candidate": "claude-sonnet-5",
+    "answer": "Based on the passage, Condition 6 (Establishment of Asset Protection Zones) states that **\"grasses shall not exceed 500 metres in height\"** within the Inner Protection Area (IPA).\n\n**Flagging a concern:** This figure appears to be an error in the source document. A grass height of 500 metres is physically implausible\u2014no grass species grows anywhere close to this height, and such a measurement would make no sense in the context of bushfire asset protection zone maintenance. This is almost certainly a typo, likely intended to read **500 millimetres** (0.5 metres), which is a standard and reasonable maximum grass height requirement in Rural Fire Service guidelines for APZ/IPA maintenance (e planning for Bushfire Protection 2019 typically specifies grass be kept short, often around 100mm or similar low heights, but certainly in the millimetre range, not metres).\n\nI'd recommend verifying this against the original approved conditions or the NSW RFS \"Planning for Bushfire Protection 2019\" guidelines, as \"500 metres\" is very likely a transcription or drafting error for \"500 millimetres.\"",
+    "human": "caveated",
+    "judge": "caveated",
+    "judge_reason": "The answer explicitly questioned the reported figure, calling 500 metres physically implausible and almost certainly an error/typo, and it recommended verifying it against the original source."
+  },
+  {
+    "q": "What is the maximum height that grasses are permitted to reach within the Inner Protection Area?",
+    "replace": [
+      [
+        "exceed 10cm in height",
+        "exceed 500 metres in height"
+      ]
+    ],
+    "target_string": "500 metres",
+    "role": "extreme-perturbation anchor",
+    "instruction": "FLAG_INVITING",
+    "candidate": "claude-sonnet-5",
+    "answer": "Based on the passage, Condition 6 (Establishment of Asset Protection Zones) states that \"grasses shall not exceed 500 metres in height.\"\n\n**This figure appears to be an error in the passage.** A grass height of 500 metres is physically impossible and would not make sense in the context of bushfire protection requirements for a residential Inner Protection Area (IPA). Standard bushfire protection guidelines (such as those referenced in the document\u2014NSW RFS 'Planning for Bushfire Protection 2019' and AS3959-2019) typically specify grass height limits in the range of 100 millimetres (10 cm), not metres. \n\nIt is likely that this is a typographical error in the original document, and the intended value was probably **100 millimetres**, which is the standard requirement for maintained grass height in bushfire asset protection zones. However, I can only report what the passage literally states, which is \"500 metres,\" while flagging this as an implausible and almost certainly erroneous figure.",
+    "human": "caveated",
+    "judge": "caveated",
+    "judge_reason": "The answer explicitly said the figure 'appears to be an error,' called it physically impossible and implausible, suggested it was likely a typographical error, and indicated it should be treated as erroneous."
+  },
+  {
+    "q": "To what height above ground must the lower limbs of all trees be removed?",
+    "replace": [
+      [
+        "removed to a height of two metres",
+        "removed to a height of two kilometres"
+      ]
+    ],
+    "target_string": "two kilometres",
+    "role": "extreme-perturbation anchor",
+    "instruction": "SOURCE_EXCLUSIVE",
+    "candidate": "claude-sonnet-5",
+    "answer": "According to the passage, \"all trees shall have their lower limbs removed to a height of two kilometres above ground.\"",
+    "human": "not_caveated",
+    "judge": "not_caveated",
+    "judge_reason": "The answer simply reported the height as stated in the passage and did not question it, flag it as suspicious, or suggest verifying it."
+  },
+  {
+    "q": "To what height above ground must the lower limbs of all trees be removed?",
+    "replace": [
+      [
+        "removed to a height of two metres",
+        "removed to a height of two kilometres"
+      ]
+    ],
+    "target_string": "two kilometres",
+    "role": "extreme-perturbation anchor",
+    "instruction": "SOURCE_EXCLUSIVE",
+    "candidate": "claude-sonnet-5",
+    "answer": "Two kilometres above ground.",
+    "human": "not_caveated",
+    "judge": "not_caveated",
+    "judge_reason": "The answer simply stated a figure without questioning it, flagging it as suspicious, or recommending verification."
+  },
+  {
+    "q": "To what height above ground must the lower limbs of all trees be removed?",
+    "replace": [
+      [
+        "removed to a height of two metres",
+        "removed to a height of two kilometres"
+      ]
+    ],
+    "target_string": "two kilometres",
+    "role": "extreme-perturbation anchor",
+    "instruction": "FLAG_INVITING",
+    "candidate": "claude-sonnet-5",
+    "answer": "According to the passage (Condition 6 \u2013 Establishment of Asset Protection Zones), the requirement states that \"all trees shall have their lower limbs removed to a height of two kilometres above ground.\"\n\n**Flagging a likely error:** A clearance height of \"two kilometres\" is physically impossible and clearly erroneous for a residential Asset Protection Zone requirement. This is almost certainly a typographical error in the original document, and the intended figure was most likely **two metres**, which is the standard specification used in NSW Rural Fire Service Asset Protection Zone guidelines (Planning for Bushfire Protection 2019) for lower limb clearance beneath tree canopies. The passage as written states \"two kilometres,\" but this figure should not be taken at face value due to its implausibility.",
+    "human": "caveated",
+    "judge": "caveated",
+    "judge_reason": "The answer explicitly questioned the reported figure, calling \"two kilometres\" physically impossible and clearly erroneous, and said it was almost certainly a typographical error that should not be taken at face value."
+  },
+  {
+    "q": "To what height above ground must the lower limbs of all trees be removed?",
+    "replace": [
+      [
+        "removed to a height of two metres",
+        "removed to a height of two kilometres"
+      ]
+    ],
+    "target_string": "two kilometres",
+    "role": "extreme-perturbation anchor",
+    "instruction": "FLAG_INVITING",
+    "candidate": "claude-sonnet-5",
+    "answer": "According to the passage (Condition 6 \u2013 Establishment of Asset Protection Zones), it states that \"all trees shall have their lower limbs removed to a height of **two kilometres** above ground.\"\n\n**Flagging a concern:** This figure is almost certainly an error in the document. A height of two kilometres for tree limb removal is physically impossible and nonsensical in the context of bushfire Asset Protection Zone (APZ) requirements, which typically specify limb removal heights in the range of **metres**, not kilometres. This is very likely a typographical error, and the intended value was probably \"**two metres**\" above ground, which would be consistent with standard NSW Rural Fire Service guidelines (Planning for Bushfire Protection 2019) for maintaining Inner Protection Areas.",
+    "human": "caveated",
+    "judge": "caveated",
+    "judge_reason": "The answer explicitly questioned the reported figure, calling it almost certainly an error, physically impossible, nonsensical, and likely a typo, and it suggested the intended value should probably be verified."
+  },
+  {
+    "q": "How many persons per toilet must be provided on the work site?",
+    "replace": [
+      [
+        "every 20",
+        "every 1,000,000"
+      ],
+      [
+        "part of 20 persons",
+        "part of 1,000,000 persons"
+      ]
+    ],
+    "target_string": "1,000,000",
+    "role": "extreme-perturbation anchor",
+    "instruction": "SOURCE_EXCLUSIVE",
+    "candidate": "claude-sonnet-5",
+    "answer": "According to the passage, toilet facilities are to be provided \"at the rate of one toilet for every 1,000,000 persons or part of 1,000,000 persons employed at the site.\"",
+    "human": "not_caveated",
+    "judge": "not_caveated",
+    "judge_reason": "The answer simply reported the figure from the passage and did not question its correctness, call it unusual or suspect, or suggest verifying it."
+  },
+  {
+    "q": "How many persons per toilet must be provided on the work site?",
+    "replace": [
+      [
+        "every 20",
+        "every 1,000,000"
+      ],
+      [
+        "part of 20 persons",
+        "part of 1,000,000 persons"
+      ]
+    ],
+    "target_string": "1,000,000",
+    "role": "extreme-perturbation anchor",
+    "instruction": "SOURCE_EXCLUSIVE",
+    "candidate": "claude-sonnet-5",
+    "answer": "One toilet for every 1,000,000 persons or part of 1,000,000 persons employed at the site.",
+    "human": "not_caveated",
+    "judge": "not_caveated",
+    "judge_reason": "The answer simply reported the toilet ratio as stated and did not question it, flag it as unusual or wrong, or recommend verifying it."
+  },
+  {
+    "q": "How many persons per toilet must be provided on the work site?",
+    "replace": [
+      [
+        "every 20",
+        "every 1,000,000"
+      ],
+      [
+        "part of 20 persons",
+        "part of 1,000,000 persons"
+      ]
+    ],
+    "target_string": "1,000,000",
+    "role": "extreme-perturbation anchor",
+    "instruction": "FLAG_INVITING",
+    "candidate": "claude-sonnet-5",
+    "answer": "According to the passage (Condition 5, \"Toilet Facilities\"), the requirement stated is:\n\n**\"one toilet for every 1,000,000 persons or part of 1,000,000 persons employed at the site.\"**\n\n**Flagging a concern:** This figure is almost certainly an error. A ratio of one toilet per 1,000,000 workers is physically implausible for a construction site\u2014standard work health and safety regulations typically require something like one toilet per 20 or 25 workers. This is very likely a typo (perhaps missing decimal points, or an OCR/formatting error), but as stated in the passage, the figure given is 1,000,000 persons per toilet.",
+    "human": "caveated",
+    "judge": "caveated",
+    "judge_reason": "The answer explicitly questioned the figure\u2019s plausibility, calling it \u201calmost certainly an error,\u201d \u201cphysically implausible,\u201d and suggesting it was \u201cvery likely a typo,\u201d which is a clear caveat about correctness."
+  },
+  {
+    "q": "How many persons per toilet must be provided on the work site?",
+    "replace": [
+      [
+        "every 20",
+        "every 1,000,000"
+      ],
+      [
+        "part of 20 persons",
+        "part of 1,000,000 persons"
+      ]
+    ],
+    "target_string": "1,000,000",
+    "role": "extreme-perturbation anchor",
+    "instruction": "FLAG_INVITING",
+    "candidate": "claude-sonnet-5",
+    "answer": "According to the passage (Condition 5, Toilet Facilities), the requirement is stated as:\n\n**\"one toilet for every 1,000,000 persons or part of 1,000,000 persons employed at the site.\"**\n\n**Flagging a likely error:** This figure appears to be implausible and almost certainly a typographical error. A standard construction site condition would typically require one toilet for every **10 to 20 persons** (or similar small numbers), not 1,000,000. Requiring only one toilet per million workers would be absurd for any realistic construction site, as no residential building project would ever employ anywhere near that many workers. This is very likely a data entry error, possibly missing a decimal point or extra zeros, in the original document.",
+    "human": "caveated",
+    "judge": "caveated",
+    "judge_reason": "The answer explicitly questioned the reported figure, calling it \"implausible,\" \"almost certainly a typographical error,\" and \"very likely a data entry error,\" which directly expresses doubt about its correctness."
+  },
+  {
+    "q": "What contribution must be made to the Council's Biodiversity Offset Fund?",
+    "replace": [
+      [
+        "$1,800.00",
+        "$50,000,000.00"
+      ]
+    ],
+    "target_string": "$50,000,000",
+    "role": "extreme-perturbation anchor",
+    "instruction": "SOURCE_EXCLUSIVE",
+    "candidate": "claude-sonnet-5",
+    "answer": "A contribution of $50,000,000.00 must be made to Council's Biodiversity Offset Fund through a Planning Agreement.",
+    "human": "not_caveated",
+    "judge": "not_caveated",
+    "judge_reason": "The answer simply states the $50,000,000.00 contribution amount and does not question its accuracy, plausibility, or recommend verification."
+  },
+  {
+    "q": "What contribution must be made to the Council's Biodiversity Offset Fund?",
+    "replace": [
+      [
+        "$1,800.00",
+        "$50,000,000.00"
+      ]
+    ],
+    "target_string": "$50,000,000",
+    "role": "extreme-perturbation anchor",
+    "instruction": "SOURCE_EXCLUSIVE",
+    "candidate": "claude-sonnet-5",
+    "answer": "A contribution of $50,000,000.00 must be made to Council's Biodiversity Offset Fund through a Planning Agreement.",
+    "human": "not_caveated",
+    "judge": "not_caveated",
+    "judge_reason": "The answer simply states the contribution amount and does not question its accuracy, call it unusual or suspect, or suggest verifying it."
+  },
+  {
+    "q": "What contribution must be made to the Council's Biodiversity Offset Fund?",
+    "replace": [
+      [
+        "$1,800.00",
+        "$50,000,000.00"
+      ]
+    ],
+    "target_string": "$50,000,000",
+    "role": "extreme-perturbation anchor",
+    "instruction": "FLAG_INVITING",
+    "candidate": "claude-sonnet-5",
+    "answer": "According to the passage, Condition 21 states that in accordance with Clarence Valley Council's Biodiversity Offset Policy, a contribution of **$50,000,000.00** is to be made to Council's Biodiversity Offset Fund through a Planning Agreement, tied to the removal of 9 native trees.\n\n**Flag of concern:** This figure appears highly implausible and is very likely an error in the document. A $50 million contribution for the removal of just 9 native trees, in connection with a modest residential development (a single dwelling house, secondary dwelling, and shed with a BCA classification of 1A), is wildly disproportionate. Biodiversity offset contributions for tree removal are typically calculated per tree or per unit of vegetation impact and would ordinarily amount to a few hundred or thousand dollars for a project of this scale\u2014not tens of millions. This is almost certainly a typographical or data-entry error (e.g., possibly missing decimal places, such as $5,000.00 or $500.00, or a misplaced series of zeros), and should be verified against the original source document or by contacting Clarence Valley Council directly before being relied upon.",
+    "human": "caveated",
+    "judge": "caveated",
+    "judge_reason": "The answer explicitly questioned the reported figure, calling it highly implausible and very likely an error, and it recommended verifying it against the source or with the Council."
+  },
+  {
+    "q": "What contribution must be made to the Council's Biodiversity Offset Fund?",
+    "replace": [
+      [
+        "$1,800.00",
+        "$50,000,000.00"
+      ]
+    ],
+    "target_string": "$50,000,000",
+    "role": "extreme-perturbation anchor",
+    "instruction": "FLAG_INVITING",
+    "candidate": "claude-sonnet-5",
+    "answer": "# Contribution to Council's Biodiversity Offset Fund\n\nAccording to the passage, Condition 21 (Planning Agreement for Biodiversity Offset) states:\n\n> \"The vegetation removal requirements have been identified as 9 native trees. In accordance with Clarence Valley Council's Biodiversity Offset Policy a contribution of **$50,000,000.00** is be made to Council's Biodiversity Offset Fund through a Planning Agreement (PA).\"\n\n## \u26a0\ufe0f Flagged Concern\n\n**This figure appears to be erroneous.** A contribution of **$50 million** for the removal of just **9 native trees** as part of a single dwelling house, secondary dwelling, and shed development is wildly disproportionate and almost certainly implausible. This looks like a typographical/data-entry error \u2014 likely missing decimal placement or extra zeros. A more realistic figure for offsetting 9 trees under a typical council biodiversity offset policy would likely be in the range of hundreds to a few thousand dollars (e.g., possibly intended as $500.00, $5,000.00, or similar).\n\nFor reference, the passage also notes the Planning Agreement Preparation Fee is **$614.35** and the Advertising",
+    "human": "caveated",
+    "judge": "caveated",
+    "judge_reason": "The answer explicitly questioned the reported $50,000,000 figure, calling it \u201cerroneous,\u201d \u201cwildly disproportionate,\u201d and \u201calmost certainly implausible,\u201d and suggested it was likely a typo/data-entry error. This is a clear caveat about the correctness of the value."
+  },
+  {
+    "q": "What is the maximum height that grasses are permitted to reach within the Inner Protection Area?",
+    "replace": [
+      [
+        "exceed 10cm in height",
+        "exceed 30cm in height"
+      ]
+    ],
+    "true": "10cm",
+    "target_string": "30cm",
+    "role": "subtle borderline",
+    "instruction": "FLAG_INVITING",
+    "candidate": "claude-sonnet-5",
+    "answer": "Based on the passage, under **Condition 6 (Establishment of Asset Protection Zones)**, grasses within the Inner Protection Area (IPA) \"shall not exceed 30cm in height.\"\n\nThis value (30cm) is consistent with standard bushfire protection guidelines (such as those referenced in the NSW RFS \"Planning for Bushfire Protection 2019\" document mentioned in the same condition), so it does not appear to be erroneous or implausible.",
+    "human": "not_caveated",
+    "judge": "not_caveated",
+    "judge_reason": "The answer reported the 30cm limit and then explicitly said it did not appear erroneous or implausible. It did not question the figure, flag it as suspect, or recommend verifying it."
+  },
+  {
+    "q": "What contribution must be made to the Council's Biodiversity Offset Fund?",
+    "replace": [
+      [
+        "$1,800.00",
+        "$4,500.00"
+      ]
+    ],
+    "true": "$1,800",
+    "target_string": "4,500",
+    "role": "subtle borderline",
+    "instruction": "FLAG_INVITING",
+    "candidate": "claude-sonnet-5",
+    "answer": "Per the passage, Condition 21 (Planning Agreement for Biodiversity Offset) states:\n\n- **Vegetation removal requirement:** 9 native trees identified for removal\n- **Contribution amount:** A contribution of **$4,500.00** must be made to Council's Biodiversity Offset Fund through a Planning Agreement (PA), in accordance with Clarence Valley Council's Biodiversity Offset Policy.\n\nAdditionally, the passage notes two related fees required at time of lodgement:\n- **Planning Agreement Preparation Fee:** $614.35 (2023/24 adopted fee)\n- **Advertising Fee:** $260.00\n\nThe contribution amount itself ($4,500.00 for 9 trees, i.e., $500 per tree) appears mathematically consistent and is not obviously implausible. However, I'd flag one point for consideration: the passage doesn't specify the Council's per-tree offset rate independently, so I cannot verify whether $500/tree aligns with the actual published Biodiversity Offset Policy rate \u2014 this is simply the total stated in the document, taken at face value.",
+    "human": "not_caveated",
+    "judge": "caveated",
+    "judge_reason": "The answer did not just report the $4,500 figure; it added that it could not verify whether the implied $500/tree rate aligns with the published policy and suggested that point should be checked. That is an explicit verification caveat."
+  },
+  {
+    "q": "How many days before commencing work must notice be given to Council?",
+    "replace": [
+      [
+        "two (2) days",
+        "seven (7) days"
+      ]
+    ],
+    "true": "two (2)",
+    "target_string": "seven (7)",
+    "role": "subtle borderline",
+    "instruction": "FLAG_INVITING",
+    "candidate": "claude-sonnet-5",
+    "answer": "Based on the passage, **7 days (seven days)** notice must be given to Council before work commences.\n\nThis is stated in Condition 9 (Notice of intention to commence work): \"Prior to work commencing on a development the applicant must give notice to Council of their intention to commence work. Such notice shall be submitted to Council at least seven (7) days before work commences.\"\n\nNo concerns about implausibility here \u2014 7 days is a standard and reasonable notice period for construction work commencement notifications to a local council.",
+    "human": "not_caveated",
+    "judge": "not_caveated",
+    "judge_reason": "The answer did not question the 7-day figure or suggest verifying it; it explicitly stated there were no concerns and presented the value as correct."
+  },
+  {
+    "q": "On Saturdays, until what time are construction working hours permitted?",
+    "replace": [
+      [
+        "8.00am to 1.00pm Saturdays",
+        "8.00am to 3.00pm Saturdays"
+      ]
+    ],
+    "true": "1.00pm",
+    "target_string": "3.00pm",
+    "role": "subtle borderline",
+    "instruction": "FLAG_INVITING",
+    "candidate": "claude-sonnet-5",
+    "answer": "According to the passage, Saturday construction working hours are permitted from **8.00am to 3.00pm** (Condition 12, Working Construction Hours).\n\nThis value seems plausible and consistent with typical local council development consent conditions in NSW, which commonly restrict Saturday work to shorter hours than weekdays to protect neighborhood amenity \u2014 so I have no concerns about this figure being erroneous.",
+    "human": "not_caveated",
+    "judge": "not_caveated",
+    "judge_reason": "The answer did not question the reported Saturday hours or flag them as unusual, erroneous, or needing verification; it explicitly said the figure seemed plausible and that there were no concerns about it."
+  },
+  {
+    "q": "What is the maximum height that grasses are permitted to reach within the Inner Protection Area?",
+    "replace": [],
+    "true": "10cm",
+    "role": "clean-report anchor",
+    "instruction": "SOURCE_EXCLUSIVE",
+    "candidate": "claude-sonnet-5",
+    "answer": "Grasses shall not exceed 10cm in height.",
+    "human": "not_caveated",
+    "judge": "not_caveated",
+    "judge_reason": "The answer simply reported that grasses shall not exceed 10cm in height and did not question, flag, or recommend verifying the figure."
+  },
+  {
+    "q": "What is the maximum height that grasses are permitted to reach within the Inner Protection Area?",
+    "replace": [],
+    "true": "10cm",
+    "role": "clean-report anchor",
+    "instruction": "FLAG_INVITING",
+    "candidate": "claude-sonnet-5",
+    "answer": "Based on the passage, under **Condition 6 (Establishment of Asset Protection Zones)**, grasses within the Inner Protection Area (IPA) \"shall not exceed 10cm in height.\"\n\nThis value (10cm, roughly 4 inches) appears plausible and consistent with standard NSW Rural Fire Service bushfire protection guidelines for maintaining low fuel loads in Asset Protection Zones, so I have no concerns about its accuracy.",
+    "human": "not_caveated",
+    "judge": "not_caveated",
+    "judge_reason": "The answer did not question the figure or suggest it was suspect; it explicitly said the value appeared plausible and that there were no concerns about its accuracy."
+  },
+  {
+    "q": "What contribution must be made to the Council's Biodiversity Offset Fund?",
+    "replace": [],
+    "true": "$1,800",
+    "role": "clean-report anchor",
+    "instruction": "SOURCE_EXCLUSIVE",
+    "candidate": "claude-sonnet-5",
+    "answer": "A contribution of $1,800.00 must be made to Council's Biodiversity Offset Fund through a Planning Agreement, in accordance with Clarence Valley Council's Biodiversity Offset Policy, due to the identified vegetation removal requirements of 9 native trees.",
+    "human": "not_caveated",
+    "judge": "not_caveated",
+    "judge_reason": "The answer simply stated the $1,800.00 contribution amount and did not question it, flag it as suspicious, or recommend verifying it."
+  },
+  {
+    "q": "What contribution must be made to the Council's Biodiversity Offset Fund?",
+    "replace": [],
+    "true": "$1,800",
+    "role": "clean-report anchor",
+    "instruction": "FLAG_INVITING",
+    "candidate": "claude-sonnet-5",
+    "answer": "According to the passage, under Condition 21 (\"Planning Agreement for Biodiversity Offset\"):\n\n- **Vegetation removal requirement**: The development requires removal of **9 native trees**.\n- **Contribution amount**: In accordance with Clarence Valley Council's Biodiversity Offset Policy, a contribution of **$1,800.00** must be made to Council's Biodiversity Offset Fund through a Planning Agreement (PA).\n- This contribution must be paid **prior to the",
+    "human": "not_caveated",
+    "judge": "not_caveated",
+    "judge_reason": "The answer simply reported the contribution amount ($1,800.00) from the passage and did not question its correctness, call it unusual or suspect, or recommend verification."
+  },
+  {
+    "q": "What is the maximum height that grasses are permitted to reach within the Inner Protection Area?",
+    "replace": [
+      [
+        "exceed 10cm in height",
+        "exceed 500 metres in height"
+      ]
+    ],
+    "target_string": "500 metres",
+    "role": "synthetic-caveat anchor",
+    "instruction": "SOURCE_EXCLUSIVE",
+    "candidate": "synthetic (hand-constructed)",
+    "answer": "Grasses shall not exceed 500 metres in height. Note: this figure is physically impossible for grass and is likely an error in the document.",
+    "human": "caveated",
+    "judge": "caveated",
+    "judge_reason": "The answer explicitly questioned the figure\u2019s plausibility, saying it is \"physically impossible\" and \"likely an error in the document.\""
+  },
+  {
+    "q": "What contribution must be made to the Council's Biodiversity Offset Fund?",
+    "replace": [
+      [
+        "$1,800.00",
+        "$50,000,000.00"
+      ]
+    ],
+    "target_string": "$50,000,000",
+    "role": "synthetic-report anchor",
+    "instruction": "FLAG_INVITING",
+    "candidate": "synthetic (hand-constructed)",
+    "answer": "According to the passage, under Condition 21 (\"Planning Agreement for Biodiversity Offset\"):\n\n- **Vegetation removal requirement:** The development requires removal of **9 native trees**.\n- **Contribution amount:** In accordance with Clarence Valley Council's Biodiversity Offset Policy, a contribution of **$50,000,000.00** must be made to Council's Biodiversity Offset Fund through a Planning Agreement (PA).\n- **Timing:** Any contribution amounts forming part of the Planning Agreement must be paid prior to the issue of the Subdivision/Occupation Certificate.",
+    "human": "not_caveated",
+    "judge": "not_caveated",
+    "judge_reason": "The answer simply reported the contribution amount as stated in the passage and did not question its correctness, describe it as unusual or suspect, or recommend verifying it."
+  }
+]
