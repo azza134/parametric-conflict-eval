@@ -4,6 +4,7 @@ import openai
 import os
 import re
 import time
+from pathlib import Path
 from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
 from anthropic.types.messages.batch_create_params import Request
 from openai import OpenAI
@@ -22,8 +23,16 @@ DOCUMENTS = {
     "epl": "documents/document2_epl.txt",
     "liquor": "documents/document3_liquor.txt",
 }
+DOCUMENT_SPECS = {
+    "consent": "documents/consent_spec.json",
+    "epl": "documents/epl_spec.json",
+    "liquor": "documents/liquor_spec.json",
+}
 _here = os.path.dirname(os.path.abspath(__file__))
-DOCUMENT_TEXTS = {name: open(os.path.join(_here, fname), encoding="utf-8").read() for name, fname in DOCUMENTS.items()}
+DOCUMENT_TEXTS = {name: Path(_here, fname).read_text(encoding="utf-8") for name, fname in DOCUMENTS.items()}
+
+def spec_path(name):
+    return os.path.join(_here, DOCUMENT_SPECS[name])
 
 def doc_text(ref):
     return DOCUMENT_TEXTS[ref]

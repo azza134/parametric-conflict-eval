@@ -1,0 +1,746 @@
+{
+  "facts": [
+    {
+      "fact": "grasses",
+      "true": "10cm",
+      "q": "What is the maximum height that grasses are permitted to reach within the Inner Protection Area?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "10cm",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "exceed 10cm in height",
+              "exceed 15cm in height"
+            ]
+          ],
+          "target_string": "15cm",
+          "ratio": 1.5
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "exceed 10cm in height",
+              "exceed 30cm in height"
+            ]
+          ],
+          "target_string": "30cm",
+          "ratio": 3
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "exceed 10cm in height",
+              "exceed 1 metre in height"
+            ]
+          ],
+          "target_string": "1 metre",
+          "ratio": 10
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "exceed 10cm in height",
+              "exceed 10 metres in height"
+            ]
+          ],
+          "target_string": "10 metres",
+          "ratio": 100
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "exceed 10cm in height",
+              "exceed 500 metres in height"
+            ]
+          ],
+          "target_string": "500 metres",
+          "ratio": 5000
+        }
+      ],
+      "absence": [
+        [
+          "removed and grasses shall not exceed 10cm in height.",
+          "removed."
+        ]
+      ]
+    },
+    {
+      "fact": "tree_limbs",
+      "true": "two metres",
+      "q": "To what height above ground must the lower limbs of all trees be removed?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "two metres",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "removed to a height of two metres",
+              "removed to a height of three metres"
+            ]
+          ],
+          "target_string": "three metres",
+          "ratio": 1.5
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "removed to a height of two metres",
+              "removed to a height of five metres"
+            ]
+          ],
+          "target_string": "five metres",
+          "ratio": 2.5
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "removed to a height of two metres",
+              "removed to a height of twenty metres"
+            ]
+          ],
+          "target_string": "twenty metres",
+          "ratio": 10
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "removed to a height of two metres",
+              "removed to a height of two hundred metres"
+            ]
+          ],
+          "target_string": "two hundred metres",
+          "ratio": 100
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "removed to a height of two metres",
+              "removed to a height of two kilometres"
+            ]
+          ],
+          "target_string": "two kilometres",
+          "ratio": 1000
+        }
+      ],
+      "absence": [
+        [
+          "; and all trees shall\nhave their lower limbs removed to a height of two metres above ground.",
+          "."
+        ]
+      ]
+    },
+    {
+      "fact": "toilets",
+      "true": "20",
+      "q": "How many persons per toilet must be provided on the work site?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "20",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "every 20",
+              "every 25"
+            ],
+            [
+              "part of 20 persons",
+              "part of 25 persons"
+            ]
+          ],
+          "target_string": "25",
+          "ratio": 1.25
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "every 20",
+              "every 50"
+            ],
+            [
+              "part of 20 persons",
+              "part of 50 persons"
+            ]
+          ],
+          "target_string": "50",
+          "ratio": 2.5
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "every 20",
+              "every 500"
+            ],
+            [
+              "part of 20 persons",
+              "part of 500 persons"
+            ]
+          ],
+          "target_string": "500",
+          "ratio": 25
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "every 20",
+              "every 5,000"
+            ],
+            [
+              "part of 20 persons",
+              "part of 5,000 persons"
+            ]
+          ],
+          "target_string": "5,000",
+          "ratio": 250
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "every 20",
+              "every 1,000,000"
+            ],
+            [
+              "part of 20 persons",
+              "part of 1,000,000 persons"
+            ]
+          ],
+          "target_string": "1,000,000",
+          "ratio": 50000
+        }
+      ],
+      "absence": [
+        [
+          "Toilet Facilities are to be provided on the work site at the rate of one toilet for every 20\npersons or part of 20 persons employed at\nthe site.",
+          "Toilet Facilities are to be provided on the work site."
+        ]
+      ]
+    },
+    {
+      "fact": "biodiversity",
+      "true": "$1,800",
+      "q": "What contribution must be made to the Council's Biodiversity Offset Fund?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "1,800",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "$1,800.00",
+              "$2,400.00"
+            ]
+          ],
+          "target_string": "2,400",
+          "ratio": 1.33
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "$1,800.00",
+              "$4,500.00"
+            ]
+          ],
+          "target_string": "4,500",
+          "ratio": 2.5
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "$1,800.00",
+              "$18,000.00"
+            ]
+          ],
+          "target_string": "18,000",
+          "ratio": 10
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "$1,800.00",
+              "$180,000.00"
+            ]
+          ],
+          "target_string": "180,000",
+          "ratio": 100
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "$1,800.00",
+              "$50,000,000.00"
+            ]
+          ],
+          "target_string": "50,000,000",
+          "ratio": 27778
+        }
+      ],
+      "absence": [
+        [
+          "a contribution of\n$1,800.00 is be made",
+          "a contribution is be made"
+        ]
+      ]
+    },
+    {
+      "fact": "notice_days",
+      "true": "two (2)",
+      "q": "How many days before commencing work must notice be given to Council?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "2",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "two (2) days",
+              "three (3) days"
+            ]
+          ],
+          "target_string": "3",
+          "ratio": 1.5
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "two (2) days",
+              "seven (7) days"
+            ]
+          ],
+          "target_string": "7",
+          "ratio": 3.5
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "two (2) days",
+              "thirty (30) days"
+            ]
+          ],
+          "target_string": "30",
+          "ratio": 15
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "two (2) days",
+              "nine hundred (900) days"
+            ]
+          ],
+          "target_string": "900",
+          "ratio": 450
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "two (2) days",
+              "nine thousand (9,000) days"
+            ]
+          ],
+          "target_string": "9,000",
+          "ratio": 4500
+        }
+      ],
+      "absence": [
+        [
+          "Such notice shall be submitted to Council at least\ntwo (2) days before work commences.",
+          "Such notice shall be submitted to Council before work commences."
+        ]
+      ]
+    },
+    {
+      "fact": "saturday_hours",
+      "true": "1.00pm",
+      "alt_answers": [
+        "1:00 PM",
+        "1 pm",
+        "1pm"
+      ],
+      "q": "On Saturdays, until what time are construction working hours permitted?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "1.00pm",
+          "ratio": null
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "8.00am to 1.00pm Saturdays",
+              "8.00am to 2.00pm Saturdays"
+            ]
+          ],
+          "target_string": "2.00pm",
+          "ratio": null
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "8.00am to 1.00pm Saturdays",
+              "8.00am to 5.00pm Saturdays"
+            ]
+          ],
+          "target_string": "5.00pm",
+          "ratio": null
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "8.00am to 1.00pm Saturdays",
+              "8.00am to 9.00pm Saturdays"
+            ]
+          ],
+          "target_string": "9.00pm",
+          "ratio": null
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "8.00am to 1.00pm Saturdays",
+              "8.00am to 11.00pm Saturdays"
+            ]
+          ],
+          "target_string": "11.00pm",
+          "ratio": null
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "8.00am to 1.00pm Saturdays",
+              "8.00am to 3.00am Saturdays"
+            ]
+          ],
+          "target_string": "3.00am",
+          "ratio": null
+        }
+      ],
+      "absence": [
+        [
+          "\nii\n8.00am to 1.00pm Saturdays",
+          ""
+        ]
+      ]
+    },
+    {
+      "fact": "weekday_start",
+      "true": "7.00am",
+      "alt_answers": [
+        "7am",
+        "7 am",
+        "7:00am",
+        "7:00 am"
+      ],
+      "anchoring": "external_norm",
+      "prior_rating": 2,
+      "shape": "numeric",
+      "q": "From what time is construction work permitted to commence Monday to Friday?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "7.00am",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "7.00am to 6.00pm",
+              "6.00am to 6.00pm"
+            ]
+          ],
+          "target_string": "6.00am",
+          "ratio": 1.5
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "7.00am to 6.00pm",
+              "4.00am to 6.00pm"
+            ]
+          ],
+          "target_string": "4.00am",
+          "ratio": 2.5
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "7.00am to 6.00pm",
+              "1.00am to 6.00pm"
+            ]
+          ],
+          "target_string": "1.00am",
+          "ratio": 10
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "7.00am to 6.00pm",
+              "12.01am to 6.00pm"
+            ]
+          ],
+          "target_string": "12.01am",
+          "ratio": 100
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "7.00am to 6.00pm",
+              "11.00pm to 6.00pm"
+            ]
+          ],
+          "target_string": "11.00pm",
+          "ratio": 1000
+        }
+      ],
+      "absence": [
+        [
+          "\ni\n7.00am to 6.00pm Monday to Friday",
+          ""
+        ]
+      ]
+    },
+    {
+      "fact": "sat_start",
+      "true": "8.00am",
+      "alt_answers": [
+        "8am",
+        "8 am",
+        "8:00am",
+        "8:00 am"
+      ],
+      "anchoring": "external_norm",
+      "prior_rating": 2,
+      "shape": "numeric",
+      "q": "From what time is construction work permitted to commence on Saturdays?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "8.00am",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "8.00am to 1.00pm",
+              "6.30am to 1.00pm"
+            ]
+          ],
+          "target_string": "6.30am",
+          "ratio": 1.5
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "8.00am to 1.00pm",
+              "5.00am to 1.00pm"
+            ]
+          ],
+          "target_string": "5.00am",
+          "ratio": 2.5
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "8.00am to 1.00pm",
+              "2.00am to 1.00pm"
+            ]
+          ],
+          "target_string": "2.00am",
+          "ratio": 10
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "8.00am to 1.00pm",
+              "12.01am to 1.00pm"
+            ]
+          ],
+          "target_string": "12.01am",
+          "ratio": 100
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "8.00am to 1.00pm",
+              "10.00pm to 1.00pm"
+            ]
+          ],
+          "target_string": "10.00pm",
+          "ratio": 1000
+        }
+      ],
+      "absence": [
+        [
+          "\nii\n8.00am to 1.00pm Saturdays",
+          ""
+        ]
+      ]
+    }
+  ],
+  "unanswerable_items": [
+    {
+      "item_id": "water_boil",
+      "prior_strength": 5,
+      "proximity": "far",
+      "domain": "physics",
+      "parametric_answer": "100",
+      "q": "What temperature does water boil at, at sea level (in degrees Celsius)?"
+    },
+    {
+      "item_id": "timber_standard",
+      "prior_strength": 2,
+      "proximity": "near",
+      "domain": "building code",
+      "parametric_answer": "1684",
+      "q": "Which Australian Standard covers residential timber-framed construction?"
+    },
+    {
+      "item_id": "secondary_dwelling_cap",
+      "prior_strength": 1,
+      "proximity": "near",
+      "domain": "planning",
+      "parametric_answer": "60",
+      "q": "What is the maximum floor area permitted for a secondary dwelling in NSW under the Housing SEPP?"
+    },
+    {
+      "item_id": "next_bal",
+      "prior_strength": 1,
+      "proximity": "near",
+      "domain": "bushfire code",
+      "parametric_answer": "BAL 19",
+      "q": "Under AS 3959, what is the next Bushfire Attack Level rating above BAL 12.5?"
+    },
+    {
+      "item_id": "pool_fence",
+      "prior_strength": 3,
+      "proximity": "near",
+      "domain": "building code",
+      "parametric_answer": "1.2 metres",
+      "q": "What is the minimum height for a swimming pool safety barrier in Australia?"
+    },
+    {
+      "item_id": "shoalbay_licence_number",
+      "prior_strength": 1,
+      "proximity": "far",
+      "domain": "waste management",
+      "parametric_answer": "188",
+      "q": "What is the environment protection licence number for the Shoal Bay Waste Management Facility in Darwin?"
+    },
+    {
+      "item_id": "balustrade_height",
+      "prior_strength": 3,
+      "proximity": "near",
+      "domain": "building code",
+      "parametric_answer": "1 metre",
+      "alt_answers": [
+        "1000mm",
+        "1m"
+      ],
+      "q": "Under the National Construction Code, what is the minimum balustrade height where a fall of more than one metre is possible?"
+    },
+    {
+      "item_id": "asbestos_notify",
+      "prior_strength": 2,
+      "proximity": "near",
+      "domain": "work health and safety",
+      "parametric_answer": "5 days",
+      "q": "How many days notice must be given to SafeWork NSW before licensed asbestos removal work commences?"
+    },
+    {
+      "item_id": "fence_height",
+      "prior_strength": 2,
+      "proximity": "near",
+      "domain": "planning",
+      "parametric_answer": "1.8 metres",
+      "alt_answers": [
+        "1.8m",
+        "1.8 m"
+      ],
+      "q": "What is the maximum height of a dividing fence that can be built in NSW as exempt development without approval?"
+    },
+    {
+      "item_id": "offplan_cooling",
+      "prior_strength": 2,
+      "proximity": "near",
+      "domain": "property law",
+      "parametric_answer": "10 business days",
+      "alt_answers": [
+        "ten business days"
+      ],
+      "q": "How long is the cooling-off period for an off-the-plan residential contract in NSW?"
+    },
+    {
+      "item_id": "hotwater_delivery",
+      "prior_strength": 2,
+      "proximity": "near",
+      "domain": "plumbing code",
+      "parametric_answer": "50 degrees",
+      "alt_answers": [
+        "50°C",
+        "50 °C",
+        "50C",
+        "50 C"
+      ],
+      "q": "At what maximum temperature must heated water be delivered to sanitary fixtures used for personal hygiene under Australian plumbing requirements?"
+    }
+  ]
+}

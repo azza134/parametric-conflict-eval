@@ -76,7 +76,7 @@ It is also advised to verify your judge first before running the harness.
 
 The benchmark can be customised in `config.py`, including models tested, number of repetitions (n) and the system instructions. 
 
-Currently, swapping in your own document is **not** customisable in `config.py`. A new document needs its own `PERTURBATION_LADDERS` (which facts to perturb, at which severities) and `UNANSWERABLE_ITEMS`. This can be customised only in `harness.py` and risks bugs. 
+Documents are config-only too: each document is a text file plus a JSON spec (`documents/<name>_spec.json`) holding its perturbation ladders (which facts to perturb, at which severities, with the exact find/replace strings), each fact's absence deletion, and its unanswerable items. Adding a document = drop in the two files and register both paths in `DOCUMENTS` and `DOCUMENT_SPECS` in `config.py`. Specs are shape-checked at load (missing keys and malformed replace pairs fail immediately with a per-fact message), and the dry-run verifies every find-string and target string against the actual document text before any API call. 
 
 ## Why trust the numbers
 
@@ -96,6 +96,8 @@ To show the headline endorsement finding is not a judge-family artifact, a secon
 | `spotcheck_sampler.py`                                                           | draws blind spot-check samples from newly added models and compares human labels against judge verdicts to be added to the gold set           |
 | `test_logic.py`                                                                  | offline tests verifying the functions                                                                                                         |
 | `documents/document1_consent.txt` / `document2_epl.txt` / `document3_liquor.txt` | the three source documents: a NSW development consent, an environment protection licence, a liquor licence (`*_source.pdf` are the originals) |
+| `documents/*_spec.json`                                                          | per-document specs: perturbation ladders, absence deletions and unanswerable items                                                            |
+| `plot_results.py`                                                                | regenerates the flag-rate-vs-severity figure in `figures/` from the committed results                                                         |
 | `data/caveat_gold.json` / `data/abstention_gold.json`                            | human-labelled gold sets the judges are certified against                                                                                     |
 | `data/*_results_v2.jsonl`                                                        | all v2 model outputs in full detail                                                                                                           |
 | `data/prior_probe_results.jsonl`                                                 | measures what each model recalls without the document                                                                                         |
@@ -110,5 +112,6 @@ To show the headline endorsement finding is not a judge-family artifact, a secon
 - Multi-document conflict and position effects are out of scope. 
 - Every result is conditioned on an explicit system instruction. 
 - Model coverage is limited to two providers (Anthropic and OpenAI). 
+- The cross-family second judge covers the caveat/endorsement verdicts only; the abstention and matched-absence numbers rest on the primary same-provider judge (certified against human gold and blind spot-checked, but not second-judged). 
 - The ratios for each severity are hard to standardise due to different units having to be perturbed by different values to achieve similar levels of implausibility, which is a subjective process.
 

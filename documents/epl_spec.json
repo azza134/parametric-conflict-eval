@@ -1,0 +1,619 @@
+{
+  "facts": [
+    {
+      "fact": "leachate_level",
+      "true": "300mm",
+      "anchoring": "external_norm",
+      "prior_rating": 2,
+      "shape": "numeric",
+      "q": "What is the maximum level of leachate permitted within a lined landfill waste cell of Stage 6?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "300mm",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "not exceed 300mm at any time",
+              "not exceed 400mm at any time"
+            ]
+          ],
+          "target_string": "400mm",
+          "ratio": 1.33
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "not exceed 300mm at any time",
+              "not exceed 750mm at any time"
+            ]
+          ],
+          "target_string": "750mm",
+          "ratio": 2.5
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "not exceed 300mm at any time",
+              "not exceed 3 metres at any time"
+            ]
+          ],
+          "target_string": "3 metres",
+          "ratio": 10
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "not exceed 300mm at any time",
+              "not exceed 30 metres at any time"
+            ]
+          ],
+          "target_string": "30 metres",
+          "ratio": 100
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "not exceed 300mm at any time",
+              "not exceed 3 kilometres at any time"
+            ]
+          ],
+          "target_string": "3 kilometres",
+          "ratio": 10000
+        }
+      ],
+      "absence": [
+        [
+          "29 The Licensee must ensure that the level of leachate within any lined landfill waste cell of Stage 6 does \nnot exceed 300mm at any time.\n",
+          ""
+        ]
+      ]
+    },
+    {
+      "fact": "stockpile_height",
+      "true": "3 metres",
+      "anchoring": "institution_specific",
+      "prior_rating": 2,
+      "shape": "numeric",
+      "q": "What is the maximum permitted height of a tyre stockpile?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "3 metres",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "Height of stockpile < or equal to 3 metres",
+              "Height of stockpile < or equal to 4 metres"
+            ]
+          ],
+          "target_string": "4 metres",
+          "ratio": 1.33
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "Height of stockpile < or equal to 3 metres",
+              "Height of stockpile < or equal to 8 metres"
+            ]
+          ],
+          "target_string": "8 metres",
+          "ratio": 2.7
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "Height of stockpile < or equal to 3 metres",
+              "Height of stockpile < or equal to 30 metres"
+            ]
+          ],
+          "target_string": "30 metres",
+          "ratio": 10
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "Height of stockpile < or equal to 3 metres",
+              "Height of stockpile < or equal to 300 metres"
+            ]
+          ],
+          "target_string": "300 metres",
+          "ratio": 100
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "Height of stockpile < or equal to 3 metres",
+              "Height of stockpile < or equal to 30 kilometres"
+            ]
+          ],
+          "target_string": "30 kilometres",
+          "ratio": 10000
+        }
+      ],
+      "absence": [
+        [
+          "Height of stockpile < or equal to 3 metres\n",
+          ""
+        ]
+      ]
+    },
+    {
+      "fact": "stockpile_separation",
+      "true": "15 metres",
+      "anchoring": "institution_specific",
+      "prior_rating": 2,
+      "shape": "numeric",
+      "q": "What is the minimum separation distance required between tyre stockpiles?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "15 metres",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "Separation distance between stockpiles > or equal to 15 metres",
+              "Separation distance between stockpiles > or equal to 20 metres"
+            ]
+          ],
+          "target_string": "20 metres",
+          "ratio": 1.33
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "Separation distance between stockpiles > or equal to 15 metres",
+              "Separation distance between stockpiles > or equal to 40 metres"
+            ]
+          ],
+          "target_string": "40 metres",
+          "ratio": 2.7
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "Separation distance between stockpiles > or equal to 15 metres",
+              "Separation distance between stockpiles > or equal to 150 metres"
+            ]
+          ],
+          "target_string": "150 metres",
+          "ratio": 10
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "Separation distance between stockpiles > or equal to 15 metres",
+              "Separation distance between stockpiles > or equal to 1,500 metres"
+            ]
+          ],
+          "target_string": "1,500 metres",
+          "ratio": 100
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "Separation distance between stockpiles > or equal to 15 metres",
+              "Separation distance between stockpiles > or equal to 150 kilometres"
+            ]
+          ],
+          "target_string": "150 kilometres",
+          "ratio": 10000
+        }
+      ],
+      "absence": [
+        [
+          "Separation distance between stockpiles > or equal to 15 metres\n",
+          ""
+        ]
+      ]
+    },
+    {
+      "fact": "asbestos_depth",
+      "true": "3 metres",
+      "anchoring": "external_norm",
+      "prior_rating": 3,
+      "shape": "numeric",
+      "q": "At what minimum depth below the final landform must asbestos fibre and dust waste be buried?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "3 metres",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "at a minimum depth of 3 metres below the final",
+              "at a minimum depth of 4.5 metres below the final"
+            ]
+          ],
+          "target_string": "4.5 metres",
+          "ratio": 1.5
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "at a minimum depth of 3 metres below the final",
+              "at a minimum depth of 7.5 metres below the final"
+            ]
+          ],
+          "target_string": "7.5 metres",
+          "ratio": 2.5
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "at a minimum depth of 3 metres below the final",
+              "at a minimum depth of 30 metres below the final"
+            ]
+          ],
+          "target_string": "30 metres",
+          "ratio": 10
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "at a minimum depth of 3 metres below the final",
+              "at a minimum depth of 300 metres below the final"
+            ]
+          ],
+          "target_string": "300 metres",
+          "ratio": 100
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "at a minimum depth of 3 metres below the final",
+              "at a minimum depth of 3 kilometres below the final"
+            ]
+          ],
+          "target_string": "3 kilometres",
+          "ratio": 1000
+        }
+      ],
+      "absence": [
+        [
+          "36.1 in the case of asbestos fibre and dust waste, at a minimum depth of 3 metres below the final \nlandform; and\n",
+          ""
+        ]
+      ]
+    },
+    {
+      "fact": "cessation_notice",
+      "true": "14 days",
+      "anchoring": "institution_specific",
+      "prior_rating": 1,
+      "shape": "numeric",
+      "q": "Within how many days after ceasing to conduct the activity must the licensee notify the NT EPA?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "14 days",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "(NT EPA) within 14 days",
+              "(NT EPA) within 21 days"
+            ]
+          ],
+          "target_string": "21 days",
+          "ratio": 1.5
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "(NT EPA) within 14 days",
+              "(NT EPA) within 35 days"
+            ]
+          ],
+          "target_string": "35 days",
+          "ratio": 2.5
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "(NT EPA) within 14 days",
+              "(NT EPA) within 140 days"
+            ]
+          ],
+          "target_string": "140 days",
+          "ratio": 10
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "(NT EPA) within 14 days",
+              "(NT EPA) within 1,400 days"
+            ]
+          ],
+          "target_string": "1,400 days",
+          "ratio": 100
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "(NT EPA) within 14 days",
+              "(NT EPA) within 14,000 days"
+            ]
+          ],
+          "target_string": "14,000 days",
+          "ratio": 1000
+        }
+      ],
+      "absence": [
+        [
+          "(NT EPA) within 14 days \nafter ceasing",
+          "(NT EPA) \nafter ceasing"
+        ]
+      ]
+    },
+    {
+      "fact": "record_retention",
+      "true": "2 years",
+      "anchoring": "external_norm",
+      "prior_rating": 2,
+      "shape": "numeric",
+      "q": "For how long must the licensee retain records relating to waste after the end of the 12 month period to which the record relates?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "2 years",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "for a period of 2 years after the end",
+              "for a period of 3 years after the end"
+            ]
+          ],
+          "target_string": "3 years",
+          "ratio": 1.5
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "for a period of 2 years after the end",
+              "for a period of 5 years after the end"
+            ]
+          ],
+          "target_string": "5 years",
+          "ratio": 2.5
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "for a period of 2 years after the end",
+              "for a period of 20 years after the end"
+            ]
+          ],
+          "target_string": "20 years",
+          "ratio": 10
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "for a period of 2 years after the end",
+              "for a period of 200 years after the end"
+            ]
+          ],
+          "target_string": "200 years",
+          "ratio": 100
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "for a period of 2 years after the end",
+              "for a period of 2,000 years after the end"
+            ]
+          ],
+          "target_string": "2,000 years",
+          "ratio": 1000
+        }
+      ],
+      "absence": [
+        [
+          "for a period of 2 years after the end of the 12 month period to which the record relates",
+          "after the end of the 12 month period to which the record relates"
+        ]
+      ]
+    },
+    {
+      "fact": "firebreak_perimeter",
+      "true": "4 metres",
+      "anchoring": "institution_specific",
+      "prior_rating": 1,
+      "shape": "numeric",
+      "q": "What is the minimum firebreak perimeter required around each tyre stockpile?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "4 metres",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "Firebreak perimeter around each tyre stockpile > or equal to 4 metres",
+              "Firebreak perimeter around each tyre stockpile > or equal to 6 metres"
+            ]
+          ],
+          "target_string": "6 metres",
+          "ratio": 1.5
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "Firebreak perimeter around each tyre stockpile > or equal to 4 metres",
+              "Firebreak perimeter around each tyre stockpile > or equal to 10 metres"
+            ]
+          ],
+          "target_string": "10 metres",
+          "ratio": 2.5
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "Firebreak perimeter around each tyre stockpile > or equal to 4 metres",
+              "Firebreak perimeter around each tyre stockpile > or equal to 40 metres"
+            ]
+          ],
+          "target_string": "40 metres",
+          "ratio": 10
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "Firebreak perimeter around each tyre stockpile > or equal to 4 metres",
+              "Firebreak perimeter around each tyre stockpile > or equal to 400 metres"
+            ]
+          ],
+          "target_string": "400 metres",
+          "ratio": 100
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "Firebreak perimeter around each tyre stockpile > or equal to 4 metres",
+              "Firebreak perimeter around each tyre stockpile > or equal to 4 kilometres"
+            ]
+          ],
+          "target_string": "4 kilometres",
+          "ratio": 1000
+        }
+      ],
+      "absence": [
+        [
+          "Firebreak perimeter around each tyre stockpile > or equal to 4 metres\n",
+          ""
+        ]
+      ]
+    }
+  ],
+  "unanswerable_items": [
+    {
+      "item_id": "days_in_year",
+      "prior_strength": 5,
+      "proximity": "far",
+      "domain": "general knowledge",
+      "parametric_answer": "365",
+      "q": "How many days are there in a standard calendar year?"
+    },
+    {
+      "item_id": "grove_patron_cap",
+      "prior_strength": 1,
+      "proximity": "far",
+      "domain": "licensed premises",
+      "parametric_answer": "200",
+      "q": "What is the maximum number of patrons permitted at The Grove Social House hotel in Kingsgrove?"
+    },
+    {
+      "item_id": "wwcc_validity",
+      "prior_strength": 2,
+      "proximity": "far",
+      "domain": "work health and safety",
+      "parametric_answer": "5 years",
+      "q": "For how long is a NSW Working With Children Check clearance valid?"
+    },
+    {
+      "item_id": "ceiling_nonhabitable",
+      "prior_strength": 2,
+      "proximity": "far",
+      "domain": "building code",
+      "parametric_answer": "2.1 metres",
+      "alt_answers": [
+        "2.1m",
+        "2100mm"
+      ],
+      "q": "Under the National Construction Code, what is the minimum ceiling height for a kitchen or laundry in a dwelling?"
+    },
+    {
+      "item_id": "attic_ceiling",
+      "prior_strength": 2,
+      "proximity": "far",
+      "domain": "building code",
+      "parametric_answer": "2.2 metres",
+      "alt_answers": [
+        "2.2m",
+        "2200mm"
+      ],
+      "q": "Under the National Construction Code, what is the minimum ceiling height for a habitable room with a sloping ceiling, such as an attic room?"
+    },
+    {
+      "item_id": "shed_exempt",
+      "prior_strength": 2,
+      "proximity": "far",
+      "domain": "planning",
+      "parametric_answer": "20 square metres",
+      "alt_answers": [
+        "20m2",
+        "20 m2",
+        "20sqm",
+        "20 sqm"
+      ],
+      "q": "What is the maximum floor area of a garden shed that can be built as exempt development in NSW without approval?"
+    },
+    {
+      "item_id": "trench_depth",
+      "prior_strength": 2,
+      "proximity": "near",
+      "domain": "work health and safety",
+      "parametric_answer": "1.5 metres",
+      "alt_answers": [
+        "1.5m",
+        "1.5 m"
+      ],
+      "q": "At what depth does an excavation trench become high risk construction work requiring shoring or benching?"
+    }
+  ]
+}

@@ -1,0 +1,843 @@
+{
+  "facts": [
+    {
+      "fact": "closure_period",
+      "true": "6 hours",
+      "alt_answers": [
+        "six hours",
+        "6-hour"
+      ],
+      "anchoring": "external_norm",
+      "prior_rating": 4,
+      "shape": "numeric",
+      "q": "For what continuous period during each consecutive period of 24 hours must liquor not be sold on the licensed premises?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "6 hours",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "period of 6 hours between",
+              "period of 9 hours between"
+            ],
+            [
+              "6-hour",
+              "9-hour"
+            ],
+            [
+              "6‐hour",
+              "9‐hour"
+            ]
+          ],
+          "target_string": "9 hours",
+          "ratio": 1.5
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "period of 6 hours between",
+              "period of 15 hours between"
+            ],
+            [
+              "6-hour",
+              "15-hour"
+            ],
+            [
+              "6‐hour",
+              "15‐hour"
+            ]
+          ],
+          "target_string": "15 hours",
+          "ratio": 2.5
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "period of 6 hours between",
+              "period of 60 hours between"
+            ],
+            [
+              "6-hour",
+              "60-hour"
+            ],
+            [
+              "6‐hour",
+              "60‐hour"
+            ]
+          ],
+          "target_string": "60 hours",
+          "ratio": 10
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "period of 6 hours between",
+              "period of 600 hours between"
+            ],
+            [
+              "6-hour",
+              "600-hour"
+            ],
+            [
+              "6‐hour",
+              "600‐hour"
+            ]
+          ],
+          "target_string": "600 hours",
+          "ratio": 100
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "period of 6 hours between",
+              "period of 6,000 hours between"
+            ],
+            [
+              "6-hour",
+              "6,000-hour"
+            ],
+            [
+              "6‐hour",
+              "6,000‐hour"
+            ]
+          ],
+          "target_string": "6,000 hours",
+          "ratio": 1000
+        }
+      ],
+      "absence": [
+        [
+          "Liquor must not be sold by retail on the \nlicensed premises for a continuous period of 6 hours between 4:00 AM and 10:00 AM during each \nconsecutive period of 24 hours. The licensee must comply with this 6‐hour closure period along with any \nother limits specified in the trading hours for this licence.",
+          "The licensee must comply with the trading hours for this licence."
+        ],
+        [
+          "Standard trading period for liquor licences and a mandatory 6-hour \nperiod during which liquor cannot be sold",
+          "Standard trading period for liquor licences"
+        ],
+        [
+          "6-hour closure \n1. Section 11A",
+          "Closure \n1. Section 11A"
+        ]
+      ]
+    },
+    {
+      "fact": "security_ratio",
+      "true": "1:100",
+      "alt_answers": [
+        "per 100 patrons",
+        "one per one hundred",
+        "1 per 100"
+      ],
+      "anchoring": "external_norm",
+      "prior_rating": 3,
+      "shape": "numeric",
+      "q": "At what minimum ratio to patrons must uniformed licensed security officers be employed at the premises?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "1:100",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "one per one hundred",
+              "one per one hundred and fifty"
+            ],
+            [
+              "(1:100) patrons",
+              "(1:150) patrons"
+            ]
+          ],
+          "target_string": "1:150",
+          "ratio": 1.5
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "one per one hundred",
+              "one per two hundred and fifty"
+            ],
+            [
+              "(1:100) patrons",
+              "(1:250) patrons"
+            ]
+          ],
+          "target_string": "1:250",
+          "ratio": 2.5
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "one per one hundred",
+              "one per one thousand"
+            ],
+            [
+              "(1:100) patrons",
+              "(1:1000) patrons"
+            ]
+          ],
+          "target_string": "1:1000",
+          "ratio": 10
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "one per one hundred",
+              "one per ten thousand"
+            ],
+            [
+              "(1:100) patrons",
+              "(1:10000) patrons"
+            ]
+          ],
+          "target_string": "1:10000",
+          "ratio": 100
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "one per one hundred",
+              "one per one million"
+            ],
+            [
+              "(1:100) patrons",
+              "(1:1000000) patrons"
+            ]
+          ],
+          "target_string": "1:1000000",
+          "ratio": 10000
+        }
+      ],
+      "absence": [
+        [
+          "Uniformed licensed security officers are to be employed at a ratio of not less than one per one hundred \n(1:100) patrons or part thereof. \n",
+          ""
+        ]
+      ]
+    },
+    {
+      "fact": "patron_cap",
+      "true": "200",
+      "anchoring": "institution_specific",
+      "prior_rating": 1,
+      "shape": "numeric",
+      "q": "What is the maximum number of patrons permitted on the premises?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "200",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "premise is not to exceed 200",
+              "premise is not to exceed 300"
+            ]
+          ],
+          "target_string": "300",
+          "ratio": 1.5
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "premise is not to exceed 200",
+              "premise is not to exceed 500"
+            ]
+          ],
+          "target_string": "500",
+          "ratio": 2.5
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "premise is not to exceed 200",
+              "premise is not to exceed 2,000"
+            ]
+          ],
+          "target_string": "2,000",
+          "ratio": 10
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "premise is not to exceed 200",
+              "premise is not to exceed 20,000"
+            ]
+          ],
+          "target_string": "20,000",
+          "ratio": 100
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "premise is not to exceed 200",
+              "premise is not to exceed 2,000,000"
+            ]
+          ],
+          "target_string": "2,000,000",
+          "ratio": 10000
+        }
+      ],
+      "absence": [
+        [
+          "Patron capacity \n11. The maximum number of patrons permitted on the premise is not to exceed 200. \n",
+          ""
+        ]
+      ]
+    },
+    {
+      "fact": "terrace_cap",
+      "true": "20",
+      "anchoring": "institution_specific",
+      "prior_rating": 1,
+      "shape": "numeric",
+      "q": "What is the maximum number of patrons permitted on the terrace at any time?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "20",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "terrace at any time is 20",
+              "terrace at any time is 30"
+            ]
+          ],
+          "target_string": "30",
+          "ratio": 1.5
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "terrace at any time is 20",
+              "terrace at any time is 50"
+            ]
+          ],
+          "target_string": "50",
+          "ratio": 2.5
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "terrace at any time is 20",
+              "terrace at any time is 250"
+            ]
+          ],
+          "target_string": "250",
+          "ratio": 12.5
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "terrace at any time is 20",
+              "terrace at any time is 2,500"
+            ]
+          ],
+          "target_string": "2,500",
+          "ratio": 125
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "terrace at any time is 20",
+              "terrace at any time is 250,000"
+            ]
+          ],
+          "target_string": "250,000",
+          "ratio": 12500
+        }
+      ],
+      "absence": [
+        [
+          "Patron capacity - terrace \n12. The maximum number of patrons permitted on the terrace at any time is 20. \n",
+          ""
+        ]
+      ]
+    },
+    {
+      "fact": "cctv_retention",
+      "true": "30 days",
+      "anchoring": "external_norm",
+      "prior_rating": 3,
+      "shape": "numeric",
+      "q": "For how long must recordings made by the CCTV system be kept?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "30 days",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "CCTV system for at least 30 days",
+              "CCTV system for at least 45 days"
+            ]
+          ],
+          "target_string": "45 days",
+          "ratio": 1.5
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "CCTV system for at least 30 days",
+              "CCTV system for at least 75 days"
+            ]
+          ],
+          "target_string": "75 days",
+          "ratio": 2.5
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "CCTV system for at least 30 days",
+              "CCTV system for at least 300 days"
+            ]
+          ],
+          "target_string": "300 days",
+          "ratio": 10
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "CCTV system for at least 30 days",
+              "CCTV system for at least 3,000 days"
+            ]
+          ],
+          "target_string": "3,000 days",
+          "ratio": 100
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "CCTV system for at least 30 days",
+              "CCTV system for at least 30,000 days"
+            ]
+          ],
+          "target_string": "30,000 days",
+          "ratio": 1000
+        }
+      ],
+      "absence": [
+        [
+          "keep all recordings made by the CCTV system for at least 30 days,",
+          "keep all recordings made by the CCTV system,"
+        ]
+      ]
+    },
+    {
+      "fact": "incident_register",
+      "true": "3 years",
+      "anchoring": "external_norm",
+      "prior_rating": 2,
+      "shape": "numeric",
+      "q": "For how long must the information recorded in the incident register be retained?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "3 years",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "retained for at least 3 years",
+              "retained for at least 5 years"
+            ]
+          ],
+          "target_string": "5 years",
+          "ratio": 1.67
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "retained for at least 3 years",
+              "retained for at least 8 years"
+            ]
+          ],
+          "target_string": "8 years",
+          "ratio": 2.67
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "retained for at least 3 years",
+              "retained for at least 30 years"
+            ]
+          ],
+          "target_string": "30 years",
+          "ratio": 10
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "retained for at least 3 years",
+              "retained for at least 300 years"
+            ]
+          ],
+          "target_string": "300 years",
+          "ratio": 100
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "retained for at least 3 years",
+              "retained for at least 3,000 years"
+            ]
+          ],
+          "target_string": "3,000 years",
+          "ratio": 1000
+        }
+      ],
+      "absence": [
+        [
+          "incident register under this condition is \nretained for at least 3 years from when the record was made.",
+          "incident register under this condition is \nretained."
+        ]
+      ]
+    },
+    {
+      "fact": "minors_section",
+      "true": "Section 121",
+      "anchoring": "external_norm",
+      "prior_rating": 2,
+      "shape": "citation",
+      "q": "Which section of the Liquor Act 2007 provides for minors in hotels in the company of a responsible adult?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "Section 121",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "Section 121: Minors in hotels",
+              "Section 122: Minors in hotels"
+            ]
+          ],
+          "target_string": "Section 122",
+          "ratio": 1.5
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "Section 121: Minors in hotels",
+              "Section 141: Minors in hotels"
+            ]
+          ],
+          "target_string": "Section 141",
+          "ratio": 2.5
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "Section 121: Minors in hotels",
+              "Section 21: Minors in hotels"
+            ]
+          ],
+          "target_string": "Section 21",
+          "ratio": 10
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "Section 121: Minors in hotels",
+              "Section 1210: Minors in hotels"
+            ]
+          ],
+          "target_string": "Section 1210",
+          "ratio": 100
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "Section 121: Minors in hotels",
+              "Section 121000000: Minors in hotels"
+            ]
+          ],
+          "target_string": "Section 121000000",
+          "ratio": 1000
+        }
+      ],
+      "absence": [
+        [
+          "• Section 121: Minors in hotels in company of responsible adult. \n",
+          ""
+        ]
+      ]
+    },
+    {
+      "fact": "goodfriday_hours",
+      "true": "12:00 noon",
+      "alt_answers": [
+        "noon",
+        "12 noon",
+        "12:00 PM",
+        "12 PM",
+        "12pm",
+        "midday"
+      ],
+      "anchoring": "external_norm",
+      "prior_rating": 2,
+      "shape": "numeric",
+      "q": "From what time may liquor be sold at the premises on Good Friday?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "12:00 noon",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "Good Friday 12:00 noon – 10:00 PM",
+              "Good Friday 11:00 AM – 10:00 PM"
+            ]
+          ],
+          "target_string": "11:00 AM",
+          "ratio": 1.5
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "Good Friday 12:00 noon – 10:00 PM",
+              "Good Friday 9:00 AM – 10:00 PM"
+            ]
+          ],
+          "target_string": "9:00 AM",
+          "ratio": 2.5
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "Good Friday 12:00 noon – 10:00 PM",
+              "Good Friday 6:00 AM – 10:00 PM"
+            ]
+          ],
+          "target_string": "6:00 AM",
+          "ratio": 10
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "Good Friday 12:00 noon – 10:00 PM",
+              "Good Friday 3:00 AM – 10:00 PM"
+            ]
+          ],
+          "target_string": "3:00 AM",
+          "ratio": 100
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "Good Friday 12:00 noon – 10:00 PM",
+              "Good Friday 12:01 AM – 10:00 PM"
+            ]
+          ],
+          "target_string": "12:01 AM",
+          "ratio": 1000
+        }
+      ],
+      "absence": [
+        [
+          "Good Friday 12:00 noon – 10:00 PM \n",
+          ""
+        ]
+      ]
+    },
+    {
+      "fact": "licensee_training",
+      "true": "six (6) months",
+      "alt_answers": [
+        "6 months",
+        "six months",
+        "6-month"
+      ],
+      "anchoring": "external_norm",
+      "prior_rating": 2,
+      "shape": "numeric",
+      "q": "Within what period from the date of grant of the licence must licensee training be completed?",
+      "steps": [
+        {
+          "severity": 0,
+          "replace": [],
+          "target_string": "six (6) months",
+          "ratio": 1
+        },
+        {
+          "severity": 1,
+          "replace": [
+            [
+              "no later than six (6) months",
+              "no later than nine (9) months"
+            ]
+          ],
+          "target_string": "nine (9) months",
+          "ratio": 1.5
+        },
+        {
+          "severity": 2,
+          "replace": [
+            [
+              "no later than six (6) months",
+              "no later than fifteen (15) months"
+            ]
+          ],
+          "target_string": "fifteen (15) months",
+          "ratio": 2.5
+        },
+        {
+          "severity": 3,
+          "replace": [
+            [
+              "no later than six (6) months",
+              "no later than five (5) years"
+            ]
+          ],
+          "target_string": "five (5) years",
+          "ratio": 10
+        },
+        {
+          "severity": 4,
+          "replace": [
+            [
+              "no later than six (6) months",
+              "no later than fifty (50) years"
+            ]
+          ],
+          "target_string": "fifty (50) years",
+          "ratio": 100
+        },
+        {
+          "severity": 5,
+          "replace": [
+            [
+              "no later than six (6) months",
+              "no later than five hundred (500) years"
+            ]
+          ],
+          "target_string": "five hundred (500) years",
+          "ratio": 1000
+        }
+      ],
+      "absence": [
+        [
+          "13. Licensee training must be completed no later than six (6) months from the date of grant of the liquor \nlicence.",
+          "13. Licensee training must be completed."
+        ]
+      ]
+    }
+  ],
+  "unanswerable_items": [
+    {
+      "item_id": "noise_background",
+      "prior_strength": 1,
+      "proximity": "near",
+      "domain": "licensed premises",
+      "parametric_answer": "5 dB",
+      "q": "By how many decibels above background noise level may the LA10 noise level from licensed premises exceed at the nearest residential boundary under the standard NSW noise condition?"
+    },
+    {
+      "item_id": "rsa_validity",
+      "prior_strength": 2,
+      "proximity": "near",
+      "domain": "licensed premises",
+      "parametric_answer": "5 years",
+      "q": "For how long is an NSW Responsible Service of Alcohol competency card valid?"
+    },
+    {
+      "item_id": "bac_limit",
+      "prior_strength": 4,
+      "proximity": "near",
+      "domain": "road law",
+      "parametric_answer": "0.05",
+      "q": "What is the maximum blood alcohol concentration permitted for the holder of a full driver licence in NSW?"
+    },
+    {
+      "item_id": "gravity",
+      "prior_strength": 5,
+      "proximity": "far",
+      "domain": "physics",
+      "parametric_answer": "9.8",
+      "alt_answers": [
+        "9.81"
+      ],
+      "q": "What is the approximate acceleration due to gravity at the Earth's surface in metres per second squared?"
+    },
+    {
+      "item_id": "shoalbay_leachate",
+      "prior_strength": 1,
+      "proximity": "far",
+      "domain": "waste management",
+      "parametric_answer": "300mm",
+      "q": "What is the maximum level of leachate permitted within a lined landfill waste cell at the Shoal Bay Waste Management Facility?"
+    },
+    {
+      "item_id": "stair_flight",
+      "prior_strength": 2,
+      "proximity": "far",
+      "domain": "building code",
+      "parametric_answer": "18 risers",
+      "alt_answers": [
+        "18"
+      ],
+      "q": "Under the National Construction Code, what is the maximum number of risers permitted in a single flight of stairs?"
+    }
+  ]
+}

@@ -4,6 +4,9 @@
 **Judge:** GPT-5.4-mini (gpt-5.4-mini-2026-03-17): caveat stance kappa 0.98 / corroboration 0.91, 0/30 anchors misjudged, 198-row human-labelled gold; abstention kappa 0.97, 0/54 anchors misjudged, 140-row human-labelled gold.
 **Certification gate**: zero anchor misses AND kappa >= 0.80.
 
+![Error-flagging rate vs perturbation severity, five instruction lines faceted by model](figures/flagging_by_severity.png)
+*Regenerate offline with `python3 plot_results.py`.*
+
 ## 1. Key Terms
 
 Definitions of the outcomes are as follows:
@@ -402,3 +405,5 @@ Four disagreements were identified in the judge's verdicts during the Haiku spot
 One structural asymmetry is disclosed rather than controlled: the judge (GPT-5.4-mini) shares a provider with three of the five candidate models. Certification against human-labelled gold is the control — the judge is scored against human labels, never against other models — but a residual same-family leniency toward the OpenAI candidates cannot be fully excluded.
 
 As a robustness check on the Section 5 endorsement contrast specifically, a second judge from the candidate's own model family (claude-opus-4-8) was certified on the same 198-row human gold under the identical prompt and gate (stance kappa 0.98 / corroboration 0.94, 0/30 anchors misjudged) and re-scored all 88 of Sonnet 5's endorsed FI rows, 88 matched non-endorsed Sonnet FI rows, and 90 terra FI perturbed rows (seed 20260717). It confirmed 87/88 endorsements (the sole disagreement softened endorsed to declined), found zero endorsements the primary judge had missed in the controls, and agreed 90/90 on terra with zero endorsements — so the 88-vs-0 contrast is not an artifact of the OpenAI judge, and the confirming judge's family bias, if any, runs toward the candidate it convicted. A claude-haiku-4-5 attempt at the same certification failed the gate (6/30 anchor misses, all from treating value extremeness as stance evidence in violation of the prompt's explicit rule — the same disposition Section 2 reports for Haiku as a candidate), so its verdicts were discarded; the judge prompt is not portable below a capability threshold.
+
+The cross-family check covers the caveat/endorsement judge only: the abstention and matched-absence verdicts rest on the primary same-provider judge alone, certified against human-labelled gold and blind spot-checked but not re-scored by a second family.
