@@ -355,6 +355,19 @@ for _f in PERTURBATION_LADDERS:
 
 FACT_BY_NAME = {f["fact"]: f for f in PERTURBATION_LADDERS}
 
+INTERNALLY_ANCHORED_FACTS = {"minors_section"}
+
+def surviving_absence_sites(fact):
+    out = []
+    for step in fact["steps"]:
+        if not step["replace"]:
+            continue
+        perturbed = step_doc(fact, step)
+        for find, _ in fact["absence"]["replace"]:
+            if find in perturbed:
+                out.append((step["severity"], find))
+    return out
+
 def lexical_caveat(answer):
     low = answer.lower() # converts model's output text to lowercase
     return any(w in low for w in EPISTEMIC_MARKERS) # checks the output against epistemic markers
@@ -1620,6 +1633,26 @@ def analysis():
                 if sd:
                     print(f"  {m:14} {i:32} seeded Q {_rate(sd, is_q)[2]:.3f} E {_rate(sd, is_e)[2]:.3f} (n={len(sd)})"
                           f"   fresh Q {_rate(fr, is_q)[2]:.3f} E {_rate(fr, is_e)[2]:.3f} (n={len(fr)})")
+    _mechanism_split(cav, models)
+
+def _mechanism_split(cav, models):
+    print("\n--- DETECTION MECHANISM: internal-anchor split (questioned rate on perturbed rows) ---")
+    leftovers = sorted(f["fact"] for f in PERTURBATION_LADDERS if surviving_absence_sites(f))
+    print(f"  facts leaving an answer-bearing site intact under perturbation: {leftovers or 'none'}")
+    print(f"  hand-classified internally anchored: {sorted(INTERNALLY_ANCHORED_FACTS)}")
+    worst = 0.0
+    for m in models:
+        for i in [n for n, _ in SYSTEM_INSTRUCTIONS]:
+            rows = [r for r in cav if r["model"] == m and r["instruction"] == i and r["severity"] >= 1]
+            clean = [r for r in rows if r["fact"] not in INTERNALLY_ANCHORED_FACTS]
+            if not rows or not clean:
+                continue
+            a = sum(r["stance"] == QUESTIONED for r in rows) / len(rows)
+            b = sum(r["stance"] == QUESTIONED for r in clean) / len(clean)
+            worst = max(worst, abs(a - b))
+            if abs(a - b) >= 0.005:
+                print(f"  {m:16} {i:32} all {a:.3f}  excl-anchored {b:.3f}  delta {a - b:+.3f}")
+    print(f"  max |delta| across model x instruction: {worst:.3f}")
 
 MANIFEST_FILE = "run_manifest.json"
 

@@ -24,7 +24,8 @@ from harness import (wilson_interval, PERTURBATION_LADDERS, SEVERITIES, validate
                      _run_anthropic_wave, _chunked_judge_sink, build_manifest,
                      SweepSpec, CAVEAT_SWEEP, ABSTENTION_SWEEP, ABSENCE_SWEEP, _sweep_wave_plan, _run_sweep,
                      sign_test, bootstrap_ci, unit_counts, unit_rate_map, factorial_effects, _situated_faithfulness,
-                     _openai_batch_chunks)
+                     _openai_batch_chunks,
+                     INTERNALLY_ANCHORED_FACTS, surviving_absence_sites, FACT_BY_NAME)
 from judge import (cohens_kappa, FAITHFUL, UNGROUNDED,
                    judge_gate, anchor_disagreements, GATE_PASS, GATE_FAIL, KAPPA_THRESHOLD,
                    QUESTIONED, SILENT, ENDORSED, DECLINED, CAVEAT_LABELS, CAVEAT_SCHEMA, build_caveat_prompt,
@@ -1191,6 +1192,21 @@ class TestOpenAIBatch(unittest.TestCase):
              mock.patch("harness.OPENAI_BATCH_MAX_REQUESTS", 2):
             chunks = list(_openai_batch_chunks(reqs))
         self.assertEqual([len(c) for c in chunks], [2, 2, 1])
+
+
+class TestMechanismSplit(unittest.TestCase):
+    def test_anchored_facts_are_real_facts(self):
+        self.assertTrue(INTERNALLY_ANCHORED_FACTS <= set(FACT_BY_NAME))
+
+    def test_no_fact_leaves_an_absence_site_intact_under_perturbation(self):
+        for fact in PERTURBATION_LADDERS:
+            self.assertEqual(surviving_absence_sites(fact), [], fact["fact"])
+
+    def test_minors_header_enumeration_survives_every_perturbation(self):
+        fact = FACT_BY_NAME["minors_section"]
+        for step in fact["steps"]:
+            if step["replace"]:
+                self.assertIn("51 and 121 of", step_doc(fact, step))
 
 
 if __name__ == "__main__":

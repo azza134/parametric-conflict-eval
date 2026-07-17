@@ -46,6 +46,8 @@ One further term appears in the tables below: **parametric leakage**, the rate a
 - Interestingly, only the Anthropic models caught errors on the AUDIT instruction (Sonnet 5 0.37, Haiku 4.5 0.14), a behavioural difference between the Anthropic and OpenAI models in responding to this instruction in terms of catching errors.
 - Haiku 4.5 is the only model in the study that flags any errors under SE. For every other model, SE suppresses flagging to zero.
 
+**Detection-mechanism note:** contradiction sensitivity pools two ways a model can catch a perturbation — world-knowledge implausibility, and document-internal contradiction. One fact (minors_section) is internally detectable at every severity: the licence's legislative header enumerates "...51 and 121 of the Liquor Act 2007", which the perturbation does not touch, so the perturbed bullet contradicts the document itself and no parametric knowledge is required to flag it. A programmatic check (reported under `analysis`) confirms no other fact leaves an answer-bearing site intact under perturbation. Excluding minors_section changes every model x instruction flag rate by at most 0.008 — no table cell above moves at two decimal places — so the reported rates are not driven by internal cross-referencing. Softer internal cues (a section-number format range, or the surviving Christmas Day "12:00 noon" beside a perturbed Good Friday time) remain and are not controlled for.
+
 ## 3. Clean specificity
 
 
@@ -187,7 +189,7 @@ All effects are computed per fact and averaged. [] is a 95% bootstrap interval o
 
 - Both instruction sets increased faithfulness rates in comparison to WG (with the exception of the Anthropic models on flag-invitation main), but source exclusivity instructions were much more effective than flag invitation ones across the models. 
 - On the OpenAI models, the interaction between the two instructions worsened the faithfulness rates, while the opposite effect was observed in Sonnet 5. 
-- Between absence faithfulness and contradiction sensitivity, OpenAI models appeared to have worsened performance in handling document-grounded QA under the interaction between the mains as opposed to the Anthropic models, suggesting that Anthropic models are more capable of interpreting more complex system instructions than OpenAI models.
+- Between absence faithfulness and contradiction sensitivity, OpenAI models appeared to have worsened performance in handling document-grounded QA under the interaction between the mains as opposed to the Anthropic models, suggesting that the Anthropic models tested are more capable of interpreting more complex system instructions than the OpenAI models tested.
 
 **False endorsement**
 
@@ -396,3 +398,5 @@ In order to stay cost-efficient, some data was transferred from v1 to v2. The fo
 Additionally, blind 'spot checks' gated the additions of GPT-5.6-terra and Haiku 4.5. Before either model's verdicts entered the tables, a sample of 60 answers from each model was human-labelled with the judge's verdicts withheld, then compared against them (terra 59/60; Haiku 58/60 on stance, 28/30 on corroboration). The labelled rows were then merged into the gold set, so the judge is certified on the output styles of those two models going forward. 
 
 Four disagreements were identified in the judge's verdicts during the Haiku spot check (two stance, two corroboration), all of them which were judge errors on answer styles the gold did not previously contain, and all of which overstated Haiku's failures rather than flattering it. The most consequential judged a typo-correcting answer as endorsed, so the tables report 2/1,800 perturbed endorsements for Haiku where the confirmed count is 1/1,800. These errors were purposefully allowed to stay in the results so that every answer is treated identically while the limited errors have negligible impact on the overall results. Each number is the same certified judge applied to all five models, and hand-correcting only the errors a sample happens to surface, while unsampled errors remain, would bias the comparison rather than fix it (not every answer can be hand checked by humans). The judge was recertified over the expanded gold and passed the kappa and anchor requirements: caveat stance kappa 0.98 / corroboration 0.91, 0/30 anchors misjudged (198 rows); abstention kappa 0.97, 0/54 anchors misjudged (140 rows).
+
+One structural asymmetry is disclosed rather than controlled: the judge (GPT-5.4-mini) shares a provider with three of the five candidate models. Certification against human-labelled gold is the control — the judge is scored against human labels, never against other models — but a residual same-family leniency toward the OpenAI candidates cannot be fully excluded.
