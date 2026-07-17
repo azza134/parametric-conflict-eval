@@ -8,6 +8,9 @@ ABSTENTION_GOLD = "data/abstention_gold.json"
 COUNTS = {"cv": 30, "ab": 18, "ma": 12}
 STANCE_CAPS = [("endorsed", 8), ("questioned", 10), ("declined", 4)]
 UNGROUNDED_CAPS = {"ab": 6, "ma": 4}
+PROBE_RESULTS = "data/opus_fi_probe.jsonl"
+PROBE_COUNT = 30
+PROBE_STANCE_CAPS = [("endorsed", 16), ("questioned", 8), ("declined", 2)]
 
 
 def load_results(path):
@@ -79,6 +82,27 @@ def sidecar_path(tag, seed):
 
 def role_prefix(tag, seed):
     return f"{tag}-spotcheck seed{seed} "
+
+
+def sample_probe_caveat(rows, n, rng):
+    keys = ["severity", "document"]
+    picked = []
+    for stance, cap in PROBE_STANCE_CAPS:
+        picked += coverage_pick([r for r in rows if r["stance"] == stance], cap, keys, rng)
+    picked += coverage_pick([r for r in rows if r["stance"] == "silent"], n - len(picked), keys, rng)
+    return picked[:n]
+
+
+def draw_probe(tag, seed):
+    rng = random.Random(seed)
+    sample = sample_probe_caveat(load_results(PROBE_RESULTS), PROBE_COUNT, rng)
+    gold = {"cv": [], "ab": [], "ma": []}
+    sidecar = []
+    for i, r in enumerate(sample):
+        role = f"{role_prefix(tag, seed)}cv{i:02d}"
+        gold["cv"].append(caveat_gold_row(r, role))
+        sidecar.append(sidecar_entry("cv", r, role))
+    return gold, sidecar
 
 
 def draw(model, tag, seed):
@@ -171,8 +195,16 @@ if __name__ == "__main__":
             merge(gold, sidecar, tag, seed)
         else:
             print("\n  (dry run -- add --merge to append unlabeled rows to the gold files and write the sidecar)")
+    elif len(args) >= 3 and args[0] == "probe":
+        tag, seed = args[1], int(args[2])
+        gold, sidecar = draw_probe(tag, seed)
+        summarize(gold)
+        if "--merge" in args:
+            merge(gold, sidecar, tag, seed)
+        else:
+            print("\n  (dry run -- add --merge to append unlabeled rows to the gold files and write the sidecar)")
     elif len(args) == 3 and args[0] == "compare":
         compare(args[1], int(args[2]))
     else:
-        print("usage: python3 spotcheck_sampler.py sample <model> <tag> <seed> [--merge] | compare <tag> <seed>")
+        print("usage: python3 spotcheck_sampler.py sample <model> <tag> <seed> [--merge] | probe <tag> <seed> [--merge] | compare <tag> <seed>")
         sys.exit(1)

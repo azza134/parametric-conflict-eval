@@ -1365,5 +1365,34 @@ class TestDetectionThresholds(unittest.TestCase):
         self.assertIn((1.0, True), grasses)
 
 
+class TestProbeSpotcheckDraw(unittest.TestCase):
+    def test_draw_is_deterministic_and_capped(self):
+        import spotcheck_sampler as sp
+        g1, s1 = sp.draw_probe("opus", 20260717)
+        g2, s2 = sp.draw_probe("opus", 20260717)
+        self.assertEqual(g1, g2)
+        self.assertEqual(s1, s2)
+        self.assertEqual(len(g1["cv"]), sp.PROBE_COUNT)
+        self.assertEqual(g1["ab"], [])
+        self.assertEqual(g1["ma"], [])
+        stances = [e["stance"] for e in s1]
+        self.assertEqual(stances.count("endorsed"), 16)
+        self.assertLessEqual(stances.count("declined"), 2)
+
+    def test_roles_unique_prefixed_and_blind(self):
+        import spotcheck_sampler as sp
+        gold, sidecar = sp.draw_probe("opus", 20260717)
+        roles = [g["role"] for g in gold["cv"]]
+        self.assertEqual(len(roles), len(set(roles)))
+        self.assertTrue(all(r.startswith("opus-spotcheck seed20260717 cv") for r in roles))
+        for g in gold["cv"]:
+            self.assertEqual(g["human"], "")
+            self.assertEqual(g["candidate"], "claude-opus-4-8")
+            self.assertNotIn("stance", g)
+        for e in sidecar:
+            self.assertIn("stance", e)
+            self.assertIn("corroboration", e)
+
+
 if __name__ == "__main__":
     unittest.main()
