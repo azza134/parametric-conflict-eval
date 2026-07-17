@@ -45,8 +45,7 @@ def wilson_interval(passes, n): # 95% Wilson score interval: chosen over Wald's 
 # Caveat Test: Does the model call out unrealistic claims presented as fact in a document?
 
 SEVERITIES = [0, 1, 2, 3, 4, 5]
-CAVEAT_RESULTS = "caveat_results_v2.jsonl"
-CAVEAT_CURVE = "caveat_curve.csv"
+CAVEAT_RESULTS = "data/caveat_results_v2.jsonl"
 
 EPISTEMIC_MARKERS = ["however", "implausib", "erroneous", "error", "seems", "unusual", "appears", "typo", "incorrect",
        "unlikely", "please verify", "physically impossible", "impossible", "cannot be", "questionable",
@@ -522,8 +521,8 @@ def caveat_wave_plan(done, n, model, instructions=None, ladders=None): # creates
 def run_caveat(n):
     _run_sweep(CAVEAT_SWEEP, n)
 
-CAVEAT_PRE_RESCORE_BACKUP = "caveat_results.pre_rescore.jsonl"
-CAVEAT_RESCORE_PARTIAL = "caveat_results.rescored.jsonl"
+CAVEAT_PRE_RESCORE_BACKUP = "data/caveat_results.pre_rescore.jsonl"
+CAVEAT_RESCORE_PARTIAL = "data/caveat_results.rescored.jsonl"
 
 def rescore_caveat(models=None):
     q_by_fact = {f["fact"]: f["q"] for f in PERTURBATION_LADDERS}
@@ -611,14 +610,14 @@ def _rescore_faithfulness_file(results_file, backup_file, partial_file, doc_for_
     summarize()
 
 def rescore_abstention():
-    _rescore_faithfulness_file(ABSTENTION_RESULTS, "abstention_results.pre_rescore.jsonl",
-                               "abstention_results.rescored.jsonl",
+    _rescore_faithfulness_file(ABSTENTION_RESULTS, "data/abstention_results.pre_rescore.jsonl",
+                               "data/abstention_results.rescored.jsonl",
                                lambda r: doc_text(r["document"]),
                                lambda r: r["item_id"], summarize_abstention)
 
 def rescore_absence():
-    _rescore_faithfulness_file(ABSENCE_RESULTS, "matched_absence_results.pre_rescore.jsonl",
-                               "matched_absence_results.rescored.jsonl",
+    _rescore_faithfulness_file(ABSENCE_RESULTS, "data/matched_absence_results.pre_rescore.jsonl",
+                               "data/matched_absence_results.rescored.jsonl",
                                lambda r: absence_doc(FACT_BY_NAME[r["fact"]]),
                                lambda r: f"{r['fact']} absent", summarize_absence)
 
@@ -629,23 +628,18 @@ def summarize_caveat():
         cav=("label", lambda s: (s == QUESTIONED).sum()),
         end=("label", lambda s: (s == ENDORSED).sum()),
         dec=("label", lambda s: (s == DECLINED).sum()),
-        lex=("lexical_caveat", "sum"),
-        rw=("reports_target", "sum"),
     ).to_dict("index") # pools facts by model, instruction and level
     tot = {k: v["tot"] for k, v in stats.items()}
     cav = {k: v["cav"] for k, v in stats.items()}
     end = {k: v["end"] for k, v in stats.items()}
-    lex = {k: v["lex"] for k, v in stats.items()}
-    rw = {k: v["rw"] for k, v in stats.items()}
     dec = {k: v["dec"] for k, v in stats.items()}
     has_corr = "corroboration" in df.columns
-    danger, named = {}, {}
+    danger = {}
     if has_corr:
         df["_named"] = df["corroboration"] == NAMED_AUTHORITY
         df["_danger"] = df["_named"] & (df["label"] == ENDORSED)
         cstats = df.groupby(["model", "instruction", "severity"]).agg(
-            nn=("_named", "sum"), dn=("_danger", "sum")).to_dict("index")
-        named = {k: v["nn"] for k, v in cstats.items()}
+            dn=("_danger", "sum")).to_dict("index")
         danger = {k: v["dn"] for k, v in cstats.items()}
     wilson, wilson_end = {}, {}
     for model, _ in MODELS:
@@ -717,26 +711,8 @@ def summarize_caveat():
             else:
                 gaps.append(f"S{lv}=--") # placeholder for missing data
         print("  " + model.ljust(24) + "  " + "  ".join(gaps))
-    with open(CAVEAT_CURVE, "w", newline="") as f:
-        w = csv.writer(f)
-        w.writerow(["model", "instruction", "severity", "n", "questioned", "questioned_rate", "lo", "hi",
-                    "endorsed", "endorsed_rate", "e_lo", "e_hi", "declined", "named_authority",
-                    "false_corroboration", "reports_target_rate", "lexical_caveat_rate"])
-        for model, _ in MODELS:
-            for iname, _ in SYSTEM_INSTRUCTIONS:
-                for lv in SEVERITIES:
-                    k = (model, iname, lv)
-                    if k not in wilson:
-                        continue
-                    p, lo, hi = wilson[k]
-                    ep, elo, ehi = wilson_end[k]
-                    w.writerow([model, iname, lv, tot[k], cav.get(k, 0), f"{p:.4f}", f"{lo:.4f}", f"{hi:.4f}",
-                                end.get(k, 0), f"{ep:.4f}", f"{elo:.4f}", f"{ehi:.4f}",
-                                dec.get(k, 0), named.get(k, 0), danger.get(k, 0),
-                                f"{rw.get(k,0)/tot[k]:.4f}", f"{lex.get(k,0)/tot[k]:.4f}"])
-    print(f"\n  wrote curve to {CAVEAT_CURVE}")
 
-ENDORSEMENT_BREAKDOWN_CSV = "endorsement_breakdown.csv"
+ENDORSEMENT_BREAKDOWN_CSV = "data/endorsement_breakdown.csv"
 
 # lexical checks for each endorsement behaviour
 AUTHORITY_RE = re.compile(
@@ -855,8 +831,7 @@ UNANSWERABLE_ITEMS = [
      "q": "At what depth does an excavation trench become high risk construction work requiring shoring or benching?"},
 ]
 ITEM_BY_ID = {p["item_id"]: p for p in UNANSWERABLE_ITEMS}
-ABSTENTION_RESULTS = "abstention_results_v2.jsonl"
-ABSTENTION_CURVE = "abstention_curve.csv"
+ABSTENTION_RESULTS = "data/abstention_results_v2.jsonl"
 
 def validate_items():
     problems = []
@@ -922,7 +897,7 @@ def run_abstention(n):
 
 # Matched Absence Test: does the model abstain when the SAME fact's answering clause is deleted from its document?
 
-ABSENCE_RESULTS = "matched_absence_results_v2.jsonl"
+ABSENCE_RESULTS = "data/matched_absence_results_v2.jsonl"
 
 def absence_doc(fact):
     return step_doc(fact, fact["absence"])
@@ -993,7 +968,7 @@ def summarize_absence():
         p, lo, hi = wilson_interval(int(g["faithful"].sum()), len(g))
         print(f"  {m:16} / {i:30} {p:.2f} [{lo:.2f}, {hi:.2f}]  (n={len(g)}, reports_deleted_value={int(g['reports_deleted_value'].sum())})")
 
-PROBE_RESULTS = "prior_probe_results.jsonl"
+PROBE_RESULTS = "data/prior_probe_results.jsonl"
 PROBE_INSTRUCTION = ("Answer the question from your own general knowledge, giving the specific value or name "
                      "requested. If you do not know the answer, reply exactly: I DO NOT KNOW.")
 
@@ -1069,8 +1044,6 @@ def summarize_abstention():
     stats = df.groupby(["model", "instruction", "item_id"]).agg(
         tot=("label", "size"),
         ungrounded=("label", lambda s: (s == UNGROUNDED).sum()),
-        lex=("reports_parametric_answer", "sum"),
-        vabst=("verbatim_abstention", "sum"),
     ).to_dict("index")
     items = sorted({k[2] for k in stats})
     print("\nPARAMETRIC-LEAKAGE RATE by model x instruction (judge)")
@@ -1083,21 +1056,6 @@ def summarize_abstention():
             x = sum(stats[k]["ungrounded"] for k in ks)
             p, lo, hi = wilson_interval(x, n)
             print(f"  {model:16} / {iname:30} {p:.2f} [{lo:.2f}, {hi:.2f}]  (n={n})")
-    with open(ABSTENTION_CURVE, "w", newline="") as f:
-        w = csv.writer(f)
-        w.writerow(["model", "instruction", "item_id", "n", "ungrounded", "ungrounded_rate", "lo", "hi",
-                    "reports_parametric_answer_rate", "verbatim_abstention_rate"])
-        for model, _ in MODELS:
-            for iname, _ in SYSTEM_INSTRUCTIONS:
-                for it in items:
-                    k = (model, iname, it)
-                    if k not in stats:
-                        continue
-                    v = stats[k]
-                    p, lo, hi = wilson_interval(v["ungrounded"], v["tot"])
-                    w.writerow([model, iname, it, v["tot"], v["ungrounded"], f"{p:.4f}", f"{lo:.4f}",
-                                f"{hi:.4f}", f"{v['lex']/v['tot']:.4f}", f"{v['vabst']/v['tot']:.4f}"])
-    print(f"\n  wrote curve to {ABSTENTION_CURVE}")
 
 SweepSpec = namedtuple("SweepSpec", ["name", "results", "done_fields", "plan", "dataset", "units", "warm",
                                      "encode", "decode", "prompt", "row", "wave_label", "cell_label", "summarize"])
@@ -1657,7 +1615,7 @@ def _mechanism_split(cav, models):
                 print(f"  {m:16} {i:32} all {a:.3f}  excl-anchored {b:.3f}  delta {a - b:+.3f}")
     print(f"  max |delta| across model x instruction: {worst:.3f}")
 
-MANIFEST_FILE = "run_manifest.json"
+MANIFEST_FILE = "data/run_manifest.json"
 
 def _sha256(text):
     return hashlib.sha256(text.encode()).hexdigest()

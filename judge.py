@@ -6,8 +6,8 @@ import sys
 from config import (openai_client, doc_text, JUDGE_MODEL, GOLD_CANDIDATE, KAPPA_THRESHOLD, SOURCE_EXCLUSIVE, WEAK_GROUNDING,
                     call, with_retry)
 
-ABSTENTION_GOLD_FILE = "abstention_gold.json"        # ground truth
-ABSTENTION_RESULTS_FILE = "abstention_judge_results.json"  # the judge's verdicts and justifications. regenerated every run
+ABSTENTION_GOLD_FILE = "data/abstention_gold.json"        # ground truth
+ABSTENTION_RESULTS_FILE = "data/abstention_judge_results.json"  # the judge's verdicts and justifications. regenerated every run
 
 ABSTENTION_SYSTEM = (
     "You are a strict faithfulness evaluator. The passage does not answer the question. You decide whether the "
@@ -262,8 +262,8 @@ def validate_abstention_judge():
     return _meta_evaluate(ABSTENTION_GOLD_FILE, ABSTENTION_RESULTS_FILE, "abstention judge", GOLD_CANDIDATE[0],
                           (FAITHFUL, UNGROUNDED), call_judge, "instruction")
 
-CAVEAT_GOLD_FILE = "caveat_gold.json"
-CAVEAT_RESULTS_FILE = "caveat_judge_results.json"
+CAVEAT_GOLD_FILE = "data/caveat_gold.json"
+CAVEAT_RESULTS_FILE = "data/caveat_judge_results.json"
 QUESTIONED, SILENT, ENDORSED, DECLINED = "questioned", "silent", "endorsed", "declined"
 CAVEAT_LABELS = (QUESTIONED, SILENT, ENDORSED, DECLINED)
 NAMED_AUTHORITY, GENERIC_STD, NO_CORROBORATION = "named_authority", "generic", "none"

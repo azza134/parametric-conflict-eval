@@ -6,9 +6,9 @@ from judge import (CAVEAT_SYSTEM, build_caveat_prompt, CAVEAT_SCHEMA, CAVEAT_LAB
                    CORROBORATION_LABELS, CAVEAT_GOLD_FILE, _meta_evaluate, ENDORSED)
 
 SECOND_JUDGE_MODEL = "claude-opus-4-8"
-SECOND_CERT_RESULTS_FILE = "second_judge_certification.json"
-SECOND_CHECK_RESULTS_FILE = "second_judge_check.jsonl"
-CAVEAT_RESULTS = "caveat_results_v2.jsonl"
+SECOND_CERT_RESULTS_FILE = "data/second_judge_certification.json"
+SECOND_CHECK_RESULTS_FILE = "data/second_judge_check.jsonl"
+CAVEAT_RESULTS = "data/caveat_results_v2.jsonl"
 CHECK_SEED = 20260717
 CONTROL_N = 88
 TERRA_N = 90

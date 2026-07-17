@@ -3,8 +3,8 @@ import random
 import sys
 from harness import FACT_BY_NAME, CAVEAT_RESULTS, ABSTENTION_RESULTS, ABSENCE_RESULTS
 
-CAVEAT_GOLD = "caveat_gold.json"
-ABSTENTION_GOLD = "abstention_gold.json"
+CAVEAT_GOLD = "data/caveat_gold.json"
+ABSTENTION_GOLD = "data/abstention_gold.json"
 COUNTS = {"cv": 30, "ab": 18, "ma": 12}
 STANCE_CAPS = [("endorsed", 8), ("questioned", 10), ("declined", 4)]
 UNGROUNDED_CAPS = {"ab": 6, "ma": 4}
@@ -74,7 +74,7 @@ def sidecar_entry(kind, r, role):
 
 
 def sidecar_path(tag, seed):
-    return f"spotcheck_sidecar_{tag}_{seed}.json"
+    return f"data/spotcheck_sidecar_{tag}_{seed}.json"
 
 
 def role_prefix(tag, seed):

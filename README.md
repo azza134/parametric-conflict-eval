@@ -1,16 +1,16 @@
-# Model Behaviour in Document-Grounded QA
+# How System Instructions Affect LLM Behaviour in Document-Grounded QA
 
 ## The dilemma
 
 Documents used by small businesses, enterprises and governments are not immune from errors, large or small. And with rapid increases in AI adoption and integration across the workflows of these institutions, hallucinations as a business and institutional risk are surfacing quickly. 
 
-What should a model do when encountered with an error in a document? Should it reach into pretraining data? Pretraining data is sometimes not specific enough to answer the question. So should the model not bring it up at all? Then the likelihood is that the error goes unnoticed. 
+What should a model do when it encounters an error in a document? Should it reach into pretraining data? Pretraining data is sometimes not specific enough to answer the question. So should the model not bring it up at all? Then the likelihood is that the error goes unnoticed. 
 
 ## What it measures
 
-This harness tests the ability of a model to spot information in a document as likely to be an error, and its willingness to reach into pre-training data when the document does not answer the question. 
+This harness tests the ability of Anthropic and OpenAI LLMs to react appropriately to different grounding scenarios, using system instructions as an independent variable. In a RAG system, this repo measures only the generation step and assumes that all previous steps, including retrieval, were done perfectly.
 
-Both characteristics are tested using the five following system instructions (can be customised in config.py):
+These were the system instructions tested: 
 
 ```text
 SOURCE_EXCLUSIVE: "Answer using ONLY the passage. If the passage does not contain the answer, reply exactly: NOT IN DOCUMENT. Never use outside knowledge."
@@ -24,16 +24,22 @@ SOURCE_EXCLUSIVE_FLAG_INVITING: "Answer using ONLY the passage. If the passage d
 SELECTIVE_AUDIT: "Answer using the passage. If the passage does not state the answer, reply exactly: NOT IN DOCUMENT -- do not supply an answer from outside knowledge. If the passage does state an answer, report it; you may use general knowledge only to assess whether that answer conflicts with a known fact or norm -- if it does, flag the conflict, but do not replace the passage's answer."
 ```
 
+## Related work
+
+- The closest prior work is [ClashEval](https://arxiv.org/abs/2404.10198) (Wu, Wu & Zou, NeurIPS 2024 Datasets & Benchmarks), which perturbs retrieved context at graded severities and finds adoption of the wrong value falls as implausibility rises. This harness independently converged on the same severity-ladder design; the overlap was found after the design was fixed. The measured outcome differs: ClashEval's metrics are adoption-side (which answer the model selects), while this harness measures what the model *says* about the value -- flag, stay silent, endorse, or corroborate it with an authority. The false-corroboration metric and the instruction factorial on speech-act outcomes appear in none of the knowledge-conflict work surveyed.
+- The broader knowledge-conflict line (Longpre et al. 2021 entity substitution; Xie et al. 2024; [ConflictBank](https://arxiv.org/abs/2408.12076)) likewise scores which knowledge source wins (ConflictBank's metrics are memorization/counter-answer ratios), not what the model discloses about the conflict. [WikiContradict](https://arxiv.org/abs/2406.13805) does score disclosure -- its correct answer must acknowledge the contradiction -- but the conflict there is between two presented Wikipedia passages with no ground truth about which is wrong, so the ideal behaviour is reporting both answers without preference; there is no planted error, no severity gradient, no corroboration axis, and a single attend-to-conflicts prompt contrast rather than an instruction factorial.
+- On the grounding side, [FACTS Grounding](https://arxiv.org/abs/2501.03200) (Google DeepMind, 2025) enforces the same source-exclusive policy as SOURCE_EXCLUSIVE (its per-example instruction wording varies; SE additionally mandates an exact refusal string so abstention is machine-checkable) and scores whether responses are grounded in a document presumed correct. This harness asks the complementary question: what should happen when the document itself is wrong.
+- RGB's negative-rejection test (Chen et al., AAAI 2024) is the nearest neighbour to the absence/abstention sweeps -- whether a model declines when retrieval lacks the answer -- without the matched-deletion control or the instruction axis.
+- The closed-book prior probe is related in spirit to P(IK) (Kadavath et al. 2022): both treat "does the model already hold this fact" as a measurable quantity, here used to verify perturbation targets conflict with an actual prior rather than to calibrate self-knowledge.
+
 ## Findings so far
 
-- The error-flagging and faithfulness rates were generally proportional to capabilities of the models.
-- Under SOURCE_EXCLUSIVE (a strict-grounding system instruction standard in RAG deployments, the same source-exclusive grounding policy FACTS Grounding uses), parametric leakage is zero across all tested models and absence faithfulness is the highest of any instruction, but the error-flagging rate is zero at every severity, a clear trade-off. All models repeat physically impossible values (500-metre grass, one toilet per 1,000,000 workers) without comment under this system instruction. 
-- The WEAK_GROUNDING instruction is very ineffective, recording the worst absence faithfulness for every model and error-flagging rates no higher than 0.18.
-- The FLAG_INVITING instruction had the highest observed error-flagging but is extremely prone to false endorsements on Sonnet 5 specifically, most dangerously endorsing perturbed values with reference to external authorities. No other model produced any false endorsements under the same instruction -- including gpt-5.6-terra, a second frontier model that flags at 0.48 while endorsing nothing in 1,800 perturbed answers -- so false endorsement reads as a Sonnet 5-specific behaviour rather than one that emerges with capability. 
-- The SOURCE_EXCLUSIVE_FLAG_INVITING instruction matched SOURCE_EXCLUSIVE's zero parametric leakage and near-identical absence faithfulness while generally avoiding endorsements, but all models recorded lower error-flagging rates under the SOURCE_EXCLUSIVE_FLAG_INVITING instruction than its FLAG_INVITING counterpart.
+- The error-flagging and faithfulness rates were generally proportional to the capabilities of the models.
+- Under SOURCE_EXCLUSIVE (a strict-grounding system instruction standard in RAG deployments), absence faithfulness rates are at or near the top of every instruction (statistically tied with SOURCE_EXCLUSIVE_FLAG_INVITING), but the error-flagging rate is zero at every severity for every model except Haiku 4.5 (0.08), a clear trade-off. The other four models repeat physically impossible values (500-metre grass, one toilet per 1,000,000 workers) without comment under this system instruction. 
+- The WEAK_GROUNDING instruction is very ineffective, recording the worst absence faithfulness of any instruction for the OpenAI models (the Anthropic models' worst is FLAG_INVITING) and error-flagging rates no higher than 0.18.
+- The FLAG_INVITING instruction had the highest observed error-flagging but is extremely prone to false endorsements on Sonnet 5 specifically, most dangerously endorsing perturbed values with reference to external authorities, a behaviour labelled as false corroboration. No other model produced any false endorsements under the same instruction, including gpt-5.6-terra, a second frontier model that flags at 0.48 while endorsing nothing in 1,800 perturbed answers, making false endorsement a Sonnet 5-specific behaviour rather than one that emerges with capability, at least among the models that were tested. 
+- The SOURCE_EXCLUSIVE_FLAG_INVITING instruction near-matched SOURCE_EXCLUSIVE's zero parametric leakage (2/72 leaks on Sonnet 5, zero on every other model) with near-identical absence faithfulness while generally avoiding endorsements, but all models recorded lower error-flagging rates under the SOURCE_EXCLUSIVE_FLAG_INVITING instruction than its FLAG_INVITING counterpart.
 - Sonnet 5 on SOURCE_EXCLUSIVE_FLAG_INVITING had the highest success in navigating each grounding scenario (situated-faithfulness rate, see results.md).
-
-Full tables, confidence intervals and provenance: [results.md](results.md). Complete per-cell grids: `caveat_curve.csv` / `abstention_curve.csv`. The v1 single-document write-up (raw examples and limitations included) lives in [archive/results-v1.md](archive/results-v1.md).
 
 ## Quickstart
 
@@ -56,15 +62,21 @@ python3 judge.py caveat             # re-certify the caveat judge against its go
 python3 judge.py abstention         # re-certify the abstention judge
 ```
 
-Sweeps default to N=3, matching the published v2 grid (the earlier consent-only cells were N=8; reps within a fact turned out to be strongly correlated, so extra reps buy little -- the analysis reports cluster-adjusted intervals alongside Wilson for exactly this reason). It is advised to verify your judge first before running the harness. 
+Sweeps default to N=3, matching the published v2 results. N=8 was used in v1, but reps within a fact were observed to be strongly correlated, making extra repetitions redundant, which is why the analysis reports cluster-adjusted intervals alongside Wilson). 
+
+It is also advised to verify your judge first before running the harness. 
 
 ## Customisation
 
-The benchmark can be customised in `config.py`, including models tested, samples per cell (n), the system instructions. Currently, swapping in your own document is deliberately **not** config-only: a new document needs its own `PERTURBATION_LADDERS` (which facts to perturb, at which severities) and `UNANSWERABLE_ITEMS`. 
+The benchmark can be customised in `config.py`, including models tested, number of repetitions (n) and the system instructions. 
+
+Currently, swapping in your own document is **not** customisable in `config.py`. A new document needs its own `PERTURBATION_LADDERS` (which facts to perturb, at which severities) and `UNANSWERABLE_ITEMS`. This can be customised only in `harness.py` and risks bugs. 
 
 ## Why trust the numbers
 
-Every answer is scored by an LLM judge, and no judge scores anything before being certified against a human-labelled gold set with a zero-tolerance anchor check (obvious cases must all be judged correctly) plus a Cohen's kappa threshold >= 0.80 against the human labels. Current certifications for GPT-5.4-mini: stance/corroboration kappa 0.98/0.91 (0/30 anchors incorrect, 198-row gold), abstention judge kappa 0.97 (0/54 anchors incorrect, 140-row gold). New candidate models are spot-checked before their verdicts count: gpt-5.6-terra's grid entered the results only after a 60-transcript stratified blind sample agreed with the judges on 59/60, and claude-haiku-4-5's after the same procedure scored 58/60 on stance and 28/30 on corroboration (results.md §11). The judge shares a provider with three of the five candidates; certification against human-labelled gold, not against other models, is the control for same-family leniency. 
+Every answer is scored by an LLM judge, and no judge scores anything before being certified against a human-labelled gold set with a zero-tolerance anchor check (obvious cases must all be judged correctly) plus a Cohen's kappa threshold >= 0.80 against the human labels. The certifications for the judge can be observed in `results.md`.
+
+To show the headline endorsement finding is not a judge-family artifact, a second judge from the convicted candidate's own family (claude-opus-4-8) was certified on the same human gold under the identical prompt and gate, and upheld the endorsement contrast 264/266, showing that the cause for the endorsements should not attributed to self-preference bias.
 
 ## Repo map
 
@@ -74,16 +86,23 @@ Every answer is scored by an LLM judge, and no judge scores anything before bein
 | `config.py`                                                                      | every customisable setting and shared functions                                                                                               |
 | `harness.py`                                                                     | the three sweeps, the prior-strength probe and the pre-registered analysis                                                                    |
 | `judge.py`                                                                       | both judges and their certification pipeline                                                                                                  |
+| `second_judge.py`                                                                | the cross-family second judge (claude-opus-4-8) that re-scored the endorsement rows                                                           |
+| `spotcheck_sampler.py`                                                           | draws blind spot-check samples from newly added models and compares human labels against judge verdicts to be added to the gold set           |
 | `test_logic.py`                                                                  | offline tests verifying the functions                                                                                                         |
 | `documents/document1_consent.txt` / `document2_epl.txt` / `document3_liquor.txt` | the three source documents: a NSW development consent, an environment protection licence, a liquor licence (`*_source.pdf` are the originals) |
-| `caveat_gold.json` / `abstention_gold.json`                                      | human-labelled gold sets the judges are certified against                                                                                     |
-| `*_results_v2.jsonl` / `matched_absence_results_v2.jsonl`                        | every graded answer in the v2 grid, with model-snapshot and run provenance                                                                    |
-| `prior_probe_results.jsonl`                                                      | closed-book prior-strength probe (measures what each model recalls without the document)                                                      |
-| `run_manifest.json`                                                              | the pre-registered run manifest                                                                                                               |
-| `results.md` + `*_curve.csv`                                                     | published findings and their full grids                                                                                                       |
-| `archive/results-v1.md`                                                          | the v1 single-document study, preserved verbatim, with its trade-off scatter plot and generator                                               |
+| `data/caveat_gold.json` / `data/abstention_gold.json`                            | human-labelled gold sets the judges are certified against                                                                                     |
+| `data/*_results_v2.jsonl`                                                        | all v2 model outputs in full detail                                                                                                           |
+| `data/prior_probe_results.jsonl`                                                 | measures what each model recalls without the document                                                                                         |
+| `data/run_manifest.json`                                                         | the pre-registered run manifest                                                                                                               |
+| `results.md`                                                                     | most recent published findings (v2)                                                                                                           |
+| `archive/results-v1.md`                                                          | the v1 results                                                                                                                                |
 
 
 ## Status / limitations
 
-This is a project aimed at solving the problem described earlier and is currently a functional prototype that is able to successfully compute all the results and processes that have been described so far. All three documents are Australian regulatory instruments from one broad domain. Multi-document conflict and position effects are out of scope. Every result is conditioned on an explicit system instruction. Model coverage is limited to two providers (Anthropic and OpenAI). Additionally, the ratios for each severity are hard to standardise due to different units having to be perturbed by different values to achieve similar levels of implausibility, which is a subjective process. 
+- All three documents are Australian regulatory instruments from one broad domain. 
+- Multi-document conflict and position effects are out of scope. 
+- Every result is conditioned on an explicit system instruction. 
+- Model coverage is limited to two providers (Anthropic and OpenAI). 
+- The ratios for each severity are hard to standardise due to different units having to be perturbed by different values to achieve similar levels of implausibility, which is a subjective process.
+
