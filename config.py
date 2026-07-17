@@ -69,6 +69,7 @@ def ask_anthropic(system_instruction, question, doc, model):
             "role": "user",
             "content": "Passage:\n" + doc + "\n\nQuestion: " + question,
         }],
+        **anthropic_thinking_kwargs(model),
     )
     truncated = response.stop_reason == "max_tokens"
     if truncated:
@@ -77,6 +78,9 @@ def ask_anthropic(system_instruction, question, doc, model):
 
 def openai_reasoning_kwargs(model):
     return {"reasoning": {"effort": "low"}} if model.startswith("gpt-5.4") else {}
+
+def anthropic_thinking_kwargs(model):
+    return {"thinking": {"type": "adaptive"}} if model.startswith("claude-opus") else {}
 
 def ask_openai(system_instruction, question, doc, model):
     reasoning = openai_reasoning_kwargs(model)
@@ -109,14 +113,21 @@ def call_closed_book(model, provider, system, question):
         print(f"    WARNING: answer truncated at max_output_tokens ({model})", flush=True)
     return r.output_text or "", r.model, truncated
 
-RETRYABLE_ERRORS = (anthropic.AnthropicError, openai.OpenAIError)
+PROVIDER_ERRORS = (anthropic.AnthropicError, openai.OpenAIError)
+
+def _retryable(e):
+    if isinstance(e, (anthropic.APIConnectionError, openai.APIConnectionError)):
+        return True
+    if isinstance(e, (anthropic.APIStatusError, openai.APIStatusError)):
+        return e.status_code == 429 or e.status_code >= 500
+    return False
 
 def with_retry(fn, *args, attempts=8):
     for i in range(attempts):
         try:
             return fn(*args) # calls the function and returns if it succeeds
-        except RETRYABLE_ERRORS as e: # if error is raised, store in variable e
-            if i == attempts - 1:
+        except PROVIDER_ERRORS as e: # if error is raised, store in variable e
+            if not _retryable(e) or i == attempts - 1:
                 raise # raise the error if the last attempt is reached
             wait = 2 ** i
             print(f"    retry {i + 1}/{attempts - 1} after {type(e).__name__}; waiting {wait}s", flush=True)
@@ -166,6 +177,7 @@ def build_batch_message_params(model, system_instruction, question, doc, max_tok
                 {"type": "text", "text": "\n\nQuestion: " + question},
             ],
         }],
+        **anthropic_thinking_kwargs(model),
     }
 
 def extract_anthropic_text(message):

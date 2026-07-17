@@ -407,3 +407,48 @@ One structural asymmetry is disclosed rather than controlled: the judge (GPT-5.4
 As a robustness check on the Section 5 endorsement contrast specifically, a second judge from the candidate's own model family (claude-opus-4-8) was certified on the same 198-row human gold under the identical prompt and gate (stance kappa 0.98 / corroboration 0.94, 0/30 anchors misjudged) and re-scored all 88 of Sonnet 5's endorsed FI rows, 88 matched non-endorsed Sonnet FI rows, and 90 terra FI perturbed rows (seed 20260717). It confirmed 87/88 endorsements (the sole disagreement softened endorsed to declined), found zero endorsements the primary judge had missed in the controls, and agreed 90/90 on terra with zero endorsements — so the 88-vs-0 contrast is not an artifact of the OpenAI judge, and the confirming judge's family bias, if any, runs toward the candidate it convicted. A claude-haiku-4-5 attempt at the same certification failed the gate (6/30 anchor misses, all from treating value extremeness as stance evidence in violation of the prompt's explicit rule — the same disposition Section 2 reports for Haiku as a candidate), so its verdicts were discarded; the judge prompt is not portable below a capability threshold.
 
 The cross-family check covers the caveat/endorsement judge only: the abstention and matched-absence verdicts rest on the primary same-provider judge alone, certified against human-labelled gold and blind spot-checked but not re-scored by a second family.
+## 12. Exploratory: endorsement propensity vs discrimination
+
+*Post-hoc analysis added 2026-07-17 after external review; not part of the pre-registered analysis. Reproduced offline by `python3 harness.py analysis`.*
+
+The Section 5 endorsement rate conflates two properties: how readily a model vouches for values at all (propensity -- its endorsement rate on the unperturbed S0 control), and how much that behaviour changes when the value is actually wrong (discrimination). A signal-detection split separates them: rates are corrected (x+0.5)/(n+1) before z-transforming, and d'(s) = z(E|S0) - z(E|Ss), where higher d' means the model treats perturbed values less like clean ones. [] is a 95% cluster bootstrap over facts (10,000 resamples, fixed seed).
+
+Sonnet 5 under FI (the only model x instruction cell with a non-trivial endorsement rate; 21 of 25 cells produce zero endorsements anywhere):
+
+| severity | E (endorse rate) | d'                   |
+| -------- | ---------------- | -------------------- |
+| S0       | 0.83 (60/72)     | --                   |
+| S1       | 0.78 (56/72)     | +0.20 [-0.40,+0.77]  |
+| S2       | 0.35 (25/72)     | +1.34 [+0.75,+2.04]  |
+| S3       | 0.10 (7/72)      | +2.22 [+1.61,+3.05]  |
+| S4       | 0.00 (0/72)      | +3.41 [+3.01,+3.90]  |
+| S5       | 0.00 (0/72)      | +3.41 [+3.01,+3.90]  |
+
+**Key findings:**
+
+- At S1 the d' interval covers zero: Sonnet 5's endorsement behaviour on a 1.25-1.5x perturbed value is statistically indistinguishable from its behaviour on the correct value. The S1 failure is not recklessness toward detected errors -- the model cannot see the error and vouches at its base propensity (0.83).
+- Discrimination rises steeply from S2 (d' 1.34) and saturates by S4; the danger band is exactly the plausibility window where discrimination is absent or partial while propensity stays high.
+- The decomposition reframes the terra contrast: terra endorsed nothing clean or perturbed (zero propensity), so its clean sheet in Section 5 reflects an answer style in which false corroboration is structurally unavailable, not necessarily sharper error detection (its detection is measured on the flagging axis in Sections 2 and 13).
+- The remaining nonzero cells (Sonnet SE+FI 2/72 at S1, Haiku FI 2/72 at S4, nano WG 1/102 at S5) are too sparse for a meaningful d'.
+
+## 13. Exploratory: detection thresholds in ratio units
+
+*Post-hoc analysis added 2026-07-17 after external review; not part of the pre-registered analysis. Reproduced offline by `python3 harness.py analysis`.*
+
+Each perturbation step carries a magnitude ratio (1.25x to 50,000x the true value). Fitting a logistic curve of flagging probability against log10(ratio) per model x instruction gives a psychometric threshold: **ratio50, the perturbation size at which the model flags half the time.** This treats error size as a continuous variable rather than the ordinal severity rungs, which partially addresses the severity-standardisation limitation. S0 rows (ratio 1) anchor the false-alarm end; the one ratio-less fact (saturday_hours, bounded) is excluded; ratio50 is reported only where the fitted curve crosses 0.5 inside the observed range. [] is a 95% cluster bootstrap over facts (2,000 resamples, fixed seed). Ratios are fact-confounded (each fact contributes its own ratio sequence), so intervals lean on the cluster bootstrap.
+
+| model            | SE          | FI                      | WG                        | SE+FI                  | AUDIT                     |
+| ---------------- | ----------- | ----------------------- | ------------------------- | ---------------------- | ------------------------- |
+| gpt-4o-mini      | no crossing | x1996 [x472,x10892]     | no crossing               | no crossing            | no crossing               |
+| gpt-5.4-nano     | no crossing | x2190 [x649,x16011]     | no crossing               | no crossing            | no crossing               |
+| claude-haiku-4-5 | no crossing | x91 [x46,x192]          | x4559 [x882,x27609]       | x398 [x135,x1621]      | x4213 [x743,x28215]       |
+| claude-sonnet-5  | no crossing | x3.3 [x2.3,x4.8]        | x977 [x377,x2867]         | x8.7 [x5.6,x13.7]      | x66 [x34,x144]            |
+| gpt-5.6-terra    | no crossing | x18 [x8.6,x39]          | no crossing               | x119 [x67,x236]        | no crossing               |
+
+"No crossing" means the fitted curve never reaches 50% within the observed range (max x50,000) -- the SE column restates the suppression wall in threshold units. In three cells a small share of bootstrap resamples also fail to cross and are excluded from the interval (nano FI 0.3%, Haiku WG 1.4%, Haiku AUDIT 1.6%); everywhere else every resample crosses.
+
+**Key findings:**
+
+- Under FI, one number per model now summarises detection sensitivity: Sonnet 5 flags majority-reliably from ~3.3x, terra from ~18x, Haiku from ~91x, and the legacy/budget models only near ~2000x.
+- The threshold quantifies what each instruction change costs: adding source-exclusivity to FI moves Sonnet 5's threshold from x3.3 to x8.7 (~2.6x less sensitive) and terra's from x18 to x119 (~6.6x) -- the same SE+FI conflict Section 6 describes, now in error-size units.
+- Instruction wording moves the threshold by orders of magnitude within a fixed model (Sonnet 5: x3.3 FI / x66 AUDIT / x977 WG), a larger effect than the model gap under any single instruction among the three models that cross under multiple instructions.

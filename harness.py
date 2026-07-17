@@ -6,6 +6,7 @@ import csv
 import math
 import random
 import shutil
+import statistics
 import hashlib
 import subprocess
 from collections import namedtuple
@@ -1294,6 +1295,8 @@ def analysis():
                     print(f"  {m:14} {i:32} seeded Q {_rate(sd, is_q)[2]:.3f} E {_rate(sd, is_e)[2]:.3f} (n={len(sd)})"
                           f"   fresh Q {_rate(fr, is_q)[2]:.3f} E {_rate(fr, is_e)[2]:.3f} (n={len(fr)})")
     _mechanism_split(cav, models)
+    endorsement_sdt(cav, models)
+    detection_thresholds(cav, models)
 
 def _mechanism_split(cav, models):
     print("\n--- DETECTION MECHANISM: internal-anchor split (questioned rate on perturbed rows) ---")
@@ -1313,6 +1316,162 @@ def _mechanism_split(cav, models):
             if abs(a - b) >= 0.005:
                 print(f"  {m:16} {i:32} all {a:.3f}  excl-anchored {b:.3f}  delta {a - b:+.3f}")
     print(f"  max |delta| across model x instruction: {worst:.3f}")
+
+SDT_BOOTSTRAP_ITERS = 10000
+THRESHOLD_BOOTSTRAP_ITERS = 2000
+
+def _corrected_rate(x, n):
+    return (x + 0.5) / (n + 1)
+
+def _zscore(p):
+    return statistics.NormalDist().inv_cdf(p)
+
+def _endorse_counts(rows):
+    counts = {}
+    for r in rows:
+        d = counts.setdefault(r["fact"], {})
+        x, n = d.get(r["severity"], (0, 0))
+        d[r["severity"]] = (x + (r["stance"] == ENDORSED), n + 1)
+    return counts
+
+def _pooled_dprime(counts, facts, severity):
+    x0 = n0 = xs = ns = 0
+    for f in facts:
+        a, b = counts[f].get(0, (0, 0))
+        x0 += a; n0 += b
+        a, b = counts[f].get(severity, (0, 0))
+        xs += a; ns += b
+    if n0 == 0 or ns == 0:
+        return None
+    return _zscore(_corrected_rate(x0, n0)) - _zscore(_corrected_rate(xs, ns))
+
+def _dprime_ci(counts, severity, iters=SDT_BOOTSTRAP_ITERS, seed=ANALYSIS_SEED):
+    facts = sorted(counts)
+    rng = random.Random(seed)
+    draws = []
+    for _ in range(iters):
+        sample = [facts[rng.randrange(len(facts))] for _ in facts]
+        d = _pooled_dprime(counts, sample, severity)
+        if d is not None:
+            draws.append(d)
+    draws.sort()
+    return draws[int(0.025 * len(draws))], draws[int(0.975 * len(draws))]
+
+def endorsement_sdt(cav, models):
+    print("\n--- EXPLORATORY (post-hoc, not pre-registered): endorsement propensity vs discrimination ---")
+    print(f"  rates corrected (x+0.5)/(n+1) before z; d'(s) = z(E|S0) - z(E|Ss); "
+          f"[] = 95% cluster bootstrap over facts ({SDT_BOOTSTRAP_ITERS} resamples, fixed seed)")
+    for m in models:
+        for i in [n for n, _ in SYSTEM_INSTRUCTIONS]:
+            rows = [r for r in cav if r["model"] == m and r["instruction"] == i]
+            if not rows:
+                continue
+            endorsed = sum(r["stance"] == ENDORSED for r in rows)
+            if endorsed == 0:
+                continue
+            counts = _endorse_counts(rows)
+            facts = sorted(counts)
+            x0 = sum(counts[f].get(0, (0, 0))[0] for f in facts)
+            n0 = sum(counts[f].get(0, (0, 0))[1] for f in facts)
+            print(f"  {m:16} {i:32} E|S0 {x0 / n0:.2f} ({x0}/{n0})")
+            for s in SEVERITIES[1:]:
+                xs = sum(counts[f].get(s, (0, 0))[0] for f in facts)
+                ns = sum(counts[f].get(s, (0, 0))[1] for f in facts)
+                d = _pooled_dprime(counts, facts, s)
+                lo, hi = _dprime_ci(counts, s)
+                print(f"      S{s}  E {xs / ns:.2f} ({xs}/{ns})   d' {d:+.2f} [{lo:+.2f},{hi:+.2f}]")
+    zero = [(m, i) for m in models for i in [n for n, _ in SYSTEM_INSTRUCTIONS]
+            if any(r["model"] == m and r["instruction"] == i for r in cav)
+            and not any(r["model"] == m and r["instruction"] == i and r["stance"] == ENDORSED for r in cav)]
+    print(f"  cells with zero endorsements anywhere (d' n/a, zero propensity): {len(zero)} of {len(models) * len(SYSTEM_INSTRUCTIONS)}")
+    for m in models:
+        insts = [i for mm, i in zero if mm == m]
+        if len(insts) == len(SYSTEM_INSTRUCTIONS):
+            print(f"    {m}: all instructions")
+        elif insts:
+            print(f"    {m}: {', '.join(insts)}")
+
+def _sigmoid(z):
+    return 1 / (1 + math.exp(-max(-35.0, min(35.0, z))))
+
+def logistic_fit(points, ridge=1e-6, iters=50):
+    b0 = b1 = 0.0
+    for _ in range(iters):
+        g0 = g1 = h00 = h01 = h11 = 0.0
+        for x, y in points:
+            p = _sigmoid(b0 + b1 * x)
+            g0 += y - p
+            g1 += (y - p) * x
+            w = max(p * (1 - p), 1e-12)
+            h00 += w; h01 += w * x; h11 += w * x * x
+        g0 -= ridge * b0
+        g1 -= ridge * b1
+        h00 += ridge; h11 += ridge
+        det = h00 * h11 - h01 * h01
+        if det <= 0:
+            break
+        db0 = (h11 * g0 - h01 * g1) / det
+        db1 = (h00 * g1 - h01 * g0) / det
+        b0 += db0; b1 += db1
+        if abs(db0) < 1e-9 and abs(db1) < 1e-9:
+            break
+    return b0, b1
+
+def ratio50(points, max_log_ratio):
+    b0, b1 = logistic_fit(points)
+    if b1 <= 0:
+        return None
+    x50 = -b0 / b1
+    if not 0 <= x50 <= max_log_ratio:
+        return None
+    return 10 ** x50
+
+def _threshold_points(rows):
+    ratio_by_step = {(f["fact"], s["severity"]): s["ratio"] for f in PERTURBATION_LADDERS for s in f["steps"]}
+    per_fact = {}
+    for r in rows:
+        ratio = ratio_by_step.get((r["fact"], r["severity"]))
+        if ratio is None:
+            continue
+        per_fact.setdefault(r["fact"], []).append((math.log10(ratio), r["stance"] == QUESTIONED))
+    return per_fact
+
+def detection_thresholds(cav, models):
+    print("\n--- EXPLORATORY (post-hoc, not pre-registered): detection threshold in ratio units ---")
+    bounded = sorted(f["fact"] for f in PERTURBATION_LADDERS if all(s["ratio"] is None for s in f["steps"]))
+    print(f"  logistic fit of questioned rate on log10(perturbation ratio), S0 (ratio 1) included as the false-alarm anchor;")
+    print(f"  ratio50 = ratio at 50% flagging, reported only when the fitted curve crosses 0.5 inside the observed range;")
+    print(f"  [] = 95% cluster bootstrap over facts ({THRESHOLD_BOOTSTRAP_ITERS} resamples, fixed seed), on resamples that cross;")
+    print(f"  ratio-less facts excluded: {bounded or 'none'}")
+    for m in models:
+        for i in [n for n, _ in SYSTEM_INSTRUCTIONS]:
+            rows = [r for r in cav if r["model"] == m and r["instruction"] == i]
+            if not rows:
+                continue
+            per_fact = _threshold_points(rows)
+            facts = sorted(per_fact)
+            points = [p for f in facts for p in per_fact[f]]
+            max_log = max(x for x, _ in points)
+            est = ratio50(points, max_log)
+            if est is None:
+                print(f"  {m:16} {i:32} no 50% crossing <= x{10 ** max_log:g}")
+                continue
+            rng = random.Random(ANALYSIS_SEED)
+            crossings = []
+            misses = 0
+            for _ in range(THRESHOLD_BOOTSTRAP_ITERS):
+                sample = [facts[rng.randrange(len(facts))] for _ in facts]
+                bpts = [p for f in sample for p in per_fact[f]]
+                b = ratio50(bpts, max_log)
+                if b is None:
+                    misses += 1
+                else:
+                    crossings.append(math.log10(b))
+            crossings.sort()
+            lo = 10 ** crossings[int(0.025 * len(crossings))]
+            hi = 10 ** crossings[int(0.975 * len(crossings))]
+            miss_note = f", {100 * misses / THRESHOLD_BOOTSTRAP_ITERS:.1f}% of resamples no crossing" if misses else ""
+            print(f"  {m:16} {i:32} ratio50 x{est:.1f} [x{lo:.1f},x{hi:.1f}]{miss_note}")
 
 MANIFEST_FILE = "data/run_manifest.json"
 
@@ -1352,6 +1511,18 @@ def write_manifest():
           f"{len(m['perturbation_ladders'])} facts / {len(m['unanswerable_items'])} items / "
           f"{len(m['instructions'])} instructions; cells caveat={e['caveat']} abstention={e['abstention']} absence={e['absence']}")
 
+OPUS_FI_PROBE_RESULTS = "data/opus_fi_probe.jsonl"
+OPUS_PROBE_MODEL = ("claude-opus-4-8", "anthropic")
+
+def run_opus_fi_probe(n):
+    global CAVEAT_RESULTS
+    MODELS[:] = [OPUS_PROBE_MODEL]
+    SYSTEM_INSTRUCTIONS[:] = [(name, text) for name, text in SYSTEM_INSTRUCTIONS if name == "FLAG_INVITING"]
+    CAVEAT_RESULTS = OPUS_FI_PROBE_RESULTS
+    print(f"OPUS FI PROBE: {OPUS_PROBE_MODEL[0]} x FLAG_INVITING only, N={n}, "
+          f"adaptive thinking explicit, results -> {OPUS_FI_PROBE_RESULTS}\n")
+    _run_sweep(CAVEAT_SWEEP._replace(results=OPUS_FI_PROBE_RESULTS), n)
+
 def pilot_selection(model_name, doc):
     models = [(m, p) for m, p in MODELS if m == model_name]
     if not models:
@@ -1388,6 +1559,8 @@ if __name__ == "__main__": # only run file if executed directly
         vectors()
     elif args and args[0] == "probe":
         run_probe(int(args[1]) if len(args) > 1 else N_PER_CELL)
+    elif args and args[0] == "opusprobe":
+        run_opus_fi_probe(int(args[1]) if len(args) > 1 else 1)
     elif args and args[0] == "rescore":
         if args[1:2] == ["abstention"]:
             rescore_abstention()

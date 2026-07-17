@@ -1,14 +1,18 @@
 # Tests to verify the functions are working as intended. No API key required.
+import anthropic
+import httpx
 import json
 import math
 import openai
 import os
+import statistics
 import tempfile
 import types
 import unittest
 from unittest import mock
 
 import config
+import harness
 
 from config import (perturb, with_retry, DOCUMENTS, doc_text, openai_reasoning_kwargs, MODELS, FLAG_INVITING, SOURCE_EXCLUSIVE,
                     SOURCE_EXCLUSIVE_FLAG_INVITING, SYSTEM_INSTRUCTIONS,
@@ -613,6 +617,11 @@ class TestCaveatSchema(unittest.TestCase):
         self.assertEqual(CAVEAT_LABELS, (QUESTIONED, SILENT, ENDORSED, DECLINED))
 
 
+def _status_error(provider, code):
+    response = httpx.Response(code, request=httpx.Request("GET", "http://test"))
+    return provider.APIStatusError(f"http {code}", response=response, body=None)
+
+
 class TestWithRetry(unittest.TestCase):
     def test_returns_on_first_success(self):
         calls = []
@@ -626,9 +635,9 @@ class TestWithRetry(unittest.TestCase):
         state = {"n": 0}
         def fn():
             state["n"] += 1
-            raise openai.OpenAIError("boom")
+            raise _status_error(openai, 529)
         with mock.patch("config.time.sleep"):
-            with self.assertRaises(openai.OpenAIError):
+            with self.assertRaises(openai.APIStatusError):
                 with_retry(fn, attempts=3)
         self.assertEqual(state["n"], 3)
 
@@ -637,7 +646,7 @@ class TestWithRetry(unittest.TestCase):
         def fn():
             state["n"] += 1
             if state["n"] < 3:
-                raise openai.OpenAIError("transient")
+                raise openai.APIConnectionError(request=httpx.Request("GET", "http://test"))
             return "ok"
         with mock.patch("config.time.sleep"):
             self.assertEqual(with_retry(fn, attempts=5), "ok")
@@ -651,6 +660,39 @@ class TestWithRetry(unittest.TestCase):
         with self.assertRaises(TypeError):
             with_retry(fn, attempts=8)
         self.assertEqual(state["n"], 1)
+
+    def test_retries_on_rate_limit_and_server_errors(self):
+        for provider, code in [(openai, 429), (openai, 500), (anthropic, 529), (anthropic, 429)]:
+            state = {"n": 0}
+            def fn():
+                state["n"] += 1
+                if state["n"] < 2:
+                    raise _status_error(provider, code)
+                return "ok"
+            with mock.patch("config.time.sleep"):
+                self.assertEqual(with_retry(fn, attempts=3), "ok")
+            self.assertEqual(state["n"], 2)
+
+    def test_fails_fast_on_client_errors(self):
+        for provider, code in [(openai, 400), (openai, 401), (openai, 403), (openai, 404),
+                               (anthropic, 400), (anthropic, 401), (anthropic, 422)]:
+            state = {"n": 0}
+            def fn():
+                state["n"] += 1
+                raise _status_error(provider, code)
+            with self.assertRaises((openai.APIStatusError, anthropic.APIStatusError)):
+                with_retry(fn, attempts=8)
+            self.assertEqual(state["n"], 1)
+
+    def test_fails_fast_on_bare_provider_error(self):
+        for exc in (openai.OpenAIError("api_key must be set"), anthropic.AnthropicError("bad client")):
+            state = {"n": 0}
+            def fn():
+                state["n"] += 1
+                raise exc
+            with self.assertRaises(type(exc)):
+                with_retry(fn, attempts=8)
+            self.assertEqual(state["n"], 1)
 
 
 class TestEffortConvention(unittest.TestCase):
@@ -1238,6 +1280,89 @@ class TestMechanismSplit(unittest.TestCase):
         for step in fact["steps"]:
             if step["replace"]:
                 self.assertIn("51 and 121 of", step_doc(fact, step))
+
+
+class TestAnthropicThinkingKwargs(unittest.TestCase):
+    def test_opus_gets_adaptive_thinking(self):
+        self.assertEqual(config.anthropic_thinking_kwargs("claude-opus-4-8"),
+                         {"thinking": {"type": "adaptive"}})
+
+    def test_other_anthropic_models_get_nothing(self):
+        self.assertEqual(config.anthropic_thinking_kwargs("claude-sonnet-5"), {})
+        self.assertEqual(config.anthropic_thinking_kwargs("claude-haiku-4-5"), {})
+
+    def test_batch_params_carry_thinking_only_for_opus(self):
+        opus = build_batch_message_params("claude-opus-4-8", "sys", "q", "doc")
+        sonnet = build_batch_message_params("claude-sonnet-5", "sys", "q", "doc")
+        self.assertEqual(opus["thinking"], {"type": "adaptive"})
+        self.assertEqual(opus["max_tokens"], 1200)
+        self.assertNotIn("thinking", sonnet)
+
+
+class TestEndorsementSdt(unittest.TestCase):
+    def test_corrected_rate_pulls_off_the_boundary(self):
+        self.assertAlmostEqual(harness._corrected_rate(0, 72), 0.5 / 73)
+        self.assertAlmostEqual(harness._corrected_rate(72, 72), 72.5 / 73)
+        self.assertAlmostEqual(harness._corrected_rate(60, 72), 60.5 / 73)
+
+    def test_pooled_dprime_matches_hand_computation(self):
+        counts = {"f1": {0: (30, 36), 1: (28, 36)}, "f2": {0: (30, 36), 1: (28, 36)}}
+        z = statistics.NormalDist().inv_cdf
+        expected = z(60.5 / 73) - z(56.5 / 73)
+        self.assertAlmostEqual(harness._pooled_dprime(counts, ["f1", "f2"], 1), expected)
+
+    def test_pooled_dprime_zero_when_rates_match(self):
+        counts = {"f": {0: (0, 10), 1: (0, 10)}}
+        self.assertAlmostEqual(harness._pooled_dprime(counts, ["f"], 1), 0.0)
+
+    def test_pooled_dprime_none_when_severity_missing(self):
+        counts = {"f": {0: (5, 10)}}
+        self.assertIsNone(harness._pooled_dprime(counts, ["f"], 3))
+
+    def test_dprime_ci_is_deterministic_and_brackets_point(self):
+        counts = {f"f{k}": {0: (2 + k % 2, 3), 1: (k % 2, 3)} for k in range(8)}
+        lo1, hi1 = harness._dprime_ci(counts, 1, iters=200)
+        lo2, hi2 = harness._dprime_ci(counts, 1, iters=200)
+        self.assertEqual((lo1, hi1), (lo2, hi2))
+        d = harness._pooled_dprime(counts, sorted(counts), 1)
+        self.assertLessEqual(lo1, d)
+        self.assertGreaterEqual(hi1, d)
+
+
+class TestDetectionThresholds(unittest.TestCase):
+    def test_logistic_fit_recovers_synthetic_threshold(self):
+        points = []
+        for x in [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
+            p = 1 / (1 + math.exp(-2.0 * (x - 1.5)))
+            points += [(x, True)] * round(p * 40) + [(x, False)] * (40 - round(p * 40))
+        est = harness.ratio50(points, 3.0)
+        self.assertIsNotNone(est)
+        self.assertAlmostEqual(math.log10(est), 1.5, delta=0.15)
+
+    def test_perfect_separation_converges_to_crossing(self):
+        points = [(x, x > 1.0) for x in [0.0, 0.2, 0.4, 0.6, 0.8, 1.2, 1.4, 1.6, 1.8, 2.0]] * 5
+        est = harness.ratio50(points, 2.0)
+        self.assertIsNotNone(est)
+        self.assertAlmostEqual(math.log10(est), 1.0, delta=0.25)
+
+    def test_no_crossing_when_all_negative(self):
+        points = [(x, False) for x in [0.0, 1.0, 2.0, 3.0]] * 10
+        self.assertIsNone(harness.ratio50(points, 3.0))
+
+    def test_no_crossing_when_flat_high(self):
+        points = [(x, True) for x in [0.0, 1.0, 2.0, 3.0]] * 10
+        self.assertIsNone(harness.ratio50(points, 3.0))
+
+    def test_threshold_points_skips_ratioless_steps(self):
+        rows = [{"fact": "saturday_hours", "severity": 3, "stance": "questioned"},
+                {"fact": "grasses", "severity": 3, "stance": "questioned"},
+                {"fact": "grasses", "severity": 0, "stance": "silent"}]
+        per_fact = harness._threshold_points(rows)
+        self.assertNotIn("saturday_hours", per_fact)
+        grasses = dict(per_fact)["grasses"]
+        self.assertEqual(len(grasses), 2)
+        self.assertIn((0.0, False), grasses)
+        self.assertIn((1.0, True), grasses)
 
 
 if __name__ == "__main__":

@@ -113,5 +113,5 @@ To show the headline endorsement finding is not a judge-family artifact, a secon
 - Every result is conditioned on an explicit system instruction. 
 - Model coverage is limited to two providers (Anthropic and OpenAI). 
 - The cross-family second judge covers the caveat/endorsement verdicts only; the abstention and matched-absence numbers rest on the primary same-provider judge (certified against human gold and blind spot-checked, but not second-judged). 
-- The ratios for each severity are hard to standardise due to different units having to be perturbed by different values to achieve similar levels of implausibility, which is a subjective process.
+- The ratios for each severity are hard to standardise due to different units having to be perturbed by different values to achieve similar levels of implausibility, which is a subjective process. The exploratory detection-threshold analysis (results.md Section 13) partially addresses this by treating the ratio itself as the continuous independent variable.
 
