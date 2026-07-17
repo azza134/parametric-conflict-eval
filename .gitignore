@@ -19,3 +19,6 @@ abstention_results.pre_rescore.jsonl
 matched_absence_results.pre_rescore.jsonl
 *.pre_terra_spotcheck
 spotcheck_sidecar_*.json
+second_judge_certification.json
+second_judge_check.jsonl
+second_judge_certification.haiku-failed.json
