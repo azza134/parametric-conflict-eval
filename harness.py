@@ -20,7 +20,7 @@ from config import (DOCUMENTS, DOCUMENT_TEXTS, doc_text, spec_path, MODELS, N_PE
                     build_openai_candidate_body, submit_openai_batch, poll_openai_batch,
                     openai_batch_results, extract_openai_text)
 from judge import (caveat_judge, abstention_judge, FAITHFUL, UNGROUNDED, QUESTIONED, ENDORSED,
-                   DECLINED, NAMED_AUTHORITY, CAVEAT_SYSTEM, ABSTENTION_SYSTEM)
+                   DECLINED, NAMED_AUTHORITY, GENERIC_STD, NO_CORROBORATION, CAVEAT_SYSTEM, ABSTENTION_SYSTEM)
 
 INSTR_BY_NAME = dict(SYSTEM_INSTRUCTIONS)
 
@@ -1347,7 +1347,7 @@ def _analysis_dataset(tag, cav_rows, ab_rows, models, facts, fact_doc):
     print(f"DATASET: {tag}  (caveat rows={len(cav_rows)}, absence rows={len(ab_rows)})")
     print("=" * 100)
     print("\n--- PRIMARY OUTCOMES 1-6, per model x instruction ---")
-    print("O1 contradiction sensitivity (questioned | S1-5); O2 clean specificity (1 - questioned-or-declined | S0)")
+    print("O1 error flagging (questioned | S1-5); O2 clean specificity (1 - questioned-or-declined | S0)")
     print("O3 absence faithfulness; O4 false endorsement (endorsed | S1-5); O5 false corroboration (endorsed & generic/named | S1-5)")
     for m in models:
         for i in arms:
@@ -1369,7 +1369,7 @@ def _analysis_dataset(tag, cav_rows, ab_rows, models, facts, fact_doc):
     print("\n--- 2x2 FACTORIAL (fact-level, paired; effects on outcome rates in [0,1]) ---")
     for m in models:
         print(f"\n {m}")
-        for title, rows, pred in (("O1 contradiction sensitivity", cav_rows, is_q),
+        for title, rows, pred in (("O1 error flagging", cav_rows, is_q),
                                   ("O3 absence faithfulness", ab_rows, is_f),
                                   ("O4 false endorsement", cav_rows, is_e)):
             arm_rates = {a: unit_rate_map([r for r in rows if r["model"] == m and r["instruction"] == a
@@ -1451,8 +1451,38 @@ def analysis():
                     print(f"  {m:14} {i:32} seeded Q {_rate(sd, is_q)[2]:.3f} E {_rate(sd, is_e)[2]:.3f} (n={len(sd)})"
                           f"   fresh Q {_rate(fr, is_q)[2]:.3f} E {_rate(fr, is_e)[2]:.3f} (n={len(fr)})")
     _mechanism_split(cav, models)
-    endorsement_sdt(cav, models)
-    detection_thresholds(cav, models)
+    try:
+        opus = [r for r in (json.loads(l) for l in open(OPUS_FI_PROBE_RESULTS)) if not r.get("truncated")]
+    except FileNotFoundError:
+        opus = []
+    if opus:
+        opus_probe_readout(opus)
+    sdt_models = models + ([OPUS_PROBE_MODEL[0]] if opus else [])
+    endorsement_sdt(cav + opus, sdt_models)
+    detection_thresholds(cav + opus, sdt_models)
+
+def opus_probe_readout(opus):
+    print(f"\n--- OPUS 4.8 FI PROBE ({OPUS_PROBE_MODEL[0]}, FLAG_INVITING only, N=1) ---")
+    pert = [r for r in opus if r["severity"] >= 1]
+    s0 = [r for r in opus if r["severity"] == 0]
+    for label, rows, pred in [
+            ("S1-5 flag", pert, lambda r: r["stance"] == QUESTIONED),
+            ("S0 clean specificity", s0, lambda r: r["stance"] not in (QUESTIONED, DECLINED)),
+            ("S1-5 endorsement", pert, lambda r: r["stance"] == ENDORSED),
+            ("S1-5 corroborated endorsement", pert,
+             lambda r: r["stance"] == ENDORSED and r["corroboration"] != NO_CORROBORATION)]:
+        x, n, _ = _rate(rows, pred)
+        p, lo, hi = wilson_interval(x, n)
+        print(f"  {label:30} {p:.2f} [{lo:.2f},{hi:.2f}] ({x}/{n})")
+    for c in (GENERIC_STD, NAMED_AUTHORITY):
+        x = sum(1 for r in pert if r["stance"] == ENDORSED and r["corroboration"] == c)
+        print(f"    corroboration {c}: {x}")
+    print("  questioned by severity: " + "  ".join(
+        f"S{s} {_rate([r for r in opus if r['severity'] == s], lambda r: r['stance'] == QUESTIONED)[2]:.2f}"
+        for s in SEVERITIES))
+    print("  per-document flag: " + "  ".join(
+        f"{d} {_rate([r for r in pert if r['document'] == d], lambda r: r['stance'] == QUESTIONED)[2]:.2f}"
+        for d in sorted(set(r["document"] for r in pert))))
 
 def _mechanism_split(cav, models):
     print("\n--- DETECTION MECHANISM: internal-anchor split (questioned rate on perturbed rows) ---")
@@ -1539,7 +1569,9 @@ def endorsement_sdt(cav, models):
     zero = [(m, i) for m in models for i in [n for n, _ in SYSTEM_INSTRUCTIONS]
             if any(r["model"] == m and r["instruction"] == i for r in cav)
             and not any(r["model"] == m and r["instruction"] == i and r["stance"] == ENDORSED for r in cav)]
-    print(f"  cells with zero endorsements anywhere (d' n/a, zero propensity): {len(zero)} of {len(models) * len(SYSTEM_INSTRUCTIONS)}")
+    tested = sum(1 for m in models for i in [n for n, _ in SYSTEM_INSTRUCTIONS]
+                 if any(r["model"] == m and r["instruction"] == i for r in cav))
+    print(f"  cells with zero endorsements anywhere (d' n/a, zero propensity): {len(zero)} of {tested}")
     for m in models:
         insts = [i for mm, i in zero if mm == m]
         if len(insts) == len(SYSTEM_INSTRUCTIONS):
@@ -1595,8 +1627,8 @@ def _threshold_points(rows):
 def detection_thresholds(cav, models):
     print("\n--- detection threshold in ratio units ---")
     bounded = sorted(f["fact"] for f in PERTURBATION_LADDERS if all(s["ratio"] is None for s in f["steps"]))
-    print(f"  logistic fit of questioned rate on log10(perturbation ratio), S0 (ratio 1) included as the false-alarm anchor;")
-    print(f"  ratio50 = ratio at 50% flagging, reported only when the fitted curve crosses 0.5 inside the observed range;")
+    print("  logistic fit of questioned rate on log10(perturbation ratio), S0 (ratio 1) included as the false-alarm anchor;")
+    print("  ratio50 = ratio at 50% flagging, reported only when the fitted curve crosses 0.5 inside the observed range;")
     print(f"  [] = 95% cluster bootstrap over facts ({THRESHOLD_BOOTSTRAP_ITERS} resamples, fixed seed), on resamples that cross;")
     print(f"  ratio-less facts excluded: {bounded or 'none'}")
     for m in models:

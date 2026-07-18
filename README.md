@@ -58,6 +58,19 @@ Sweeps default to N=3, matching the published v2 results. N=8 was used in v1, bu
 
 It is also advised to verify your judge first before running the harness. 
 
+## Reproducing the published results
+
+Every table in `results.md` and every figure regenerates offline from the committed result files, with no API keys:
+
+```
+pip install -r requirements.txt
+python3 -m unittest test_logic     # 214 tests over the scoring and analysis logic
+python3 harness.py analysis        # regenerates the published statistics from data/
+python3 plot_results.py            # regenerates the figures
+```
+
+CI runs this exact sequence (fresh install, tests, full analysis readout) on every push, so a clean clone rebuilding the published numbers is continuously verified, not a one-time claim. API keys are only needed to run new sweeps, and re-running a sweep is not expected to reproduce the saved transcripts bit-for-bit: several roster entries are floating aliases and provider models drift over time (disclosed in `results.md`). The saved transcripts in `data/` are the frozen record; everything downstream of them is deterministic.
+
 ## Customisation
 
 The benchmark can be customised in `config.py`, including models tested, number of repetitions (n) and the system instructions. 

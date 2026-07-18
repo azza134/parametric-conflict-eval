@@ -1,0 +1,4 @@
+exclude = ["archive"]
+
+[lint]
+ignore = ["E702", "E731", "E741"]
