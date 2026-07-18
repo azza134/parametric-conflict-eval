@@ -104,6 +104,7 @@ Reproduce with `python3 harness.py adoption`; per-row output in `data/adoption_v
 **Key Findings:**
 
 - All the models had a similar performance across all instructions in abstaining from raising doubts about the unperturbed value, with the anomaly of 0.85 on Sonnet 5 (FI). 
+  - This Sonnet 5 anomaly also means that it raises possible implausibilities on even the unperturbed value, an indicator of how sensitive Sonnet 5 is to FI. 
 - Between the anomalies in Sonnet 5's clean specificity on FI and error flagging on AUDIT, Sonnet 5 can be seen from the data as being more likely to flag errors if the system instruction invites such behaviour, even values that are correct and unperturbed (0.85 clean specificity).
 
 ## 4. Absence faithfulness
@@ -238,7 +239,7 @@ All effects are computed per fact and averaged. [] is a 95% bootstrap interval o
 
 - Both instruction sets increased faithfulness rates in comparison to WG (with the exception of the Anthropic models on flag-invitation main), but source exclusivity instructions were much more effective than flag invitation ones across the models. 
 - On the OpenAI models, the interaction between the two instructions worsened the faithfulness rates, while the opposite effect was observed in Sonnet 5. 
-- Between absence faithfulness and error flagging, OpenAI models appeared to have worsened performance in handling document-grounded QA under the interaction between the mains as opposed to the Anthropic models. One reading is that the tested Anthropic models interpret complex system instructions more capably, but this design cannot separate whether that reflects how each model provider trains its models to follow instructions, or the answer style or comprehension systems of the models. 
+- Between absence faithfulness and error flagging, OpenAI models appeared to have worsened performance in handling document-grounded QA under the interaction between the mains as opposed to the Anthropic models. One reading is that the tested Anthropic models interpret complex system instructions more capably, but this design cannot separate whether that reflects how each model provider trains its models to follow instructions, or the answer style or comprehension systems of the models.
 
 **False endorsement**
 
