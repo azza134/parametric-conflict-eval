@@ -1624,13 +1624,8 @@ def _threshold_points(rows):
         per_fact.setdefault(r["fact"], []).append((math.log10(ratio), r["stance"] == QUESTIONED))
     return per_fact
 
-def detection_thresholds(cav, models):
-    print("\n--- detection threshold in ratio units ---")
-    bounded = sorted(f["fact"] for f in PERTURBATION_LADDERS if all(s["ratio"] is None for s in f["steps"]))
-    print("  logistic fit of questioned rate on log10(perturbation ratio), S0 (ratio 1) included as the false-alarm anchor;")
-    print("  ratio50 = ratio at 50% flagging, reported only when the fitted curve crosses 0.5 inside the observed range;")
-    print(f"  [] = 95% cluster bootstrap over facts ({THRESHOLD_BOOTSTRAP_ITERS} resamples, fixed seed), on resamples that cross;")
-    print(f"  ratio-less facts excluded: {bounded or 'none'}")
+def threshold_estimates(cav, models):
+    out = []
     for m in models:
         for i in [n for n, _ in SYSTEM_INSTRUCTIONS]:
             rows = [r for r in cav if r["model"] == m and r["instruction"] == i]
@@ -1642,7 +1637,7 @@ def detection_thresholds(cav, models):
             max_log = max(x for x, _ in points)
             est = ratio50(points, max_log)
             if est is None:
-                print(f"  {m:16} {i:32} no 50% crossing <= x{10 ** max_log:g}")
+                out.append({"model": m, "instruction": i, "max_ratio": 10 ** max_log, "est": None})
                 continue
             rng = random.Random(ANALYSIS_SEED)
             crossings = []
@@ -1656,10 +1651,25 @@ def detection_thresholds(cav, models):
                 else:
                     crossings.append(math.log10(b))
             crossings.sort()
-            lo = 10 ** crossings[int(0.025 * len(crossings))]
-            hi = 10 ** crossings[int(0.975 * len(crossings))]
-            miss_note = f", {100 * misses / THRESHOLD_BOOTSTRAP_ITERS:.1f}% of resamples no crossing" if misses else ""
-            print(f"  {m:16} {i:32} ratio50 x{est:.1f} [x{lo:.1f},x{hi:.1f}]{miss_note}")
+            out.append({"model": m, "instruction": i, "max_ratio": 10 ** max_log, "est": est,
+                        "lo": 10 ** crossings[int(0.025 * len(crossings))],
+                        "hi": 10 ** crossings[int(0.975 * len(crossings))],
+                        "miss_pct": 100 * misses / THRESHOLD_BOOTSTRAP_ITERS})
+    return out
+
+def detection_thresholds(cav, models):
+    print("\n--- detection threshold in ratio units ---")
+    bounded = sorted(f["fact"] for f in PERTURBATION_LADDERS if all(s["ratio"] is None for s in f["steps"]))
+    print("  logistic fit of questioned rate on log10(perturbation ratio), S0 (ratio 1) included as the false-alarm anchor;")
+    print("  ratio50 = ratio at 50% flagging, reported only when the fitted curve crosses 0.5 inside the observed range;")
+    print(f"  [] = 95% cluster bootstrap over facts ({THRESHOLD_BOOTSTRAP_ITERS} resamples, fixed seed), on resamples that cross;")
+    print(f"  ratio-less facts excluded: {bounded or 'none'}")
+    for t in threshold_estimates(cav, models):
+        if t["est"] is None:
+            print(f"  {t['model']:16} {t['instruction']:32} no 50% crossing <= x{t['max_ratio']:g}")
+            continue
+        miss_note = f", {t['miss_pct']:.1f}% of resamples no crossing" if t["miss_pct"] else ""
+        print(f"  {t['model']:16} {t['instruction']:32} ratio50 x{t['est']:.1f} [x{t['lo']:.1f},x{t['hi']:.1f}]{miss_note}")
 
 MANIFEST_FILE = "data/run_manifest.json"
 

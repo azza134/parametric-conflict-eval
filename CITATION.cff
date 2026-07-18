@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this benchmark or its results, please cite it as below."
+title: "How System Instructions Affect LLM Behaviour in Document-Grounded QA"
+authors:
+  - family-names: "Ngo"
+    given-names: "Andrew"
+repository-code: "https://github.com/andrewngo315/parametric-conflict-eval"
+license: MIT
+version: v2
+date-released: "2026-07-18"
