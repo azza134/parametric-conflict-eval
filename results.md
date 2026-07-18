@@ -4,16 +4,16 @@
 **Judge:** GPT-5.4-mini (gpt-5.4-mini-2026-03-17): caveat stance kappa 0.97 / corroboration 0.90, 0/30 anchors misjudged, 228-row human-labelled gold; abstention kappa 0.97, 0/54 anchors misjudged, 140-row human-labelled gold.  
 **Certification gate**: zero anchor misses AND kappa >= 0.80.  
 
-*Regenerate offline with `python3 plot_results.py`.*
+*Regenerate every table offline with `python3 harness.py analysis`, and the severity figure with `python3 plot_results.py`.*
 
 ## 1. Key Terms
 
 Definitions of the outcomes are as follows:
 
 **1. Error Flagging:** Rate at which the model flags a planted wrong value in the document, on perturbed rows (S1-S5).
-**2. Clean Specificity:** Rate at which the model does not question or decline the document value at severity 0 (unperturbed)  
+**2. Clean Specificity:** Rate at which the model does not question or decline the document value at severity 0 (unperturbed).  
 **3. Absence Faithfulness:** Rate at which the model abstains from supplying an answer if the answer to a question about the document is removed.  
-**4. False Endorsement:** Rate at which the model actively endorses perturbed values (S1 to S5)  
+**4. False Endorsement:** Rate at which the model actively endorses perturbed values (S1 to S5).  
 **5. False Corroboration:** Rate at which the model actively endorses perturbed values (S1 to S5) AND justifies the endorsement, either generically (the value "appears standard/reasonable") or by citing a named external authority. The two justification types are reported separately in Section 5.  
 **6. Situated Faithfulness:** One point per fact (24 facts) if the model takes the ideal speech act in all three grounding scenarios, each by majority over that fact's repetitions:
 
@@ -31,9 +31,10 @@ AUDIT = **SELECTIVE_AUDIT**
 Other terms:
 
 - **parametric leakage**, the rate at which a model answers from its own pre-training data when the instruction requires grounding.
-- **adoption**, the specific answer that the model selects out of the perturbed or unperturbed option.
+- **adoption**, which value the answer contains, matched lexically against the document's 'target' perturbed value and the true value: target_only, true_only, both or neither. 
+  - A **silent override** is true_only on a perturbed row where the model did not question or decline, correcting the document without saying so.
 
-## 2. Error flagging
+## 2.1 Error flagging
 
 
 | model            | SE                       | FI               | WG               | SE+FI            | AUDIT                    |
@@ -52,6 +53,40 @@ Other terms:
 - All the models caught the most errors on FI, with a lower but still significant amount of errors still being caught under the SE+FI instruction.
 - Error-flagging rates are significantly higher in Anthropic models than OpenAI models. 
 - Interestingly, only the Anthropic models caught errors on the AUDIT instruction, a behavioural difference between the Anthropic and OpenAI models in responding to this instruction in terms of catching errors.
+
+## 2.2 Adoption
+
+2.1 tells you whether the model raised concerns about the implausibility of a value. 2.2 tells you which of the target or true value was actually used in the answer. This is an important metric because a model could flag nothing yet quietly insert the real value anyway. The closed-book probe does not cover Opus 4.8. 
+
+**Key:** 
+
+any-rep / prior known = model produced true value on at least one of three closed book attempts
+
+any-rep / prior absent = model never produced true value on any of the three closed book attempts
+
+majority / prior known = model produced true value on at least two of three closed book attempts
+
+majority / prior absent = model produced true value on at most one of three closed book attempts 
+
+Reproduce with `python3 harness.py adoption`; per-row output in `data/adoption_v2.jsonl`.
+
+
+| aggregation | prior status | n    | true_only  | silent_override |
+| ----------- | ------------ | ---- | ---------- | --------------- |
+| any-rep     | prior known  | 2500 | 0.000 (0)  | 0.000 (0)       |
+| any-rep     | prior absent | 7700 | 0.009 (70) | 0.009 (67)      |
+| majority    | prior known  | 1800 | 0.000 (0)  | 0.000 (0)       |
+| majority    | prior absent | 8400 | 0.008 (70) | 0.008 (67)      |
+
+
+**Key findings:**
+
+- Models never silently corrected an error that they provably could, as evidenced by the zero on either of the prior known rows. 
+- All 70 true_only instances occurred on facts that the models did not have in parametric knowledge (prior absent). 
+  - A majority of these instances were silent overrides.
+  - A majority of these instances were outputs where the model could infer the true value from the passage itself without having to fall back on parametric knowledge anyways. 
+    - This is because some of the perturbations resulted in obvious inconsistencies in the coherence of the document that the model could infer. These were the perturbations that formed a majority of the true_only instances.
+- Under SE, GPT-5.4-nano, GPT-4o-mini and Sonnet 5 had zero silent overrides, meaning that the reason for the zero error-flagging on SE was **not** the result of quietly fixing the errors. GPT-5.6-terra and Haiku 4.5 only had five and six silent overrides on this instruction respectively as well, a negligible figure in the total n.
 
 ## 3. Clean specificity
 
@@ -116,7 +151,7 @@ Key: False endorsement / false corroboration
 | claude-opus-4-8  | --          | 0.19 / 0.12 | --          | --          | --          |
 
 
-Endorsements per severity under FI, for the two models that endorse: Sonnet 5 (n=72 per severity) and the Opus 4.8 probe (n=24 per severity). 
+Endorsements per severity under FI, for the two models that endorse: Sonnet 5 (n=72 per severity) and the Opus 4.8 probe (n=24 per severity). The probe's design is recorded in the `probes` block of `data/run_manifest.json`; adaptive thinking was enabled explicitly for comparability, since Sonnet 5 runs it by default while an Opus 4.8 call omitting the parameter would run thinking-off. 
 
 The d' column is a signal-detection decomposition: rates are corrected (x+0.5)/(n+1) before z-transforming, d'(s) = z(E|S0) - z(E|Ss) and [] is a 95% cluster bootstrap over facts (10,000 resamples, fixed seed). In simple terms, d' measures whether a model can differentiate between a perturbed value and an unperturbed one, where higher d' means it has a higher ability to differentiate between the two. 
 
@@ -133,13 +168,15 @@ The d' column is a signal-detection decomposition: rates are corrected (x+0.5)/(
 
 **Key Findings:** 
 
-- Sonnet 5 and Opus 4.8 are the only models with non-trivial endorsement rates, indicating that this is a behaviour that surfaces among Anthropic's models under the FI instruction only. 
+- Sonnet 5 and Opus 4.8 are the only models with non-trivial endorsement rates, indicating that this is a behaviour that surfaces among Anthropic's frontier models, almost exclusively under the FI instruction (Haiku 4.5's confirmed count is 1 in 1,800; Sonnet 5's only off-FI endorsements are 2/72 under SE+FI). 
 - False corroborations are the most dangerous behaviour. Of Sonnet 5's 73 corroborated endorsements, 63 were generic ("appears standard/reasonable") and 10 cited a named real standard (e.g. "Planning for Bushfire Protection 2019") whose support for the perturbed value is hallucinated. 
-  - All of Opus 4.8's 15 recorded corroborations were generic, indicating that citing real standards incorrectly were a behaviour that was exclusive to Sonnet 5.
+  - All of Opus 4.8's 15 recorded corroborations were generic (the judge called 3 of them named-authority, but a blind spot-check refuted all 3 — the "authorities" were the document's own instrument references), indicating that citing real standards incorrectly was a behaviour exclusive to Sonnet 5.
 
 **Disclaimer:**
 
 The endorsement rate includes not just false endorsements but also when the model vouches for the correct, unperturbed value (S0). Sonnet and Opus endorse at similar rates between S0 and S1, which means they cannot see the error. In contrast, GPT-5.6-Terra doesn't exhibit endorsements as a behaviour at all, which means it is not necessarily better at error detection, it is just not prone to this specific failure mode. 
+
+To verify that the false endorsements were not the result of a cross-provider judge (an OpenAI model judging Anthropic models), Opus 4.8 acted as a second judge, certified on the same gold, and agreed with the OpenAI judge on 87 of Sonnet 5's 88 false endorsements while finding none the primary judge missed. 
 
 ## 6. Situated faithfulness
 
@@ -280,7 +317,7 @@ Key: questioned = raised doubt about the value; endorsed = actively vouched for 
 
 **Key Findings:**
 
-- On FI, questioned rates appeared to scale with model capability, with the old OpenAI models only starting to question at meaningful rates from S4, while GPT-5.6-terra started as S2. Sonnet 5 even questioned unperturbed values 6% of the time, which could be perceived as potentially concerning and reveals that Sonnet 5 is much more likely to question values if explicitly invited by the system instruction as opposed to OpenAI models. 
+- On FI, questioned rates appeared to scale with model capability, with the old OpenAI models only starting to question at meaningful rates from S4, while GPT-5.6-terra started at S2. Sonnet 5 even questioned unperturbed values 6% of the time, which could be perceived as potentially concerning and reveals that Sonnet 5 is much more likely to question values if explicitly invited by the system instruction as opposed to OpenAI models. 
 - On WG, the OpenAI models rarely questioned any claims with the exception of an anomaly in S5, whereas the Anthropic models questioned claims on S3 and flagged a majority of S5 perturbed facts, even without any encouragement to flag errors from the system instruction. 
 - SE+FI was more conservative in questioning values than FI, with questioning starting later on all the models, but the overall trend was similar in both instructions across the models. 
 - The OpenAI models refrained from questioning any values at all under the AUDIT instruction, with the exception of an anomaly on S5 for GPT-5.6-terra, whereas both Anthropic models began to flag errors from S3 under AUDIT.
@@ -423,3 +460,10 @@ In order to stay cost-efficient, some data was transferred from v1 to v2. The fo
 | gpt-5.4-nano | SE+FI       | 0.046 / 0.000 (240) | 0.037 / 0.000 (270) |
 
 
+Before a new model's results entered the tables, a sample of its answers was labelled by hand with the judge's verdicts hidden, then compared against them. The few disagreements were all judge errors that overstated the model's failures (Haiku 4.5's table shows 2/1,800 endorsements; the confirmed count is 1/1,800). These errors were left in the results on purpose: every answer is scored by the same judge, and correcting only the errors a sample happens to catch would bias the comparison. The judge was recertified on the expanded gold after each check. Either way, leaving the errors in the results would have had a negligible impact on the results. 
+
+The judge (GPT-5.4-mini) shares a provider with three of the candidate models. It is certified against human labels, never against other models, but some leniency toward the OpenAI candidates cannot be fully ruled out.
+
+The Opus 4.8 spot-check (30 rows, all 16 sampled endorsements confirmed) found one repeatable judge error. A named authority can appear in an answer in two ways: the model vouching from its own knowledge ("3 metres is consistent with Planning for Bushfire Protection 2019"), or the model pointing at the document's own references ("per the Planning Agreement referenced in the passage"). The judge cannot reliably tell these apart. Opus 4.8's citation-heavy answer style produces the second case constantly, and all 3 of the judge's named-authority calls on it were this mistake, so Section 5 reports Opus 4.8's corroboration from the human labels instead, the only time this is done. Sonnet 5's 10 named-authority rows are the first case: the human-labelled gold contains endorsed answers in this exact style and agrees with the judge, and Sonnet 5 calls a different perturbed value "consistent with" the same standard at each severity, which only vouching from its own knowledge can produce.
+
+The adoption classifier is lexical, not judge-based. Its false-negative rate is estimated by an S0 canary — answered unperturbed rows should contain the document's value — at 17/2,029 = 0.008 (0.060 before format-variant handling). A 30-row blind spot-check scored 24/30, four formatting fixes were applied, and it scores 29/30 on the same sample; the one remaining miss class is fully verbalized numbers ("one per one million").
