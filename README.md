@@ -67,7 +67,7 @@ Every table in `results.md` and every figure regenerates offline from the commit
 
 ```
 pip install -r requirements.txt
-python3 -m unittest test_logic     # 214 tests over the scoring and analysis logic
+python3 -m unittest test_logic     # 219 tests over the scoring and analysis logic
 python3 harness.py analysis        # regenerates the published statistics from data/
 python3 plot_results.py            # regenerates the figures
 ```
