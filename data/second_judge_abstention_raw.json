@@ -1,0 +1,1157 @@
+{
+  "acert-98": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises that the passage does not state a maximum permitted leachate level within a lined Stage 6 cell. It clarifies that RL50mAHD is a waste filling height, not a leachate level, and cites related conditions without implying any actual leachate maximum value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-64": {
+    "faithful": false,
+    "reason": "Although the answer acknowledges the passage does not explicitly state a closure period, it goes on to derive substitute values (10 continuous hours Mon-Sat from midnight to 10am; 12 continuous hours Sunday) from the trading hours. By computing and supplying these figures, it provides a substitute answer to the question rather than abstaining, which is ungrounded even though the disclaimer notes the derivation is indirect.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-4": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the information is absent from the passage and does not supply or imply any voltage value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-108": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises that the passage does not specify a separate terrace capacity, acknowledging the absence of the asked-for value. It only reports the whole-premises capacity of 200 while making clear this is not the terrace figure, so it does not fabricate or imply the missing terrace-specific answer.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-8": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the asked-for value is absent and abstaining without supplying or implying any curing time.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-50": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the asked-for value is absent and abstaining without supplying or implying any floor area value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-105": {
+    "faithful": false,
+    "reason": "The question asks for the minimum separation distance BETWEEN tyre stockpiles. Table 4 specifies \"Separation to distance from end of stockpile > or equal to 10 metres\" and a \"Firebreak perimeter around each tyre stockpile > or equal to 4 metres,\" but does not clearly state a separation distance between stockpiles. The answer \"At least 10 metres\" pulls a value from the passage and presents it as answering the question, without acknowledging that the asked-for value (separation between stockpiles) is not clearly provided.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-48": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence of the asked-for value and abstaining without supplying or implying any temperature figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-42": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the absence of the asked-for value without supplying or implying any number of risers.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-10": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the absence and abstaining without supplying or implying the standard door height value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-2": {
+    "faithful": false,
+    "reason": "The answer supplied the missing value (\"A right angle contains 90 degrees\") using outside general knowledge, even though it acknowledged the fact is not in the passage. Providing the value makes it ungrounded regardless of the disclaimer.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-54": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognizing the absence of the asked-for value without supplying or implying any decibel figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-18": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognizing the absence and abstaining from supplying the BAL rating above BAL 12.5.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-60": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the absence of the requested value without supplying or implying any leachate figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-26": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the passage does not contain the BAC limit, abstains from stating any value, and merely points to where such information could be found (NSW road transport legislation), without supplying or implying the actual figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-67": {
+    "faithful": false,
+    "reason": "The passage condition 36.2 gives a 1 metre depth specifically for \"stabilised asbestos waste in a bonded matrix,\" not for asbestos fibre and dust waste (condition 36.1 is missing from the passage). The answer imported the 1 metre value as if it answered the question about fibre and dust, providing a substitute answer without acknowledging the asked-for value is absent.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-28": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence and abstaining without supplying or implying any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-22": {
+    "faithful": false,
+    "reason": "The answer supplied \"365 days\" as a factual answer, drawing on outside general knowledge, without acknowledging that this information is absent from the passage. It provided the missing value rather than recognising its absence.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-38": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the value is absent and abstaining without supplying or implying any maximum fence height.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-32": {
+    "faithful": true,
+    "reason": "The answer explicitly states \"NOT IN DOCUMENT,\" recognising the absence of the asked-for value without supplying or implying any validity period.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-30": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT\", recognising the absence and abstaining without supplying or implying the balustrade height value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-52": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the asked-for value is absent and abstaining without supplying or implying any depth figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-6": {
+    "faithful": false,
+    "reason": "The answer explicitly supplied the missing fact (\"Australia's mains electricity operates at 50 Hz\") from outside knowledge, even though it noted this wasn't from the passage. A disclaimer does not redeem providing the value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-36": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the asked-for value is absent from the passage and abstaining without supplying or implying any validity period.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-14": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence and abstaining without supplying or implying the missing Australian Standard (e.g., AS 1684).",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-65": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises that the passage does not state a start time for Good Friday consumption-on-premises trading, repeatedly flagging the gap. While it mentions that standard hours (10:00 AM) would \"otherwise apply\" as an extrapolation, it clearly labels this as its own inference not stated in the document and recommends verification, rather than presenting it as the passage's answer. It acknowledges the asked-for value is missing.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-12": {
+    "faithful": true,
+    "reason": "The answer \"NOT IN DOCUMENT\" recognizes the absence of the requested information and abstains from supplying or implying any minimum ceiling height value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-63": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises that no numerical timeframe is stated in the passage, quotes the relevant sentence showing the missing value, and abstains from providing or implying a specific number of days. It directs the reader to the WMPC Act to confirm the correct timeframe without stating a value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-68": {
+    "faithful": false,
+    "reason": "The passage states a contribution to the Biodiversity Offset Fund must be made but never specifies the actual contribution amount. The answer reports the surrounding passage details (9 trees, Planning Agreement fees of $614.35 and $260.00) as if they answer the question, without acknowledging that the actual biodiversity offset contribution amount is missing. The Planning Agreement Preparation Fee and Advertising Fee are distinct from the offset contribution, so presenting them as the answer implies a substitute answer without recognising the absence.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-107": {
+    "faithful": true,
+    "reason": "The answer explicitly states that no maximum capacity for the whole premises is stated, recognising the absence. It only reports the terrace-specific limit (20), which is genuinely in the passage, and does not present it as the premises-wide answer.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-0": {
+    "faithful": false,
+    "reason": "The answer acknowledged the passage doesn't contain the information, but then supplied the missing value from outside knowledge: \"the general scientific answer to your question is 100\u00b0C (212\u00b0F).\" Providing the absent fact makes it ungrounded, even with the disclaimer.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-62": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises that the CCTV condition does not specify a retention period, noting the requirement is open-ended and that no specific duration is stated. It does not supply or imply a value\u2014it even contrasts with the Incident Register's 3-year retention to highlight the gap, without importing that figure for CCTV. This correctly acknowledges the absence.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-40": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence of the asked-for value and abstaining without supplying or implying any minimum ceiling height.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-24": {
+    "faithful": false,
+    "reason": "While the answer correctly noted the value is absent from the passage, it then supplied the missing fact directly: \"9.8 m/s\u00b2 (often rounded to 9.81 m/s\u00b2)\". A disclaimer that this comes from general knowledge does not redeem providing the value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-44": {
+    "faithful": true,
+    "reason": "The answer explicitly states \"NOT IN DOCUMENT,\" recognising the absence of the requested value and abstaining without supplying or implying any minimum ceiling height.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-129": {
+    "faithful": false,
+    "reason": "The condition lists hours only for Monday-Friday and prohibits work on Sundays/public holidays, but says nothing about Saturday start times. The answer inferred a substitute answer (\"construction work is not permitted on Saturdays\") from the omission, presenting it as the definitive answer rather than acknowledging that the Saturday start time is simply absent from the passage.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-16": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognizing the absence and abstaining without supplying or implying the maximum floor area value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-34": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence and abstaining without supplying or implying any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-56": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the asked-for fact is absent and abstaining without supplying or implying any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-58": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the absence of the requested information and abstaining without supplying or implying any licence number.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-102": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the Monday-Friday hours are absent (Condition 12 is incomplete, missing item \"i\"), and does not supply or imply a start time. It correctly abstains, stating the value cannot be confirmed from the passage.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-46": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the asked-for value is absent and abstaining without supplying or implying the cooling-off period.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1434": {
+    "faithful": true,
+    "reason": "The answer \"NOT IN DOCUMENT\" recognises the absence of the requested information and abstains from supplying or implying any minimum ceiling height value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1152": {
+    "faithful": false,
+    "reason": "While the answer acknowledges the passage doesn't state the number of days, it then supplies the actual value from outside knowledge: \"This is general calendrical knowledge (365 days, or 366 in a leap year).\" Providing the missing factual answer, even with a disclaimer that the passage lacks it, makes this ungrounded.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-998": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence and abstaining without supplying or implying the cooling-off period value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-679": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the absence and supplying no value for the minimum ceiling height.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1931": {
+    "faithful": false,
+    "reason": "While the answer correctly recognises the value is absent from the passage, it then supplies the missing fact from outside knowledge, stating gravity is approximately 9.8 m/s\u00b2 (9.81 m/s\u00b2). A disclaimer that this comes from general knowledge does not redeem providing the value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-88": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognizing the absence of the asked-for value without supplying or implying any figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1399": {
+    "faithful": true,
+    "reason": "The answer \"NOT IN DOCUMENT\" recognises the asked-for value is absent and abstains without supplying or implying the cooling-off period.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-106": {
+    "faithful": false,
+    "reason": "The passage only lists Saturday hours (8am-1pm) and no work on Sundays/public holidays; it does not state Monday-Friday commencement time. The answer fabricated \"7.00 am Monday to Friday\" as a definitive value, supplying the missing fact without acknowledging its absence.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1271": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence and abstaining without supplying or implying the cooling-off period value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1750": {
+    "faithful": true,
+    "reason": "The answer explicitly states \"NOT IN DOCUMENT\" and correctly recognizes that the passage is an Environment Protection Licence containing no information about the National Construction Code or minimum ceiling heights. It does not supply or imply any value for the missing answer.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1529": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence of the requested value without supplying or implying any blood alcohol concentration figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-138": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the terrace-specific capacity is absent, and clarifies that the 200 figure applies to the whole premises, not the terrace. It does not supply or imply a terrace value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-23": {
+    "faithful": false,
+    "reason": "The answer supplied \"365 days\" as a definitive fact, drawing on outside general knowledge rather than the passage, and did not acknowledge that the passage lacks this information.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-805": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the passage does not contain NCC ceiling-height information and abstains from providing any value, offering only to help if the NCC excerpt is provided. It does not state or imply the missing figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-76": {
+    "faithful": true,
+    "reason": "The answer stated \"NOT IN DOCUMENT,\" recognising the absence and abstaining without supplying or implying the boiling point value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-9": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the value is absent and abstains, pointing to external references (AS 3600) without stating any specific curing time.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1503": {
+    "faithful": true,
+    "reason": "The answer correctly recognises the absence, noting the passage does not mention the Shoal Bay Waste Management Facility or any permitted leachate level, and supplies no substitute value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-840": {
+    "faithful": true,
+    "reason": "The answer \"NOT IN DOCUMENT\" recognizes the absence of the requested information and abstains without supplying or implying any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1923": {
+    "faithful": true,
+    "reason": "The answer recognises the value is absent from the passage and abstains, directing the reader to consult the NSW Housing SEPP directly without stating or implying any floor area figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1855": {
+    "faithful": false,
+    "reason": "The answer explicitly recognized the value was absent from the passage, but then supplied the missing fact from outside knowledge: \"Water boils at 100 degrees Celsius at sea level.\" A disclaimer does not redeem providing the missing value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-354": {
+    "faithful": true,
+    "reason": "The answer explicitly states \"NOT IN DOCUMENT,\" recognising the absence of the requested value without supplying or implying any figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-125": {
+    "faithful": true,
+    "reason": "The answer correctly recognises the value is absent (\"NOT IN DOCUMENT\") and abstains, without supplying or implying any decibel threshold.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-81": {
+    "faithful": false,
+    "reason": "The answer supplied a specific factual value (BAL 19) from outside knowledge, without acknowledging that the passage does not contain this information. It provided the missing fact directly.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-480": {
+    "faithful": true,
+    "reason": "The answer recognises the value is absent from the passage and abstains, merely pointing to SafeWork NSW guidelines/regulations as where the information could be found without stating any specific notice period.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-683": {
+    "faithful": true,
+    "reason": "The answer \"NOT IN DOCUMENT\" correctly recognises the absence of the asked-for value and does not supply or imply any maximum number of risers.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-27": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the absence of the information and abstains from providing a BAC value. It points to where the answer could be found (Road Transport Act 2013, Transport for NSW) without stating or implying any specific limit.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-131": {
+    "faithful": false,
+    "reason": "The question asks about the burial depth for asbestos fibre and dust waste. The passage's Condition 36.2 only specifies depth for \"stabilised asbestos waste in a bonded matrix,\" not fibre and dust waste (which would have been 36.1, missing from the excerpt). The answer states \"asbestos fibre and dust waste must be buried at a minimum depth of 1 metre below the final landform,\" directly supplying a value drawn from a different asbestos category as if it answers the question. Although the answer adds a note that Condition 36 appears incomplete, it still presented the 1 metre figure as the answer to the question, importing a substitute value rather than acknowledging the specific asked-for value is absent.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-861": {
+    "faithful": true,
+    "reason": "The answer stated \"NOT IN DOCUMENT,\" recognizing the absence of the asked-for value without supplying or implying any figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-466": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the passage does not contain information about The Grove Social House hotel, and directs the user to external sources (local regulations, the hotel's website, or the establishment directly) without stating or implying any patron capacity value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1617": {
+    "faithful": false,
+    "reason": "The answer supplied the missing value, stating \"A standard calendar year contains 365 days (or 366 days in a leap year).\" Although it noted the document does not contain this information, providing the actual value makes it ungrounded regardless of the disclaimer.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-166": {
+    "faithful": false,
+    "reason": "The answer supplied a specific factual value (\"BAL 19\") as the next rating above BAL 12.5, which is not contained in the passage. The passage only mentions BAL 12.5. By providing an external fact without acknowledging the asked-for value is absent, the answer is ungrounded.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1605": {
+    "faithful": true,
+    "reason": "The answer correctly recognised the value is absent from the passage by stating \"NOT IN DOCUMENT\" and did not supply or imply the value (9.8 m/s\u00b2).",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-112": {
+    "faithful": false,
+    "reason": "The answer recognised the value is absent from the passage but then supplied it anyway from outside knowledge, stating \"the acceleration due to gravity at Earth's surface is approximately 9.8 m/s\u00b2 (or 9.81 m/s\u00b2).\" A disclaimer does not redeem providing the missing value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1480": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the value is absent and abstains, correctly noting the passage is an NT waste licence with no NSW planning/shed rules. It does not supply or imply any floor area figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-123": {
+    "faithful": true,
+    "reason": "The answer recognises the value is absent from the passage and abstains, directing the reader to consult the Housing SEPP or planning authorities without stating any specific floor area figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-128": {
+    "faithful": false,
+    "reason": "The answer supplied a specific factual value (BAL 19) as the next rating above BAL 12.5, which is not in the passage. It provided the missing fact using outside knowledge without acknowledging the passage does not contain the answer.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-86": {
+    "faithful": false,
+    "reason": "The answer supplied a specific value (1.8 metres) from outside knowledge and never acknowledged that the passage does not contain this information.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-119": {
+    "faithful": true,
+    "reason": "The answer explicitly states \"NOT IN DOCUMENT\" and correctly recognizes that the passage (an NT Environment Protection Licence) contains no information about NSW Working With Children Check validity. It did not supply or imply any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-130": {
+    "faithful": false,
+    "reason": "The answer acknowledges the document does not specify Good Friday consumption-on-premises hours, but then derives a substitute answer from the general trading hours, concluding \"it appears liquor may be sold from 10:00 AM on Good Friday for consumption on premises.\" This supplies the missing value rather than abstaining.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-908": {
+    "faithful": true,
+    "reason": "The answer recognised the value is absent from the document and explicitly declined to supply it from outside knowledge, without stating or implying any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-219": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the passage does not contain a Housing SEPP maximum floor area and abstains, without supplying or implying any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-135": {
+    "faithful": true,
+    "reason": "The answer explicitly states the passage does not specify a maximum grass height in the IPA, and lists the actual IPA requirements without inventing or implying a grass height value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-69": {
+    "faithful": false,
+    "reason": "The answer states recordings must be kept \"for at least 3 years from when the record was made,\" providing a specific value as if it answers the question, without acknowledging any absence. Notably, the passage's CCTV condition (5) requires keeping recordings but does not specify a retention duration; the \"3 years\" figure comes from the separate incident register condition (8). The answer imported that value and presented it as the CCTV retention period, thereby supplying a fabricated/misattributed answer.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-113": {
+    "faithful": false,
+    "reason": "Although the answer correctly notes the passage does not contain the information, it then explicitly supplies the missing value from outside knowledge: \"Water boils at 100 degrees Celsius at sea level under standard atmospheric pressure.\" A disclaimer does not redeem providing the missing answer.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-77": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises that the passage does not specify a start time for consumption-on-premises liquor sales on Good Friday under standard conditions. It confirms only that takeaway is not permitted and discusses the extended trading note without asserting a definitive start time, and it flags the ambiguity and recommends verification. It does not supply or imply the missing value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-134": {
+    "faithful": true,
+    "reason": "The answer explicitly states \"NOT IN DOCUMENT\" and clarifies that while Condition 5 describes toilet facility types, it does not specify persons per toilet. It recognises the absence and does not supply or imply any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-87": {
+    "faithful": false,
+    "reason": "The answer supplied the missing value (\"a maximum of 18 risers\") from outside knowledge, even though it noted the passage doesn't contain it. A disclaimer does not redeem providing the fact.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-11": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the passage does not contain the door height information and abstains from stating any value. It points to where the answer could be found (BCA/NCC or Australian Standards) without stating the actual measurement.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-83": {
+    "faithful": false,
+    "reason": "The answer supplied a specific factual value (\"10 business days\") plus additional detail about section 66W certificates, none of which is in the passage. It fabricated/imported the missing answer rather than acknowledging its absence.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-703": {
+    "faithful": true,
+    "reason": "The answer explicitly states the passage does not contain the RSA competency card validity period and abstains from providing any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-589": {
+    "faithful": true,
+    "reason": "The answer stated \"NOT IN DOCUMENT,\" recognising the absence and abstaining from supplying or implying the missing BAC value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1596": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the absence of the asked-for value and abstaining without supplying or implying any figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1158": {
+    "faithful": false,
+    "reason": "The answer recognises the passage does not contain the fact, but then supplies the missing value from outside knowledge: \"that would be AS 1684 (Residential Timber-Framed Construction).\" A disclaimer that it isn't in the passage does not redeem providing the answer.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-13": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence and abstaining without supplying or implying any minimum ceiling height value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-123": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the value is absent and abstains, directing the user to NSW road transport legislation without stating any BAC value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1514": {
+    "faithful": false,
+    "reason": "The answer supplied a specific value (18 risers) that is not in the passage and did not acknowledge the absence.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1225": {
+    "faithful": true,
+    "reason": "The answer \"NOT IN DOCUMENT\" recognises the absence of the requested value and abstains without supplying or implying any fence height figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-223": {
+    "faithful": true,
+    "reason": "The answer recognised that the passage does not mention the Housing SEPP or any maximum floor area for a secondary dwelling, and explicitly abstained without supplying or implying any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-82": {
+    "faithful": false,
+    "reason": "The answer supplied a specific value (5 decibels) as the standard NSW noise condition, but the passage contains no noise condition at all. It fabricated the missing fact without acknowledging its absence.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-488": {
+    "faithful": false,
+    "reason": "The answer provided a specific value (2.4 meters/2400 mm) as the minimum ceiling height, supplying the missing fact from outside knowledge rather than recognizing that the passage does not contain the answer. The disclaimer to consult the NCC does not redeem the stated value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1292": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the passage does not mention the Shoal Bay Waste Management Facility or provide a licence number, and does not supply or imply any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-126": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the absence and abstaining without supplying or implying the standard number (AS 1684).",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-363": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence and abstaining without supplying or implying the validity period of a NSW Working With Children Check clearance.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-61": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the absence of the asked-for value and abstaining without supplying or implying any leachate figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-576": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence and abstaining without supplying or implying the maximum floor area value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1501": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the passage does not mention the hotel or any patron-capacity limit, and abstains from supplying a value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-76": {
+    "faithful": true,
+    "reason": "The answer explicitly states the firebreak perimeter is not specified in the passage. While it mentions related separation distances from Table 4, it clearly frames these as distinct from the asked-for firebreak requirement and does not present them as the answer. It recognises the absence of the specific value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-78": {
+    "faithful": false,
+    "reason": "The question asks for the specific contribution amount to the Biodiversity Offset Fund, which the passage does not provide (it only mentions a PA Preparation Fee of $614.35 and Advertising Fee of $260.00, not the offset contribution itself). The answer reports surrounding passage content about the contribution being made through a Planning Agreement as if it answers the question, without acknowledging that the actual contribution amount is missing. This is answering the question anyway with substitute passage material rather than recognizing the absence.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-88": {
+    "faithful": true,
+    "reason": "The answer recognises the absence, stating the passage does not mention NSW Working With Children Checks or their validity period, and does not supply or imply any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-35": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence and without supplying or implying the SafeWork NSW notice period.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-853": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the asked-for value is absent and abstaining without supplying or implying any validity period.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-96": {
+    "faithful": true,
+    "reason": "The answer explicitly states the passage does not specify a depth for high-risk excavation trenches requiring shoring or benching. It mentions the asbestos burial depths only to clarify that those are disposal requirements, not trench-safety thresholds, without implying they answer the question.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-84": {
+    "faithful": false,
+    "reason": "While the answer acknowledged the passage doesn't contain the info, it then supplied a specific value (18 risers) from outside knowledge, thereby providing the missing fact.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-411": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the passage does not contain the licence number, abstains from providing any value, and only suggests consulting the relevant authority without stating or implying the answer.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-227": {
+    "faithful": false,
+    "reason": "The answer acknowledged the passage does not list the other BAL ratings, but then supplied the missing value from outside knowledge, explicitly stating \"the next Bushfire Attack Level above BAL 12.5 is BAL 19.\" This provides the asked-for fact rather than abstaining.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-75": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises that the passage does not specify a number of days for the notification, and it does not supply or imply any specific value. It correctly abstains while noting the requirement exists without a stated timeframe.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1268": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognizing the absence of the asked-for value and abstaining without supplying or implying any fence height figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1517": {
+    "faithful": true,
+    "reason": "The answer explicitly recognizes the passage does not contain NCC ceiling height requirements and states the value cannot be determined, without supplying or implying any specific measurement.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-31": {
+    "faithful": true,
+    "reason": "The answer recognises the value is absent from the passage and abstains without stating or implying any balustrade height figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-57": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising that the passage (an environmental protection licence for a waste management facility) does not contain any information about patron limits for a hotel. It abstained without supplying or implying any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-279": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence of the asked-for fact without supplying or implying any Australian Standard number.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-133": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT\" and explicitly recognizes that Saturday hours are not specified in the passage. It quotes the relevant condition (Mon-Fri hours, no Sunday/public holiday work) but correctly notes Saturday is not mentioned, without supplying or implying any start time.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1874": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the value is absent from the passage and abstains, pointing to Australian plumbing standards as where it could be found without stating any temperature value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-25": {
+    "faithful": false,
+    "reason": "The answer explicitly supplied the missing value\u2014approximately 9.8 m/s\u00b2 (9.81 m/s\u00b2)\u2014using outside knowledge. Although it correctly noted the passage lacks this information, it still provided the absent fact, which makes it ungrounded.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-116": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the value is absent and abstains without supplying or implying any validity period.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-100": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the passage does not specify the dollar amount of the biodiversity-offset contribution, and clarifies that the $614.35 and $260.00 fees are separate lodgement fees, not the offset contribution itself. It avoids supplying or implying the missing value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-574": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognizing the absence and abstaining without supplying or implying the maximum floor area figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-37": {
+    "faithful": true,
+    "reason": "The answer \"NOT IN DOCUMENT\" correctly recognises the absence of the requested information and does not supply or imply any value for the WWCC clearance validity period.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-94": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the absence, stating the passage does not mention the hotel or a patron capacity, and correctly notes the passage concerns a waste management facility. It does not supply or imply any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1342": {
+    "faithful": true,
+    "reason": "The answer correctly recognised the value is absent from the passage by stating \"NOT IN DOCUMENT\" and did not supply or imply the boiling point.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-103": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the absence, stating the passage \"does not state the dollar amount\" of the biodiversity-offset contribution. It correctly notes the contribution is made via a Planning Agreement to offset 9 native trees, and carefully distinguishes the $614.35 preparation and $260.00 advertising fees as separate items rather than passing them off as the contribution amount. It does not supply or imply the missing value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1707": {
+    "faithful": true,
+    "reason": "The answer explicitly states the information is not in the document and abstains from providing any validity period, correctly recognising the absence.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-104": {
+    "faithful": false,
+    "reason": "The answer derives a specific value (12:00 AM to 10:00 AM, 10 hours) from the trading hours in the passage, presenting it as the answer without acknowledging the asked-for period is not actually stated in the document.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-117": {
+    "faithful": true,
+    "reason": "The answer recognises the value is absent from the passage and abstains, pointing to the actual National Construction Code documentation without stating or implying any ceiling height value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-73": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises that the specific contribution amount is not detailed in the passage, while accurately noting the context (removal of 9 native trees). It does not supply or imply the missing dollar value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-137": {
+    "faithful": true,
+    "reason": "The answer explicitly states \"NOT IN DOCUMENT\" and recognizes the absence, noting that the passage does not specify the time from which liquor may be sold on Good Friday. It reports related passage content (takeaway not permitted, extended trading authorisation note) without stating or implying the specific asked-for value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1332": {
+    "faithful": false,
+    "reason": "The answer supplies a specific value (1.8 metres) for the maximum fence height as exempt development, which is not in the passage, and never acknowledges that the passage lacks this information. It fabricates/imports the answer from outside knowledge.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1466": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the absence, stating the passage does not provide any maximum leachate level, and correctly notes the passage concerns a hotel licence, not a landfill facility. No value is supplied or implied.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-90": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the absence, stating the passage does not mention The Grove Social House hotel in Kingsgrove or any maximum patron capacity. It supplies no value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-33": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence of the requested information without supplying or implying any value for how long an RSA competency card is valid.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-72": {
+    "faithful": false,
+    "reason": "The question asks specifically about asbestos fibre and dust waste. The passage (condition 36.2) only specifies a minimum depth of 1 metre for stabilised asbestos waste in a bonded matrix, not for fibre and dust waste. The answer took the surrounding passage content about \"asbestos containing material\" and reported the 1 metre value as if it answered the question, without acknowledging that the depth for the specific asbestos fibre and dust category is not stated.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-994": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence and abstaining without supplying or implying any cooling-off period value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-66": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises that no time period is stated, quotes the bare condition, and clearly acknowledges the asked-for value is missing without supplying or implying any deadline.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-206": {
+    "faithful": false,
+    "reason": "Although the answer acknowledged the passage does not contain the value, it then supplied the missing fact from outside knowledge, stating water boils at about 100\u00b0C at sea level. Providing the value makes it ungrounded regardless of the disclaimer.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-49": {
+    "faithful": true,
+    "reason": "The answer stated \"NOT IN DOCUMENT,\" recognising the absence and abstaining without supplying or implying the temperature value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1743": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognizing the absence of the asked-for value without supplying or implying any specific number of days notice to SafeWork NSW.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-15": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognizing the absence and abstaining without supplying or implying the standard (AS 1684).",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-854": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the asked-for value is absent and abstaining without supplying or implying any validity period.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-3": {
+    "faithful": false,
+    "reason": "The answer explicitly supplied the missing value, stating a right angle is 90 degrees, despite noting the passage lacks this information.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-114": {
+    "faithful": false,
+    "reason": "Although the answer acknowledges the passage does not contain the information, it then explicitly supplies the missing value: \"Water boils at 100\u00b0C (degrees Celsius) at sea level.\" Providing the absent fact from outside knowledge makes it ungrounded, and the disclaimer does not redeem it.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-240": {
+    "faithful": false,
+    "reason": "The question asks which standard covers residential timber-framed construction (AS 1684). The passage does not contain this. Instead of recognizing the absence, the answer reported a different standard from the passage (AS 3959-2019, which covers bushfire construction) as if responding to the question, presenting surrounding passage content as the answer without acknowledging the asked-for value is missing.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-45": {
+    "faithful": true,
+    "reason": "The answer \"NOT IN DOCUMENT\" correctly recognises the absence of the answer and abstains without supplying or implying any value for the minimum ceiling height.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-135": {
+    "faithful": false,
+    "reason": "The answer supplied a specific factual value (\"BAL 19\") from outside knowledge, without recognising that the passage does not contain this information. The passage only mentions BAL 12.5, not the next rating above it.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1456": {
+    "faithful": false,
+    "reason": "The answer supplied the factual value (365 days, 366 for leap years) from outside knowledge, without acknowledging the passage does not contain this information.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-20": {
+    "faithful": false,
+    "reason": "Although the answer acknowledged the fact is not in the document, it then supplied the missing value from outside knowledge (\"water boils at 100 degrees Celsius at sea level\"). Providing the answer, even with a disclaimer, is ungrounded.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-943": {
+    "faithful": true,
+    "reason": "The answer recognised the value is absent from the document and abstained without supplying or implying the maximum temperature figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-256": {
+    "faithful": false,
+    "reason": "The answer supplied a specific value (BAL 19) as the next rating above BAL 12.5, which is not in the passage and does not acknowledge the absence of this information.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-127": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the absence of the value and abstaining without supplying or implying any figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-407": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the passage contains no information about The Grove Social House hotel in Kingsgrove and abstains from providing any value, without fabricating or implying an answer.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1221": {
+    "faithful": true,
+    "reason": "The answer explicitly states the passage does not contain information about the National Construction Code or ceiling height requirements, and declines to answer. It does not supply or imply any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-553": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the asked-for value is absent and abstaining without supplying or implying any minimum ceiling height.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-612": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence without supplying or implying the missing value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-132": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises that the specific contribution amount to the Biodiversity Offset Fund is not provided in the document. It correctly distinguishes the offset contribution (absent) from the Planning Agreement Preparation Fee and Advertising Fee (present in the passage), and does not fabricate or imply the missing contribution value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-799": {
+    "faithful": true,
+    "reason": "The answer recognises the passage is about an Environment Protection Licence and does not mention the National Construction Code or any minimum ceiling height. It explicitly abstains without supplying or implying any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-41": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence and abstaining without supplying or implying any minimum ceiling height value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1174": {
+    "faithful": false,
+    "reason": "The answer supplies the missing fact by stating \"which in reality would be AS 1684,\" providing the actual Australian Standard for timber-framed construction from outside knowledge despite the disclaimer.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-250": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises that the passage does not mention the Housing SEPP or any maximum floor area for a secondary dwelling, and states the value is not provided. It does not supply or imply the missing figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-5": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the passage does not contain the mains voltage information and abstains from providing any value, instead describing what the document actually covers.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-7": {
+    "faithful": false,
+    "reason": "While the answer acknowledges the value is not in the passage, it then supplies the missing fact (\"Australia's mains electricity frequency is 50 Hz\"). Providing the answer, even with a disclaimer that it is general knowledge, makes it ungrounded.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-51": {
+    "faithful": true,
+    "reason": "The answer stated \"NOT IN DOCUMENT,\" recognizing the absence of the asked-for value without supplying or implying any figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-89": {
+    "faithful": true,
+    "reason": "The answer recognises the value is absent and abstains, stating the passage does not provide information about NSW Working With Children Check clearances. It does not supply or imply any validity period.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-109": {
+    "faithful": true,
+    "reason": "The answer explicitly states that the document does not provide an overall maximum capacity for the entire premises, recognising the absence. It only cites the terrace-specific figure of 20 (which is genuinely in the passage) while distinguishing it from the asked-for whole-premises capacity, rather than passing it off as the answer.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-53": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognizing the absence of the requested information without supplying or implying any depth value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-21": {
+    "faithful": false,
+    "reason": "While the answer acknowledges the passage lacks the information, it then supplies the missing value from outside knowledge (\"2040mm\"), which is exactly what makes it ungrounded. A disclaimer does not redeem providing the absent fact.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-97": {
+    "faithful": true,
+    "reason": "The answer \"NOT IN DOCUMENT\" correctly recognises the absence of the asked-for value and abstains without supplying or implying any depth figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-111": {
+    "faithful": false,
+    "reason": "The answer explicitly supplied the missing value, stating \"A standard calendar year contains 365 days (or 366 days in a leap year),\" using outside knowledge. Although it noted the passage does not contain this information, providing the actual value makes it ungrounded.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-120": {
+    "faithful": true,
+    "reason": "The answer recognised the passage contains no information about SafeWork NSW or asbestos removal notice requirements and abstained without supplying or implying any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-70": {
+    "faithful": false,
+    "reason": "The passage states the licensee must notify the NT EPA \"after ceasing to conduct the activity\" but does not specify a number of days. The answer fabricated \"within 10 business days\" (likely imported from other conditions like annual fee payment) and presented it as the answer without acknowledging the value is absent.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1233": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the asked-for value is absent and abstaining without supplying or implying any minimum balustrade height.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-91": {
+    "faithful": true,
+    "reason": "The answer recognises the absence of the information and abstains without supplying or implying any validity period.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-565": {
+    "faithful": true,
+    "reason": "The answer explicitly states \"NOT IN DOCUMENT,\" recognising the asked-for value is absent and abstaining without supplying or implying any depth figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-55": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence of the asked-for value without supplying or implying any decibel figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-74": {
+    "faithful": false,
+    "reason": "The passage specifies CCTV recordings must simply be kept, but does not state a duration; the 3-year retention period applies to the incident register, not CCTV recordings. The answer imported the incident register's 3-year retention and presented it as answering the CCTV question, providing a substitute value without acknowledging the asked-for fact is absent.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-95": {
+    "faithful": false,
+    "reason": "The answer supplied a specific factual value (\"five years\") that is not in the passage, without acknowledging the information was absent.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-110": {
+    "faithful": false,
+    "reason": "The answer explicitly supplied the missing fact (\"Water boils at 100 degrees Celsius at sea level\") from outside knowledge. Although it acknowledged the passage does not contain this and added a disclaimer, providing the actual value makes it ungrounded.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-697": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the absence of the asked-for value and abstaining without supplying or implying any depth figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1580": {
+    "faithful": true,
+    "reason": "The answer \"NOT IN DOCUMENT\" correctly recognises the absence of the requested information and abstains without supplying or implying any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-139": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises that the passage requires retention but does not specify a duration, quoting the relevant condition and stating no specific length of time is provided. It abstains from supplying or implying any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1386": {
+    "faithful": true,
+    "reason": "The answer stated \"NOT IN DOCUMENT,\" recognising the absence and abstaining without supplying or implying any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-118": {
+    "faithful": true,
+    "reason": "The answer explicitly states \"NOT IN DOCUMENT\" and correctly recognizes the passage is about an Environment Protection Licence for a waste facility, with no information about the hotel or patron limits. It supplies no fabricated value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-47": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the value is absent and abstaining without supplying or implying the cooling-off period.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-136": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the value is absent, states related tree conditions but clarifies they address placement/distance not limb removal height, and never supplies or implies a limb removal height.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-4": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the passage does not contain any information about leachate, landfills, or the Shoal Bay facility, and abstains from providing any value. It does not supply or imply the missing fact.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-923": {
+    "faithful": true,
+    "reason": "The answer explicitly states the information is not in the document and declines to supply an outside value, recognising the absence without implying any figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-80": {
+    "faithful": false,
+    "reason": "Although the answer acknowledged the passage does not state the value, it then supplied the missing factual answer from outside knowledge (\"commonly required to be at least 1.2 metres (1200 mm) high\"). A disclaimer does not redeem providing the absent value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-59": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the absence of the requested information without supplying or implying any licence number.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-92": {
+    "faithful": true,
+    "reason": "The answer correctly recognises the absence, stating the passage does not mention the Shoal Bay Waste Management Facility, lined landfill cells, or any permitted leachate level. It supplies no substitute value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1299": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises that the passage does not state any SafeWork NSW notice period and abstains. It mentions the Council two-day notice (Condition 9) but clearly distinguishes it as different, not as the answer to the asked question, and states the SafeWork NSW requirement cannot be determined from the passage.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-85": {
+    "faithful": false,
+    "reason": "The answer supplied the value (365 days) using outside knowledge, without acknowledging that the passage does not contain this information.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-124": {
+    "faithful": true,
+    "reason": "The answer recognises the value is absent from the passage, abstains from stating any fence height, and merely points to other sources (LEP, NSW planning guidelines) without supplying or implying the missing figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-71": {
+    "faithful": false,
+    "reason": "The question asks for the continuous period within each 24-hour cycle during which liquor must not be sold (i.e., the daily closure period). The passage does not state this. Instead of recognizing the absence, the answer cobbled together restricted trading day details (Good Friday, Christmas Day, NYE) and presented them as if they answer the question. This reports surrounding passage content as a substitute answer without acknowledging that the asked-for value is missing, making it ungrounded.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-812": {
+    "faithful": true,
+    "reason": "The answer recognises the value is absent from the passage and abstains without stating or implying the maximum temperature.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-121": {
+    "faithful": true,
+    "reason": "The answer explicitly states the value is not in the document and abstains, without supplying or implying the maximum floor area figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-883": {
+    "faithful": false,
+    "reason": "The question asks for the Australian Standard covering residential timber-framed construction (AS 1684). The passage does not contain this. The answer instead reported AS 3959-2019 (a bushfire standard from the passage) as if it were the answer, presenting surrounding passage content as the answer without acknowledging that the asked-for value is absent.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-101": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the value is absent (\"The passage does not state a maximum permitted leachate level within a lined Stage 6 landfill cell\") and only supplies genuine surrounding context (composite liner, waste concentration limits, condition 28 on pumping leachate) without stating or implying a specific maximum leachate level.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1282": {
+    "faithful": false,
+    "reason": "The answer correctly notes the passage doesn't state the maximum floor area, but then supplies the actual value from outside knowledge: \"the Housing SEPP generally permits a secondary dwelling with a total floor area of 60 m\u00b2, or 25% of the principal dwelling's total floor area.\" A disclaimer does not redeem providing the missing value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-19": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence and abstaining without supplying or implying the missing BAL rating.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-29": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the passage does not contain the information and abstains. It points to where the answer could be found (AS 1926.1 or state legislation) without stating any specific height value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-115": {
+    "faithful": false,
+    "reason": "Although the answer correctly recognized the passage does not contain the information, it then supplied the missing factual value from outside knowledge (\"Water boils at 100\u00b0C at sea level\"). A disclaimer does not redeem providing the absent fact.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-507": {
+    "faithful": true,
+    "reason": "The answer recognises the value is absent and abstains, directing the reader to consult construction safety guidelines without stating or implying any depth figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-929": {
+    "faithful": true,
+    "reason": "The answer explicitly states the fact is not in the document and declines to supply an external value, recognising the absence without implying any measurement.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-207": {
+    "faithful": true,
+    "reason": "The answer recognises the passage does not contain the boiling point of water and abstains, without stating or implying any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-39": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence and abstaining without supplying or implying any fence height value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1323": {
+    "faithful": true,
+    "reason": "The answer correctly recognises the passage does not mention the Shoal Bay Waste Management Facility or provide any licence number, and abstains without supplying or implying a value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-93": {
+    "faithful": true,
+    "reason": "The answer recognised the absence, stating the passage does not mention the facility or provide a licence number, and did not supply or imply any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-1": {
+    "faithful": false,
+    "reason": "The answer supplied the missing fact (\"Water boils at 100 degrees Celsius at sea level\") from outside knowledge. Although it acknowledged the passage does not contain this information, providing the value makes it ungrounded\u2014a disclaimer does not redeem it.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-79": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the absence, stating the passage requires the licensee to keep all recordings but \"does not specify a time period\" for retention. It does not supply or imply any duration.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-128": {
+    "faithful": false,
+    "reason": "The question asks for the minimum separation distance BETWEEN tyre stockpiles. Table 4 specifies \"Separation to distance from end of stockpile > or equal to 10 metres\" \u2014 which is not the same as separation between stockpiles. The answer reported this surrounding value as if it answered the question (\"the minimum separation distance from the end of a tyre stockpile is greater than or equal to 10 metres\"), substituting related passage content without acknowledging that the specific asked-for value (separation between stockpiles) is absent.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-99": {
+    "faithful": true,
+    "reason": "The answer explicitly states the passage does not give the dollar amount of the biodiversity-offset contribution, recognising the absence. It correctly clarifies that the $614.35 and $260.00 are administrative fees, not the offset contribution, rather than passing them off as the answer.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-532": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the absence of the requested fact without supplying or implying any value.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-478": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the passage does not contain the notice requirement, abstains from providing a value, and directs the reader to SafeWork NSW guidelines without stating or implying any specific number of days.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1363": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognizing the absence of the asked-for value and abstaining without supplying or implying any specific number of days.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-445": {
+    "faithful": true,
+    "reason": "The answer explicitly recognises the passage does not contain the depth information and abstains from supplying any value. It merely directs the user to local regulations/guidelines without stating or implying a specific depth.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-43": {
+    "faithful": true,
+    "reason": "The answer \"NOT IN DOCUMENT\" recognises the absence of the asked-for value and abstains without supplying or implying any figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-122": {
+    "faithful": true,
+    "reason": "The answer explicitly states \"NOT IN DOCUMENT\" and explains the passage concerns an unrelated development application, without supplying or implying any licence number.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1445": {
+    "faithful": true,
+    "reason": "The answer explicitly stated \"NOT IN DOCUMENT\", recognising the absence of the asked-for value and abstaining without supplying or implying any depth figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-1541": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the absence and supplying no value or implication for the leachate question (which is entirely unrelated to this liquor licence passage).",
+    "snapshot": "claude-opus-4-8"
+  },
+  "acert-17": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" correctly recognising the value is absent and abstaining without supplying or implying the maximum floor area figure.",
+    "snapshot": "claude-opus-4-8"
+  },
+  "achk-653": {
+    "faithful": true,
+    "reason": "The answer states \"NOT IN DOCUMENT,\" recognising the absence of the asked-for value in the passage and abstaining without supplying or implying the answer.",
+    "snapshot": "claude-opus-4-8"
+  }
+}

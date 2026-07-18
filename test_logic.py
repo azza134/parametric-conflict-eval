@@ -1521,5 +1521,73 @@ class TestAdoption(unittest.TestCase):
         self.assertEqual(o, "both")
 
 
+class TestSecondJudgeAbstention(unittest.TestCase):
+    def test_prompt_blocks_reconstruct_byte_identical(self):
+        import second_judge
+        from judge import build_abstention_prompt
+        for name in DOCUMENTS:
+            doc = doc_text(name)
+            prefix, suffix = second_judge.abstention_prompt_blocks("What is X?", doc, "NOT IN DOCUMENT.")
+            self.assertEqual(prefix + suffix, build_abstention_prompt("What is X?", doc, "NOT IN DOCUMENT."))
+            self.assertTrue(suffix.startswith(second_judge.ANSWER_MARKER))
+            self.assertIn(doc, prefix)
+            self.assertNotIn("NOT IN DOCUMENT.", prefix)
+
+    def test_judge_params_cache_control_placement(self):
+        import second_judge
+        p = second_judge.abstention_judge_params("q?", "some doc", "an answer", True)
+        blocks = p["messages"][0]["content"]
+        self.assertEqual(blocks[0]["cache_control"], {"type": "ephemeral", "ttl": second_judge.CACHE_TTL})
+        self.assertNotIn("cache_control", blocks[1])
+        self.assertNotIn("thinking", p)
+        self.assertEqual(p["tool_choice"], {"type": "tool", "name": "verdict"})
+        p2 = second_judge.abstention_judge_params("q?", "some doc", "an answer", False)
+        self.assertNotIn("cache_control", p2["messages"][0]["content"][0])
+
+    def test_check_selection_deterministic_and_stratified(self):
+        import second_judge
+        a = second_judge.abstention_check_selection(2, 1, 2, 1)
+        b = second_judge.abstention_check_selection(2, 1, 2, 1)
+        self.assertEqual([(arm, i) for arm, i, _ in a], [(arm, i) for arm, i, _ in b])
+        self.assertEqual(len({i for _, i, _ in a}), len(a))
+        for arm, _, r in a:
+            if arm.startswith("openai"):
+                self.assertTrue(r["model"].startswith("gpt"))
+            else:
+                self.assertTrue(r["model"].startswith("claude"))
+            if arm.endswith("faithful-side") or arm.endswith("control-faithful"):
+                self.assertTrue(r["faithful"])
+            else:
+                self.assertFalse(r["faithful"])
+
+    def test_estimate_cost_cache_rule_and_bounds(self):
+        import second_judge
+        jobs = ([{"cid": f"a{i}", "q": "q1", "doc": "d1", "answer": "x"} for i in range(5)]
+                + [{"cid": "b0", "q": "q2", "doc": "d2", "answer": "x"}])
+        tokens = {("q1", "d1"): 6000, ("q2", "d2"): 6000}
+        self.assertEqual(second_judge.cached_prefix_keys(jobs, tokens), {("q1", "d1")})
+        small = {("q1", "d1"): 100, ("q2", "d2"): 100}
+        self.assertEqual(second_judge.cached_prefix_keys(jobs, small), set())
+        est = second_judge.estimate_abstention_cost(jobs, tokens)
+        self.assertEqual(est["n_jobs"], 6)
+        self.assertEqual(est["n_prefixes"], 2)
+        self.assertEqual(est["n_cached_prefixes"], 1)
+        self.assertLess(est["expected_usd"], est["worst_usd"])
+        uncached = second_judge.estimate_abstention_cost(jobs, small)
+        self.assertEqual(uncached["n_cached_prefixes"], 0)
+        self.assertEqual(uncached["expected_usd"], uncached["worst_usd"])
+
+    def test_cert_jobs_align_with_gold_order(self):
+        import second_judge
+        with open(second_judge.ABSTENTION_GOLD_FILE) as f:
+            gold = json.load(f)
+        jobs = second_judge.abstention_cert_jobs()
+        self.assertEqual(len(jobs), len(gold))
+        self.assertEqual([j["cid"] for j in jobs], [f"acert-{i}" for i in range(len(gold))])
+        for j, g in zip(jobs, gold):
+            self.assertEqual(j["q"], g["q"])
+            self.assertEqual(j["answer"], g["answer"])
+
+
 if __name__ == "__main__":
     unittest.main()
